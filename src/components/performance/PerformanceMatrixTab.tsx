@@ -105,12 +105,12 @@ export function PerformanceMatrixTab({
   });
 
   // Section 3: Anomaly Distribution (Count per checkpoint count bucket: 0 to 8)
-  const checkpointBuckets = [1, 2, 3, 4, 5, 6, 7, 8].map((count) => {
+  const checkpointBuckets = [0, 1, 2, 3, 4, 5, 6, 7, 8].map((count) => {
     const matchingCases = anomalies.checkpointAnomalies.filter(
       (a) => a.recorded_checkpoint_count === count
     );
     return {
-      checkpoint_count: `${count} Checkpoints`,
+      checkpoint_count: count === 0 ? '0 (None)' : `${count} Checkpoints`,
       cases_count: matchingCases.length,
       is_anomaly: count < 8,
     };
