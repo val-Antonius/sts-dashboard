@@ -1,49 +1,81 @@
+@import "tailwindcss";
+
+@theme {
+  --color-base: var(--bg-base);
+  --color-surface: var(--surface);
+  --color-surface-hover: var(--surface-hover);
+  --color-border: var(--border-subtle);
+  --color-ink-primary: var(--ink-primary);
+  --color-ink-muted: var(--ink-muted);
+  --color-accent-brass: var(--accent-brass);
+  --color-status-ok: var(--status-ok);
+  --color-status-warn: var(--status-warn);
+  --color-status-danger: var(--status-danger);
+  --color-status-neutral: var(--status-neutral);
+}
+
 :root {
-  --background: #ffffff;
-  --foreground: #171717;
+  --bg-base: #F7F5F0;
+  --surface: #FFFFFF;
+  --surface-hover: #F2EFE9;
+  --border-subtle: #E3E0D6;
+  --ink-primary: #1C1B18;
+  --ink-muted: #6B6A63;
+  --accent-brass: #A6763C;
+  --status-ok: #3B7A57;      /* Achieved, Closed */
+  --status-warn: #B8863B;    /* Warning, Approaching SLA */
+  --status-danger: #A54B3F;  /* Not Achieved, Overdue SLA, Anomaly */
+  --status-neutral: #8B897F; /* Active, normal progression */
 }
 
-@media (prefers-color-scheme: dark) {
-  :root {
-    --background: #0a0a0a;
-    --foreground: #ededed;
-  }
-}
-
-html {
-  height: 100%;
-}
-
-html,
-body {
-  max-width: 100vw;
-  overflow-x: hidden;
-}
-
-body {
-  min-height: 100%;
-  display: flex;
-  flex-direction: column;
-  color: var(--foreground);
-  background: var(--background);
-  font-family: Arial, Helvetica, sans-serif;
-  -webkit-font-smoothing: antialiased;
-  -moz-osx-font-smoothing: grayscale;
+[data-theme="dark"] {
+  --bg-base: #141518;
+  --surface: #1C1E22;
+  --surface-hover: #25282D;
+  --border-subtle: #2B2E34;
+  --ink-primary: #EDEBE4;
+  --ink-muted: #9A988F;
+  --accent-brass: #C08C4A;
+  --status-ok: #489369;
+  --status-warn: #C99645;
+  --status-danger: #BD584B;
+  --status-neutral: #9A988F;
 }
 
 * {
   box-sizing: border-box;
-  padding: 0;
-  margin: 0;
 }
 
-a {
-  color: inherit;
-  text-decoration: none;
+body {
+  background-color: var(--bg-base);
+  color: var(--ink-primary);
+  font-feature-settings: "cv02", "cv03", "cv04", "cv11";
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
 }
 
-@media (prefers-color-scheme: dark) {
-  html {
-    color-scheme: dark;
-  }
+/* Strict requirement per 04_MASTER_STYLEGUIDE: Tabular Numbers */
+.tabular-nums,
+table,
+.kpi-value,
+.stat-number,
+[data-tabular="true"] {
+  font-variant-numeric: tabular-nums;
+  font-feature-settings: "tnum";
+}
+
+/* Custom Scrollbar */
+::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+}
+::-webkit-scrollbar-track {
+  background: transparent;
+}
+::-webkit-scrollbar-thumb {
+  background: var(--border-subtle);
+  border-radius: 3px;
+}
+::-webkit-scrollbar-thumb:hover {
+  background: var(--ink-muted);
 }
