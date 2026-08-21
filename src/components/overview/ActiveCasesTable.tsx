@@ -1,15 +1,44 @@
-import React from 'react';
+'use client';
+
+import React, { useState, useMemo } from 'react';
 import Link from 'next/link';
 import { ActiveCaseCurrentMonth } from '@/types/database';
 import { StatusBadge } from '@/components/common/StatusBadge';
 import { EmptyState } from '@/components/common/EmptyState';
-import { Stethoscope, CornerDownRight } from 'lucide-react';
+import { Stethoscope, CornerDownRight, ArrowUpDown, ArrowUp, ArrowDown } from 'lucide-react';
 
 interface ActiveCasesTableProps {
   cases: ActiveCaseCurrentMonth[];
 }
 
+type SortOrder = 'desc' | 'asc' | 'none';
+
 export function ActiveCasesTable({ cases }: ActiveCasesTableProps) {
+  const [sortOrder, setSortOrder] = useState<SortOrder>('desc');
+
+  const toggleSort = () => {
+    if (sortOrder === 'desc') {
+      setSortOrder('asc');
+    } else if (sortOrder === 'asc') {
+      setSortOrder('none');
+    } else {
+      setSortOrder('desc');
+    }
+  };
+
+  const sortedCases = useMemo(() => {
+    if (!cases || cases.length === 0) return [];
+    if (sortOrder === 'none') return cases;
+
+    return [...cases].sort((a, b) => {
+      if (sortOrder === 'asc') {
+        return a.solution_time_days - b.solution_time_days;
+      } else {
+        return b.solution_time_days - a.solution_time_days;
+      }
+    });
+  }, [cases, sortOrder]);
+
   if (!cases || cases.length === 0) {
     return <EmptyState message="No active cases recorded for the current month" />;
   }
@@ -21,7 +50,24 @@ export function ActiveCasesTable({ cases }: ActiveCasesTableProps) {
           <tr className="border-b border-border bg-base/60 text-ink-muted font-medium">
             <th className="py-3 px-4">Customer / Branch / PIC</th>
             <th className="py-3 px-4">Unit Model & Serial</th>
-            <th className="py-3 px-4">Solution Time / SLA</th>
+            <th
+              className="py-3 px-4 cursor-pointer hover:bg-surface-hover/80 transition-colors select-none group"
+              onClick={toggleSort}
+              title="Click to sort by Solution Time"
+            >
+              <div className="flex items-center gap-1.5">
+                <span>Solution Time / SLA</span>
+                {sortOrder === 'desc' && (
+                  <ArrowDown className="w-3.5 h-3.5 text-accent-brass font-bold" />
+                )}
+                {sortOrder === 'asc' && (
+                  <ArrowUp className="w-3.5 h-3.5 text-accent-brass font-bold" />
+                )}
+                {sortOrder === 'none' && (
+                  <ArrowUpDown className="w-3.5 h-3.5 text-ink-muted/50 group-hover:text-ink-muted" />
+                )}
+              </div>
+            </th>
             <th className="py-3 px-4">Claim Status</th>
             <th className="py-3 px-4">Root Cause</th>
             <th className="py-3 px-4 text-center">Carry-Over</th>
@@ -29,7 +75,7 @@ export function ActiveCasesTable({ cases }: ActiveCasesTableProps) {
           </tr>
         </thead>
         <tbody className="divide-y divide-border">
-          {cases.map((c) => {
+          {sortedCases.map((c) => {
             const isOverdue = c.solution_time_days > c.achievement_threshold_days;
             const slaColor = isOverdue
               ? 'text-[#A54B3F] dark:text-[#BD584B] font-semibold'
@@ -54,10 +100,19 @@ export function ActiveCasesTable({ cases }: ActiveCasesTableProps) {
                   </div>
                 </td>
 
-                {/* Unit Model & Serial (Monospace) */}
+                {/* Unit Model & Serial with Product Code Badge */}
                 <td className="py-3 px-4">
-                  <div className="font-medium text-ink-primary">{c.unit_model_name}</div>
-                  <div className="font-mono text-ink-muted text-[11px]">
+                  <div className="flex items-center gap-1.5">
+                    {c.product_code && (
+                      <span className="font-mono text-[10px] font-semibold px-1.5 py-0.2 rounded bg-accent-brass/10 text-accent-brass border border-accent-brass/30 shrink-0">
+                        {c.product_code}
+                      </span>
+                    )}
+                    <span className="font-medium text-ink-primary truncate">
+                      {c.unit_model_name}
+                    </span>
+                  </div>
+                  <div className="font-mono text-ink-muted text-[11px] mt-0.5">
                     {c.serial_number || '—'}
                   </div>
                 </td>

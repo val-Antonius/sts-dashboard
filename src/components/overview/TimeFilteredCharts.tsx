@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState, useEffect } from 'react';
+import React, { useState } from 'react';
 import {
   ResponsiveContainer,
   BarChart,
@@ -87,7 +87,7 @@ export function TimeFilteredCharts({ initialData }: TimeFilteredChartsProps) {
         )}
       </div>
 
-      {/* 2x2 Chart Grid */}
+      {/* 3x2 Responsive Chart Grid */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
         {/* Chart 1: Top 5 Active Cases by Branch */}
         <div className="p-4 bg-surface border border-border rounded-lg shadow-xs flex flex-col justify-between">
@@ -132,7 +132,7 @@ export function TimeFilteredCharts({ initialData }: TimeFilteredChartsProps) {
                     dataKey="claimable_status_name"
                     type="category"
                     tick={{ fontSize: 10, fill: 'var(--ink-muted)' }}
-                    width={100}
+                    width={110}
                   />
                   <Tooltip contentStyle={customTooltipStyle} />
                   <Bar dataKey="count" fill="#3B7A57" radius={[0, 4, 4, 0]} name="Active Cases" />
@@ -144,7 +144,62 @@ export function TimeFilteredCharts({ initialData }: TimeFilteredChartsProps) {
           )}
         </div>
 
-        {/* Chart 3: Active Case Volume by Customer Segment */}
+        {/* Chart 3: Top 5 Active Cases by Root Cause (NEW) */}
+        <div className="p-4 bg-surface border border-border rounded-lg shadow-xs flex flex-col justify-between">
+          <div className="flex items-center justify-between mb-3">
+            <h3 className="text-xs font-semibold uppercase tracking-wider text-ink-muted">
+              Top 5 Active Cases by Root Cause
+            </h3>
+          </div>
+          {data.topRootCauses && data.topRootCauses.length > 0 ? (
+            <div className="h-60 w-full">
+              <ResponsiveContainer width="100%" height="100%">
+                <BarChart
+                  data={data.topRootCauses}
+                  layout="vertical"
+                  margin={{ top: 10, right: 20, left: 40, bottom: 10 }}
+                >
+                  <XAxis type="number" allowDecimals={false} tick={{ fontSize: 11, fill: 'var(--ink-muted)' }} />
+                  <YAxis
+                    dataKey="root_cause_name"
+                    type="category"
+                    tick={{ fontSize: 10, fill: 'var(--ink-muted)' }}
+                    width={110}
+                  />
+                  <Tooltip contentStyle={customTooltipStyle} />
+                  <Bar dataKey="count" fill="#B8863B" radius={[0, 4, 4, 0]} name="Active Cases" />
+                </BarChart>
+              </ResponsiveContainer>
+            </div>
+          ) : (
+            <EmptyState className="h-60" />
+          )}
+        </div>
+
+        {/* Chart 4: Top 5 Active Cases by Product Code (NEW) */}
+        <div className="p-4 bg-surface border border-border rounded-lg shadow-xs flex flex-col justify-between">
+          <div className="flex items-center justify-between mb-3">
+            <h3 className="text-xs font-semibold uppercase tracking-wider text-ink-muted">
+              Top 5 Active Cases by Product Code
+            </h3>
+          </div>
+          {data.topProductCodes && data.topProductCodes.length > 0 ? (
+            <div className="h-60 w-full">
+              <ResponsiveContainer width="100%" height="100%">
+                <BarChart data={data.topProductCodes} margin={{ top: 10, right: 10, left: -20, bottom: 20 }}>
+                  <XAxis dataKey="product_code" tick={{ fontSize: 11, fill: 'var(--ink-muted)' }} />
+                  <YAxis allowDecimals={false} tick={{ fontSize: 11, fill: 'var(--ink-muted)' }} />
+                  <Tooltip contentStyle={customTooltipStyle} />
+                  <Bar dataKey="count" fill="#A6763C" radius={[4, 4, 0, 0]} name="Active Cases" />
+                </BarChart>
+              </ResponsiveContainer>
+            </div>
+          ) : (
+            <EmptyState className="h-60" />
+          )}
+        </div>
+
+        {/* Chart 5: Active Case Volume by Customer Segment */}
         <div className="p-4 bg-surface border border-border rounded-lg shadow-xs flex flex-col justify-between">
           <div className="flex items-center justify-between mb-3">
             <h3 className="text-xs font-semibold uppercase tracking-wider text-ink-muted">
@@ -174,7 +229,7 @@ export function TimeFilteredCharts({ initialData }: TimeFilteredChartsProps) {
           )}
         </div>
 
-        {/* Chart 4: Carried-Over Backlog by Branch */}
+        {/* Chart 6: Carried-Over Backlog by Branch */}
         <div className="p-4 bg-surface border border-border rounded-lg shadow-xs flex flex-col justify-between">
           <div className="flex items-center justify-between mb-3">
             <h3 className="text-xs font-semibold uppercase tracking-wider text-ink-muted">

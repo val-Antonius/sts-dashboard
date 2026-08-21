@@ -39,6 +39,8 @@ export function DiagnosticDetails({
             <div className="text-xs text-ink-muted flex flex-wrap items-center gap-3">
               <span>Segment: <strong>{caseDetail.golongan_customer}</strong></span>
               <span>•</span>
+              <span>Product Code: <strong className="font-mono text-ink-primary px-1.5 py-0.2 bg-base rounded border border-border">{caseDetail.product_code || '—'}</strong></span>
+              <span>•</span>
               <span>Model: <strong className="text-ink-primary">{caseDetail.unit_model_name}</strong></span>
               <span>•</span>
               <span>Serial: <code className="font-mono text-ink-primary">{caseDetail.serial_number || '—'}</code></span>

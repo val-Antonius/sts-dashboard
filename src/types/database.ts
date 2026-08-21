@@ -11,6 +11,7 @@ export interface ActiveCaseCurrentMonth {
   customer_name: string;
   branch_code: string;
   pic_name: string | null;
+  product_code: string;
   unit_model_name: string;
   serial_number: string | null;
   solution_time_days: number;
@@ -32,7 +33,9 @@ export interface PicBranchWorkloadCurrentMonth {
 export interface ActiveCaseDimension {
   issue_case_id: string;
   branch_code: string;
+  product_code: string;
   claimable_status_name: string;
+  root_cause_name: string | null;
   golongan_customer: 'All Customer' | 'KA Nasional';
   complaint_date: string;
   is_carried_over: boolean;

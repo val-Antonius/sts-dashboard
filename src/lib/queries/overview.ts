@@ -27,6 +27,7 @@ export async function getActiveCasesCurrentMonth(): Promise<ActiveCaseCurrentMon
       customer_name,
       branch_code,
       pic_name,
+      product_code,
       unit_model_name,
       serial_number,
       solution_time_days::int,
@@ -64,6 +65,16 @@ export interface StatusCount {
   count: number;
 }
 
+export interface RootCauseCount {
+  root_cause_name: string;
+  count: number;
+}
+
+export interface ProductCodeCount {
+  product_code: string;
+  count: number;
+}
+
 export interface SegmentCount {
   golongan_customer: string;
   count: number;
@@ -72,6 +83,8 @@ export interface SegmentCount {
 export interface OverviewChartData {
   topBranches: BranchCount[];
   topStatuses: StatusCount[];
+  topRootCauses: RootCauseCount[];
+  topProductCodes: ProductCodeCount[];
   customerSegments: SegmentCount[];
   carriedOverByBranch: BranchCount[];
 }
@@ -115,7 +128,27 @@ export async function getOverviewChartsData(
     LIMIT 5;
   `, queryParams);
 
-  // 3. Active Case Volume by Customer Segment (All Customer vs KA Nasional)
+  // 3. Top 5 Active Cases by Root Cause
+  const rootCauseRes = await query<{ root_cause_name: string; count: string }>(`
+    SELECT COALESCE(root_cause_name, 'Not Recorded') AS root_cause_name, COUNT(*)::int AS count
+    FROM product_issue.v_active_case_dimensions
+    WHERE ${dateClause}
+    GROUP BY COALESCE(root_cause_name, 'Not Recorded')
+    ORDER BY count DESC
+    LIMIT 5;
+  `, queryParams);
+
+  // 4. Top 5 Active Cases by Product Code
+  const productCodeRes = await query<{ product_code: string; count: string }>(`
+    SELECT product_code, COUNT(*)::int AS count
+    FROM product_issue.v_active_case_dimensions
+    WHERE ${dateClause}
+    GROUP BY product_code
+    ORDER BY count DESC
+    LIMIT 5;
+  `, queryParams);
+
+  // 5. Active Case Volume by Customer Segment (All Customer vs KA Nasional)
   const segmentRes = await query<{ golongan_customer: string; count: string }>(`
     SELECT golongan_customer, COUNT(*)::int AS count
     FROM product_issue.v_active_case_dimensions
@@ -124,7 +157,7 @@ export async function getOverviewChartsData(
     ORDER BY count DESC;
   `, queryParams);
 
-  // 4. Carried-Over Backlog by Branch
+  // 6. Carried-Over Backlog by Branch
   let carriedRes;
   if (range === 'this_month') {
     carriedRes = await query<{ branch_code: string; count: string }>(`
@@ -173,6 +206,8 @@ export async function getOverviewChartsData(
   return {
     topBranches: branchRes.rows.map((r) => ({ branch_code: r.branch_code, count: Number(r.count) })),
     topStatuses: statusRes.rows.map((r) => ({ claimable_status_name: r.claimable_status_name, count: Number(r.count) })),
+    topRootCauses: rootCauseRes.rows.map((r) => ({ root_cause_name: r.root_cause_name, count: Number(r.count) })),
+    topProductCodes: productCodeRes.rows.map((r) => ({ product_code: r.product_code, count: Number(r.count) })),
     customerSegments: segmentRes.rows.map((r) => ({ golongan_customer: r.golongan_customer, count: Number(r.count) })),
     carriedOverByBranch: carriedRes.rows.map((r) => ({ branch_code: r.branch_code, count: Number(r.count) })),
   };
