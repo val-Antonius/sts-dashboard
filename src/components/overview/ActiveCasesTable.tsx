@@ -159,7 +159,7 @@ export function ActiveCasesTable({ cases }: ActiveCasesTableProps) {
                 {/* Action: Pure Icon Button navigating to Case Diagnostic */}
                 <td className="py-3 px-4 text-center">
                   <Link
-                    href={`/case-solution-process/diagnostic?id=${c.issue_case_id}`}
+                    href={`/operations/diagnostic?id=${c.issue_case_id}`}
                     aria-label={`View Diagnostic for case ${c.customer_name}`}
                     className="inline-flex items-center justify-center p-1.5 rounded-md text-accent-brass hover:bg-accent-brass/10 transition-colors border border-accent-brass/30"
                   >

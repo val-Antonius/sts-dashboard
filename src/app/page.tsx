@@ -1,5 +1,5 @@
 import { redirect } from 'next/navigation';
 
-export default function Home() {
-  redirect('/case-overview');
+export default function RootPage() {
+  redirect('/operations/active-case');
 }

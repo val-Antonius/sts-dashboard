@@ -25,14 +25,20 @@ export function Header() {
     }
   };
 
-  let pageTitle = 'Case Overview';
+  let pageTitle = 'Active Case';
   let parentTitle = 'Operations';
 
   if (pathname.includes('/diagnostic')) {
     pageTitle = 'Case Diagnostic';
+    parentTitle = 'Operations';
+  } else if (pathname.includes('/solution-time') || pathname.includes('/performance')) {
+    pageTitle = 'Solution Time Performance';
     parentTitle = 'Case Solution Process';
-  } else if (pathname.includes('/performance')) {
-    pageTitle = 'Case Solution Performance';
+  } else if (pathname.includes('/volume-trends')) {
+    pageTitle = 'Case Volume Trends';
+    parentTitle = 'Case Solution Process';
+  } else if (pathname.includes('/data-quality')) {
+    pageTitle = 'Data Quality & Anomaly Detection';
     parentTitle = 'Case Solution Process';
   }
 

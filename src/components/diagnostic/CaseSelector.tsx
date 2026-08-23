@@ -30,7 +30,7 @@ export function CaseSelector({ cases, selectedCaseId }: CaseSelectorProps) {
   const handleSelect = (id: string) => {
     setIsOpen(false);
     setSearchTerm('');
-    router.push(`/case-solution-process/diagnostic?id=${id}`);
+    router.push(`/operations/diagnostic?id=${id}`);
   };
 
   return (
