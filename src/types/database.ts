@@ -123,3 +123,44 @@ export interface SingleCaseDetail {
   achievement: string;
   achievement_threshold_days: number;
 }
+
+export interface ProductRootCauseItem {
+  product_code: string;
+  total: number;
+  [root_cause: string]: number | string;
+}
+
+export interface ProductClaimableItem {
+  product_code: string;
+  total: number;
+  claimable_count: number;
+  non_claimable_count: number;
+  claimable_pct: number;
+  non_claimable_pct: number;
+}
+
+export interface ProductBranchHeatmapData {
+  products: string[];
+  branches: string[];
+  matrix: Record<string, Record<string, number>>; // matrix[product_code][branch_code] = count
+  maxCount: number;
+}
+
+export interface BranchClaimableItem {
+  branch_code: string;
+  total: number;
+  [status: string]: number | string;
+}
+
+export interface PrincipalClaimableData {
+  productRootCauses: {
+    data: ProductRootCauseItem[];
+    rootCauseKeys: string[];
+  };
+  productClaimable: ProductClaimableItem[];
+  productBranchHeatmap: ProductBranchHeatmapData;
+  branchClaimable: {
+    data: BranchClaimableItem[];
+    statusKeys: string[];
+  };
+}

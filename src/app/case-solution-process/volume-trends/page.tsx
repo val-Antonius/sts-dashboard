@@ -2,6 +2,7 @@ import React from 'react';
 import {
   getClaimableStatusByRootCause,
   getPerformanceVolumeData,
+  getPrincipalClaimableData,
 } from '@/lib/queries/performance';
 import { VolumeTrendsTabs } from '@/components/volume-trends/VolumeTrendsTabs';
 
@@ -11,9 +12,11 @@ export default async function CaseVolumeTrendsPage() {
   const [
     claimableByRootCause,
     volumeData,
+    principalData,
   ] = await Promise.all([
     getClaimableStatusByRootCause(),
     getPerformanceVolumeData('last_1_year'),
+    getPrincipalClaimableData('last_1_year'),
   ]);
 
   return (
@@ -32,6 +35,7 @@ export default async function CaseVolumeTrendsPage() {
       <VolumeTrendsTabs
         claimableByRootCause={claimableByRootCause}
         initialVolumeData={volumeData}
+        initialPrincipalData={principalData}
       />
     </div>
   );

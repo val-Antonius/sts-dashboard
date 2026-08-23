@@ -3,6 +3,7 @@
 import React, { useState } from 'react';
 import {
   ClaimableStatusByRootCause,
+  PrincipalClaimableData,
 } from '@/types/database';
 import { PerformanceVolumeData } from '@/lib/queries/performance';
 import { TimeRangeFilter, TimeRangeOption } from '@/components/common/TimeRangeFilter';
@@ -20,16 +21,19 @@ import {
   Legend,
 } from 'recharts';
 import { EmptyState } from '@/components/common/EmptyState';
-import { BarChart3, Tag, Layers, Loader2, Sparkles } from 'lucide-react';
+import { BarChart3, Tag, Layers, Loader2 } from 'lucide-react';
+import { PrincipalClaimableTab } from './PrincipalClaimableTab';
 
 interface VolumeTrendsTabsProps {
   claimableByRootCause: ClaimableStatusByRootCause[];
   initialVolumeData: PerformanceVolumeData;
+  initialPrincipalData: PrincipalClaimableData;
 }
 
 export function VolumeTrendsTabs({
   claimableByRootCause,
   initialVolumeData,
+  initialPrincipalData,
 }: VolumeTrendsTabsProps) {
   const [activeTab, setActiveTab] = useState<'overview' | 'principal' | 'root_cause'>('overview');
   const [range, setRange] = useState<TimeRangeOption>('last_1_year');
@@ -287,19 +291,9 @@ export function VolumeTrendsTabs({
         </div>
       )}
 
-      {/* Tab 2: Principal & Claimable Status (Empty Placeholder) */}
+      {/* Tab 2: Principal & Claimable Status (NEW CHARTS) */}
       {activeTab === 'principal' && (
-        <div className="p-12 bg-surface border border-dashed border-border rounded-lg text-center space-y-3">
-          <div className="w-10 h-10 mx-auto rounded-full bg-accent-brass/10 border border-accent-brass/30 flex items-center justify-center text-accent-brass">
-            <Sparkles className="w-5 h-5" />
-          </div>
-          <h3 className="text-sm font-semibold text-ink-primary">
-            Principal and Claimable Status Analytics
-          </h3>
-          <p className="text-xs text-ink-muted max-w-md mx-auto">
-            New analytics charts for Principal Breakdown and Claimable Status will be configured here as specified in the upcoming instructions.
-          </p>
-        </div>
+        <PrincipalClaimableTab initialData={initialPrincipalData} />
       )}
 
       {/* Tab 3: Root Cause Analysis (Pareto) */}
