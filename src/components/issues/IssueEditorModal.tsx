@@ -927,6 +927,29 @@ export function IssueEditorModal({
                         className="w-full px-3 py-2 bg-surface border border-border rounded-md focus:border-accent-brass font-mono"
                       />
                     </div>
+
+                    <div>
+                      <label className="block font-semibold text-ink-muted mb-1 text-[11px]">
+                        SRD Publication Date
+                      </label>
+                      <input
+                        type="date"
+                        value={formData.srd_publication_date || ''}
+                        onChange={(e) => setFormData({ ...formData, srd_publication_date: e.target.value })}
+                        className="w-full px-3 py-2 bg-surface border border-border rounded-md focus:border-accent-brass font-mono"
+                      />
+                    </div>
+                  </div>
+
+                  {/* Goodwill Solution Time Guidance Callout */}
+                  <div className="p-3.5 rounded-lg bg-base/40 border border-border text-[11px] text-ink-muted space-y-1">
+                    <div className="flex items-center gap-2 font-semibold text-ink-primary">
+                      <span className="w-2 h-2 rounded-full bg-accent-brass" />
+                      <span>Formula Solution Time & Aturan Goodwill (v_claim_metrics)</span>
+                    </div>
+                    <p className="leading-relaxed">
+                      Sesuai formula revisi <code className="font-mono text-ink-primary">v_claim_metrics</code>: Perhitungan durasi menggunakan hari kerja <code className="font-mono text-ink-primary">NETWORKDAYS(Senin-Jumat)</code>. Untuk klaim <strong>Goodwill</strong>, periode jeda antara <em>Goodwill Statement Date</em> hingga <em>SRD Publication Date</em> secara otomatis tidak dihitung dalam aging hari solusi.
+                    </p>
                   </div>
                 </div>
               )}
