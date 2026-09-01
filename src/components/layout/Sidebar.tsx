@@ -6,10 +6,11 @@ import { usePathname } from 'next/navigation';
 import {
   LayoutDashboard,
   Stethoscope,
+  ClipboardList,
+  FolderTree,
   Clock,
   BarChart3,
   AlertCircle,
-  Database,
 } from 'lucide-react';
 
 export function Sidebar() {
@@ -54,6 +55,18 @@ export function Sidebar() {
               </Link>
 
               <Link
+                href="/operations/issues"
+                className={`flex items-center gap-2.5 px-3 py-2 rounded-md text-xs font-medium transition-colors ${
+                  isActive('/operations/issues')
+                    ? 'bg-accent-brass/10 text-accent-brass font-semibold border-l-2 border-accent-brass'
+                    : 'text-ink-muted hover:text-ink-primary hover:bg-surface-hover'
+                }`}
+              >
+                <ClipboardList className="w-4 h-4 shrink-0" />
+                <span>Issue Management</span>
+              </Link>
+
+              <Link
                 href="/operations/diagnostic"
                 className={`flex items-center gap-2.5 px-3 py-2 rounded-md text-xs font-medium transition-colors ${
                   isActive('/operations/diagnostic') || isActive('/case-solution-process/diagnostic')
@@ -63,6 +76,18 @@ export function Sidebar() {
               >
                 <Stethoscope className="w-4 h-4 shrink-0" />
                 <span>Case Diagnostic</span>
+              </Link>
+
+              <Link
+                href="/operations/master-data"
+                className={`flex items-center gap-2.5 px-3 py-2 rounded-md text-xs font-medium transition-colors ${
+                  isActive('/operations/master-data')
+                    ? 'bg-accent-brass/10 text-accent-brass font-semibold border-l-2 border-accent-brass'
+                    : 'text-ink-muted hover:text-ink-primary hover:bg-surface-hover'
+                }`}
+              >
+                <FolderTree className="w-4 h-4 shrink-0" />
+                <span>Master Data</span>
               </Link>
             </div>
           </div>

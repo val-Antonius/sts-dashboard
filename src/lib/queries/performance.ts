@@ -41,11 +41,10 @@ export async function getClaimableStatusByRootCause(): Promise<ClaimableStatusBy
 export async function getCheckpointDurationRanking(): Promise<CheckpointDurationRanking[]> {
   const res = await query<CheckpointDurationRanking>(`
     SELECT
-      checkpoint_name,
-      avg_duration_days::float,
-      median_duration_days::float,
-      p90_duration_days::float,
-      sla_status,
+      checkpoint_code,
+      n_kejadian::int,
+      avg_durasi::float,
+      median_durasi::float,
       rank_by_avg_duration::int
     FROM product_issue.v_checkpoint_duration_ranking
     ORDER BY rank_by_avg_duration ASC;

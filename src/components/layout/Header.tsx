@@ -28,7 +28,13 @@ export function Header() {
   let pageTitle = 'Active Case';
   let parentTitle = 'Operations';
 
-  if (pathname.includes('/diagnostic')) {
+  if (pathname.includes('/operations/master-data')) {
+    pageTitle = 'Master Data';
+    parentTitle = 'Operations';
+  } else if (pathname.includes('/operations/issues')) {
+    pageTitle = 'Issue Management';
+    parentTitle = 'Operations';
+  } else if (pathname.includes('/diagnostic')) {
     pageTitle = 'Case Diagnostic';
     parentTitle = 'Operations';
   } else if (pathname.includes('/solution-time') || pathname.includes('/performance')) {
