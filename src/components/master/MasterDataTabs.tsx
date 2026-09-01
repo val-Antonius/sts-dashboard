@@ -485,7 +485,7 @@ export function MasterDataTabs({ initialData }: MasterDataTabsProps) {
       {activeTab === 'branch_pic' && (
         <div className="space-y-6">
           <MasterDataTable
-            title="Branches (dim_branch)"
+            title="Branches"
             description="Operational branches and business areas linked to geographic city locations"
             data={branches}
             columns={branchColumns}
@@ -497,7 +497,7 @@ export function MasterDataTabs({ initialData }: MasterDataTabsProps) {
           />
 
           <MasterDataTable
-            title="Person in Charge (dim_pic)"
+            title="Person in Charge (PIC)"
             description="Service engineers, section heads, and service leaders responsible for process checkpoints"
             data={pics}
             columns={picColumns}
@@ -514,7 +514,7 @@ export function MasterDataTabs({ initialData }: MasterDataTabsProps) {
       {activeTab === 'product' && (
         <div className="space-y-6">
           <MasterDataTable
-            title="Product Lines / Models (dim_product_model)"
+            title="Product Lines & Models"
             description="Standard product manufacturer brands and machine series (e.g. PER, MFT, KBT, FGW)"
             data={models}
             columns={modelColumns}
@@ -526,7 +526,7 @@ export function MasterDataTabs({ initialData }: MasterDataTabsProps) {
           />
 
           <MasterDataTable
-            title="Physical Unit Assets (dim_unit_asset)"
+            title="Unit Assets"
             description="Individual machine assets with unique serial numbers and unit model specifications"
             data={assets}
             columns={assetColumns}
@@ -543,7 +543,7 @@ export function MasterDataTabs({ initialData }: MasterDataTabsProps) {
       {activeTab === 'customer' && (
         <div className="space-y-6">
           <MasterDataTable
-            title="Customer Groups (dim_customer_group)"
+            title="Customer Groups"
             description="Holding entities and Key Account classifications (KA Nasional vs Standard)"
             data={customerGroups}
             columns={groupColumns}
@@ -555,7 +555,7 @@ export function MasterDataTabs({ initialData }: MasterDataTabsProps) {
           />
 
           <MasterDataTable
-            title="Customer Companies (dim_customer)"
+            title="Customers"
             description="Client accounts linked to customer groups and issue cases"
             data={customers}
             columns={customerColumns}
@@ -570,9 +570,10 @@ export function MasterDataTabs({ initialData }: MasterDataTabsProps) {
 
       {/* TAB 4: CLAIM & REFERENCE LOOKUPS */}
       {activeTab === 'references' && (
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+        <div className="grid grid-cols-1 xl:grid-cols-2 gap-6">
           <MasterDataTable
-            title="Claimable Statuses (ref_claimable_status)"
+            title="Claimable Statuses"
+            description="Warranty claim classifications & scope mapping"
             data={claimableStatuses}
             columns={claimStatusColumns}
             searchFields={['status_name']}
@@ -583,7 +584,8 @@ export function MasterDataTabs({ initialData }: MasterDataTabsProps) {
           />
 
           <MasterDataTable
-            title="Root Causes (ref_root_cause)"
+            title="Root Causes"
+            description="Technical root cause categories for diagnostic analysis"
             data={rootCauses}
             columns={rootCauseColumns}
             searchFields={['root_cause_name']}
@@ -593,9 +595,10 @@ export function MasterDataTabs({ initialData }: MasterDataTabsProps) {
             onDelete={(r) => setDeleteConfirm({ type: 'root_cause', item: r, label: `Root Cause ${r.root_cause_name}` })}
           />
 
-          <div className="lg:col-span-2">
+          <div className="xl:col-span-2">
             <MasterDataTable
-              title="Bottleneck Reasons (ref_bottleneck_reason)"
+              title="Bottleneck Reasons"
+              description="Root delay reasons when cases exceed normal turnaround milestones"
               data={bottlenecks}
               columns={bottleneckColumns}
               searchFields={['bottleneck_name']}

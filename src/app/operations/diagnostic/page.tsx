@@ -11,15 +11,15 @@ import { EmptyState } from '@/components/common/EmptyState';
 export const revalidate = 0;
 
 interface PageProps {
-  searchParams: Promise<{ id?: string }>;
+  searchParams: Promise<{ id?: string; caseId?: string }>;
 }
 
 export default async function CaseDiagnosticPage({ searchParams }: PageProps) {
-  const { id } = await searchParams;
+  const { id, caseId } = await searchParams;
   const cases = await getAllCaseOptions();
 
   // If no case is selected via URL, default to the first case in the list
-  const selectedCaseId = id || cases[0]?.issue_case_id;
+  const selectedCaseId = id || caseId || cases[0]?.issue_case_id;
 
   const diagnosticData = selectedCaseId
     ? await getCaseDiagnosticData(selectedCaseId)

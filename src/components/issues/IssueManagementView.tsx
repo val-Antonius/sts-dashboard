@@ -15,6 +15,7 @@ import {
   IssueManagementItem,
 } from '@/types/database';
 import { IssueEditorModal } from './IssueEditorModal';
+import { Pagination } from '@/components/common/Pagination';
 import {
   Search,
   Plus,
@@ -62,6 +63,7 @@ export function IssueManagementView({
   const [statusWo, setStatusWo] = useState('ALL');
   const [branchId, setBranchId] = useState('ALL');
   const [claimableStatusId, setClaimableStatusId] = useState('ALL');
+  const [currentPage, setCurrentPage] = useState(1);
 
   // Modal State
   const [isModalOpen, setIsModalOpen] = useState(false);
@@ -97,6 +99,7 @@ export function IssueManagementView({
 
   const handleSearchSubmit = (e: React.FormEvent) => {
     e.preventDefault();
+    setCurrentPage(1);
     refetchData();
   };
 
@@ -105,6 +108,7 @@ export function IssueManagementView({
     setStatusWo('ALL');
     setBranchId('ALL');
     setClaimableStatusId('ALL');
+    setCurrentPage(1);
     setIsLoading(true);
     fetch('/api/issues?limit=100')
       .then((r) => r.json())
@@ -149,6 +153,12 @@ export function IssueManagementView({
   const openCount = items.filter((i) => i.status_wo === 'Belum Closed').length;
   const closedCount = items.filter((i) => i.status_wo === 'Closed').length;
   const overdueCount = items.filter((i) => i.status_wo === 'Belum Closed' && i.achievement === 'Not Achieved').length;
+
+  // Pagination (15 rows standard)
+  const pageSize = 15;
+  const totalPages = Math.ceil(items.length / pageSize);
+  const safePage = Math.min(Math.max(1, currentPage), Math.max(1, totalPages));
+  const paginatedItems = items.slice((safePage - 1) * pageSize, safePage * pageSize);
 
   return (
     <div className="space-y-6 max-w-7xl mx-auto">
@@ -306,7 +316,7 @@ export function IssueManagementView({
                   </td>
                 </tr>
               ) : (
-                items.map((row) => {
+                paginatedItems.map((row) => {
                   const isOpen = row.status_wo === 'Belum Closed';
                   const isOverdue = row.achievement === 'Not Achieved';
 
@@ -412,7 +422,7 @@ export function IssueManagementView({
                           </button>
 
                           <Link
-                            href={`/operations/diagnostic?caseId=${row.issue_case_id}`}
+                            href={`/operations/diagnostic?id=${row.issue_case_id}`}
                             title="View Case Diagnostic"
                             className="p-1.5 rounded hover:bg-base text-ink-muted hover:text-ink-primary transition-colors border border-border"
                           >
@@ -435,6 +445,15 @@ export function IssueManagementView({
             </tbody>
           </table>
         </div>
+
+        {/* Pagination Bar */}
+        <Pagination
+          currentPage={safePage}
+          totalItems={items.length}
+          pageSize={15}
+          onPageChange={setCurrentPage}
+          itemLabel="issue cases"
+        />
       </div>
 
       {/* ISSUE EDITOR / CREATOR MODAL */}
