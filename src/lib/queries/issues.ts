@@ -7,6 +7,14 @@ import {
   CheckpointDuration,
 } from '@/types/database';
 
+export class ConcurrencyConflictError extends Error {
+  code = 'CONCURRENCY_CONFLICT';
+  constructor(message = 'Konflik Data (Optimistic Locking): Kasus ini telah diubah oleh pengguna lain sejak Anda membuka form. Silakan muat ulang data terbaru sebelum menyimpan.') {
+    super(message);
+    this.name = 'ConcurrencyConflictError';
+  }
+}
+
 export interface IssueListFilters {
   search?: string;
   status_wo?: string;
@@ -129,6 +137,8 @@ export async function getIssueManagementList(
       COALESCE(m.solution_time_days, 0)::int AS solution_time_days,
       COALESCE(m.achievement_threshold_days, 20)::int AS achievement_threshold_days,
       COALESCE(m.achievement, 'Not Achieved') AS achievement,
+      COALESCE(ic.row_version, 1)::int AS case_row_version,
+      COALESCE(cl.row_version, 1)::int AS claim_row_version,
       ic.created_at::text,
       ic.updated_at::text
     FROM product_issue.fact_issue_case ic
@@ -210,6 +220,8 @@ export async function getIssueDetailFull(issueCaseId: string): Promise<{
       COALESCE(m.solution_time_days, 0)::int AS solution_time_days,
       COALESCE(m.achievement_threshold_days, 20)::int AS achievement_threshold_days,
       COALESCE(m.achievement, 'Not Achieved') AS achievement,
+      COALESCE(ic.row_version, 1)::int AS case_row_version,
+      COALESCE(cl.row_version, 1)::int AS claim_row_version,
       ic.created_at::text,
       ic.updated_at::text
     FROM product_issue.fact_issue_case ic
@@ -382,55 +394,114 @@ export async function createIssueCase(formData: IssueFormData): Promise<{ issue_
 }
 
 export async function updateIssueCase(issueCaseId: string, formData: IssueFormData): Promise<boolean> {
-  // 1. Update fact_issue_case
-  await query(`
-    UPDATE product_issue.fact_issue_case
-    SET
-      branch_id = $1,
-      customer_id = $2,
-      unit_asset_id = $3,
-      pic_id = $4,
-      complaint_date = $5,
-      hm_value = $6,
-      unit_condition_id = $7,
-      old_or_new_issue = $8,
-      root_cause_id = $9,
-      symptom_text = $10,
-      technical_analysis_text = $11,
-      corrective_action_text = $12,
-      preventive_action_text = $13,
-      wo_checking_number = $14,
-      wo_warranty_repair_number = $15,
-      tr_document_ref = $16,
-      tsr_document_ref = $17,
-      bottleneck_id = $18,
-      goodwill_statement_date = $19,
-      srd_publication_date = $20,
-      updated_at = now()
-    WHERE issue_case_id = $21;
-  `, [
-    formData.branch_id,
-    formData.customer_id,
-    formData.unit_asset_id,
-    formData.pic_id || null,
-    formData.complaint_date,
-    formData.hm_value || null,
-    formData.unit_condition_id || null,
-    formData.old_or_new_issue || 'New Issue',
-    formData.root_cause_id || null,
-    formData.symptom_text || null,
-    formData.technical_analysis_text || null,
-    formData.corrective_action_text || null,
-    formData.preventive_action_text || null,
-    formData.wo_checking_number || null,
-    formData.wo_warranty_repair_number || null,
-    formData.tr_document_ref || null,
-    formData.tsr_document_ref || null,
-    formData.bottleneck_id || null,
-    formData.goodwill_statement_date || null,
-    formData.srd_publication_date || null,
-    issueCaseId,
-  ]);
+  // 1. Update fact_issue_case with optimistic locking if row_version is provided
+  if (formData.row_version !== undefined && formData.row_version !== null) {
+    const updateRes = await query<{ issue_case_id: string }>(`
+      UPDATE product_issue.fact_issue_case
+      SET
+        branch_id = $1,
+        customer_id = $2,
+        unit_asset_id = $3,
+        pic_id = $4,
+        complaint_date = $5,
+        hm_value = $6,
+        unit_condition_id = $7,
+        old_or_new_issue = $8,
+        root_cause_id = $9,
+        symptom_text = $10,
+        technical_analysis_text = $11,
+        corrective_action_text = $12,
+        preventive_action_text = $13,
+        wo_checking_number = $14,
+        wo_warranty_repair_number = $15,
+        tr_document_ref = $16,
+        tsr_document_ref = $17,
+        bottleneck_id = $18,
+        goodwill_statement_date = $19,
+        srd_publication_date = $20,
+        row_version = row_version + 1,
+        updated_at = now()
+      WHERE issue_case_id = $21 AND row_version = $22
+      RETURNING issue_case_id;
+    `, [
+      formData.branch_id,
+      formData.customer_id,
+      formData.unit_asset_id,
+      formData.pic_id || null,
+      formData.complaint_date,
+      formData.hm_value || null,
+      formData.unit_condition_id || null,
+      formData.old_or_new_issue || 'New Issue',
+      formData.root_cause_id || null,
+      formData.symptom_text || null,
+      formData.technical_analysis_text || null,
+      formData.corrective_action_text || null,
+      formData.preventive_action_text || null,
+      formData.wo_checking_number || null,
+      formData.wo_warranty_repair_number || null,
+      formData.tr_document_ref || null,
+      formData.tsr_document_ref || null,
+      formData.bottleneck_id || null,
+      formData.goodwill_statement_date || null,
+      formData.srd_publication_date || null,
+      issueCaseId,
+      formData.row_version,
+    ]);
+
+    if (updateRes.rows.length === 0) {
+      throw new ConcurrencyConflictError();
+    }
+  } else {
+    await query(`
+      UPDATE product_issue.fact_issue_case
+      SET
+        branch_id = $1,
+        customer_id = $2,
+        unit_asset_id = $3,
+        pic_id = $4,
+        complaint_date = $5,
+        hm_value = $6,
+        unit_condition_id = $7,
+        old_or_new_issue = $8,
+        root_cause_id = $9,
+        symptom_text = $10,
+        technical_analysis_text = $11,
+        corrective_action_text = $12,
+        preventive_action_text = $13,
+        wo_checking_number = $14,
+        wo_warranty_repair_number = $15,
+        tr_document_ref = $16,
+        tsr_document_ref = $17,
+        bottleneck_id = $18,
+        goodwill_statement_date = $19,
+        srd_publication_date = $20,
+        row_version = row_version + 1,
+        updated_at = now()
+      WHERE issue_case_id = $21;
+    `, [
+      formData.branch_id,
+      formData.customer_id,
+      formData.unit_asset_id,
+      formData.pic_id || null,
+      formData.complaint_date,
+      formData.hm_value || null,
+      formData.unit_condition_id || null,
+      formData.old_or_new_issue || 'New Issue',
+      formData.root_cause_id || null,
+      formData.symptom_text || null,
+      formData.technical_analysis_text || null,
+      formData.corrective_action_text || null,
+      formData.preventive_action_text || null,
+      formData.wo_checking_number || null,
+      formData.wo_warranty_repair_number || null,
+      formData.tr_document_ref || null,
+      formData.tsr_document_ref || null,
+      formData.bottleneck_id || null,
+      formData.goodwill_statement_date || null,
+      formData.srd_publication_date || null,
+      issueCaseId,
+    ]);
+  }
 
   // 2. Update claim
   if (formData.claimable_status_id) {
@@ -443,7 +514,7 @@ export async function updateIssueCase(issueCaseId: string, formData: IssueFormDa
         closing_date_wo = EXCLUDED.closing_date_wo,
         closing_by_rfu_date = EXCLUDED.closing_by_rfu_date,
         status_wo = EXCLUDED.status_wo,
-        updated_at = now();
+        row_version = claim.row_version + 1;
     `, [
       issueCaseId,
       formData.claimable_status_id,

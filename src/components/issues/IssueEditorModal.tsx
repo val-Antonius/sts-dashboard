@@ -1,7 +1,28 @@
 'use client';
 
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import {
+  X,
+  Plus,
+  Trash2,
+  Calendar,
+  Wrench,
+  Layers,
+  PackageCheck,
+  ShieldCheck,
+  ChevronRight,
+  ChevronLeft,
+  Save,
+  Loader2,
+  AlertTriangle,
+  AlertCircle,
+  CheckCircle2,
+  RefreshCw,
+  Info,
+} from 'lucide-react';
+import {
+  IssueFormData,
+  IssueManagementItem,
   DimBranch,
   DimCustomer,
   DimUnitAsset,
@@ -11,26 +32,7 @@ import {
   RefBottleneckReason,
   RefUnitCondition,
   RefPartReadiness,
-  IssueFormData,
-  IssueManagementItem,
-  IssuePartInput,
 } from '@/types/database';
-import {
-  X,
-  CheckCircle2,
-  Calendar,
-  Layers,
-  Wrench,
-  PackageCheck,
-  ShieldCheck,
-  Plus,
-  Trash2,
-  Loader2,
-  AlertTriangle,
-  ChevronRight,
-  ChevronLeft,
-  Save,
-} from 'lucide-react';
 
 interface IssueEditorModalProps {
   isOpen: boolean;
@@ -51,12 +53,12 @@ interface IssueEditorModalProps {
 }
 
 const CHECKPOINT_STEPS = [
-  { code: 'WO_CHECKING_CREATED', label: '1. WO Checking Created', desc: 'Work order checking issued' },
-  { code: 'WO_CHECKING_CLOSED', label: '2. WO Checking Closed', desc: 'Inspection finished' },
-  { code: 'PS_APPROVAL', label: '3. PS Approval', desc: 'Product Support approval' },
+  { code: 'WO_CHECKING_CREATED', label: '1. WO Checking Created', desc: 'Inspection work order created in SAP' },
+  { code: 'WO_CHECKING_CLOSED', label: '2. WO Checking Closed', desc: 'Initial inspection completed' },
+  { code: 'PS_APPROVAL', label: '3. PS Approval', desc: 'Parts specialist approval' },
   { code: 'WO_REPAIR_RELEASED', label: '4. WO Repair Released', desc: 'Repair work order released' },
-  { code: 'PART_GI', label: '5. Part Goods Issue (GI)', desc: 'Spare parts supplied' },
-  { code: 'UNIT_RFU', label: '6. Unit Ready for Use (RFU)', desc: 'Machine repaired & ready' },
+  { code: 'PART_GI', label: '5. Parts Goods Issued', desc: 'Parts issued to technician' },
+  { code: 'UNIT_RFU', label: '6. Unit Ready for Use', desc: 'Unit restored & operational' },
   { code: 'WO_REPAIR_CLOSED', label: '7. WO Repair Closed', desc: 'Repair paperwork closed' },
   { code: 'WO_CLOSED', label: '8. Final WO Closed', desc: 'Overall case closed' },
 ];
@@ -72,6 +74,10 @@ export function IssueEditorModal({
   const [isLoading, setIsLoading] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [errorMsg, setErrorMsg] = useState<string | null>(null);
+
+  // Optimistic Concurrency Control state
+  const [loadedRowVersion, setLoadedRowVersion] = useState<number | null>(null);
+  const [concurrencyConflict, setConcurrencyConflict] = useState<string | null>(null);
 
   // Form State
   const [formData, setFormData] = useState<IssueFormData>({
@@ -108,12 +114,16 @@ export function IssueEditorModal({
     if (editCaseId && isOpen) {
       setIsLoading(true);
       setErrorMsg(null);
+      setConcurrencyConflict(null);
       fetch(`/api/issues/${editCaseId}`)
         .then((r) => r.json())
         .then((data) => {
           if (data.error) throw new Error(data.error);
           const c: IssueManagementItem = data.caseData;
+          const ver = c.case_row_version ?? 1;
+          setLoadedRowVersion(ver);
           setFormData({
+            row_version: ver,
             branch_id: c.branch_id || '',
             customer_id: c.customer_id || '',
             unit_asset_id: c.unit_asset_id || '',
@@ -152,6 +162,9 @@ export function IssueEditorModal({
         .finally(() => setIsLoading(false));
     } else if (isOpen) {
       // Reset for new creation
+      setLoadedRowVersion(null);
+      setConcurrencyConflict(null);
+      setErrorMsg(null);
       setFormData({
         branch_id: lookups.branches[0]?.branch_id || '',
         customer_id: lookups.customers[0]?.customer_id || '',
@@ -184,22 +197,142 @@ export function IssueEditorModal({
     }
   }, [editCaseId, isOpen]);
 
+  // Reload handler when optimistic concurrency conflict occurs
+  const handleReloadLatest = async () => {
+    if (!editCaseId) return;
+    setIsLoading(true);
+    setConcurrencyConflict(null);
+    setErrorMsg(null);
+    try {
+      const res = await fetch(`/api/issues/${editCaseId}`);
+      const data = await res.json();
+      if (data.error) throw new Error(data.error);
+      const c: IssueManagementItem = data.caseData;
+      const ver = c.case_row_version ?? 1;
+      setLoadedRowVersion(ver);
+      setFormData({
+        row_version: ver,
+        branch_id: c.branch_id || '',
+        customer_id: c.customer_id || '',
+        unit_asset_id: c.unit_asset_id || '',
+        pic_id: c.pic_id || '',
+        complaint_date: c.complaint_date || '',
+        hm_value: c.hm_value || null,
+        unit_condition_id: c.unit_condition_id || '',
+        old_or_new_issue: (c.old_or_new_issue as any) || 'New Issue',
+        root_cause_id: c.root_cause_id || '',
+        symptom_text: c.symptom_text || '',
+        technical_analysis_text: c.technical_analysis_text || '',
+        corrective_action_text: c.corrective_action_text || '',
+        preventive_action_text: c.preventive_action_text || '',
+        wo_checking_number: c.wo_checking_number || '',
+        wo_warranty_repair_number: c.wo_warranty_repair_number || '',
+        tr_document_ref: c.tr_document_ref || '',
+        tsr_document_ref: c.tsr_document_ref || '',
+        checkpoints: data.checkpoints || {},
+        parts: data.parts?.map((p: any) => ({
+          part_number: p.part_number,
+          part_name: p.part_name,
+          part_readiness_id: p.part_readiness_id,
+          eta_part_date: p.eta_part_date,
+          is_full_supplied: p.is_full_supplied,
+        })) || [],
+        claimable_status_id: c.claimable_status_id || '',
+        status_wo: (c.status_wo as any) || 'Belum Closed',
+        closing_date_wo: c.closing_date_wo || '',
+        closing_by_rfu_date: c.closing_by_rfu_date || '',
+        bottleneck_id: c.bottleneck_id || '',
+        goodwill_statement_date: c.goodwill_statement_date || '',
+        srd_publication_date: c.srd_publication_date || '',
+      });
+    } catch (err: any) {
+      setErrorMsg('Gagal memuat data terbaru: ' + err.message);
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  // --- VALIDATION RULES COMPUTATION ---
+  // 1. Delivery Date vs Complaint Date
+  const selectedAsset = useMemo(() => {
+    return lookups.assets.find((a) => a.unit_asset_id === formData.unit_asset_id);
+  }, [lookups.assets, formData.unit_asset_id]);
+
+  const deliveryDateError = useMemo(() => {
+    if (selectedAsset?.delivery_date && formData.complaint_date) {
+      if (formData.complaint_date < selectedAsset.delivery_date) {
+        return `Complaint Date (${formData.complaint_date}) tidak boleh lebih awal dari Delivery Date unit (${selectedAsset.delivery_date}).`;
+      }
+    }
+    return null;
+  }, [selectedAsset?.delivery_date, formData.complaint_date]);
+
+  // 2. Closing Date WO vs Complaint Date
+  const closingDateWoError = useMemo(() => {
+    if (formData.closing_date_wo && formData.complaint_date) {
+      if (formData.closing_date_wo < formData.complaint_date) {
+        return `Closing Date WO (${formData.closing_date_wo}) tidak boleh lebih awal dari Complaint Date (${formData.complaint_date}).`;
+      }
+    }
+    return null;
+  }, [formData.closing_date_wo, formData.complaint_date]);
+
+  // 3. Closing by RFU Date vs Complaint Date
+  const closingByRfuError = useMemo(() => {
+    if (formData.closing_by_rfu_date && formData.complaint_date) {
+      if (formData.closing_by_rfu_date < formData.complaint_date) {
+        return `Closing by RFU Date (${formData.closing_by_rfu_date}) tidak boleh lebih awal dari Complaint Date (${formData.complaint_date}).`;
+      }
+    }
+    return null;
+  }, [formData.closing_by_rfu_date, formData.complaint_date]);
+
+  // 4. SRD Publication Date vs Goodwill Statement Date
+  const srdDateError = useMemo(() => {
+    if (formData.goodwill_statement_date && formData.srd_publication_date) {
+      if (formData.srd_publication_date < formData.goodwill_statement_date) {
+        return `SRD Publication Date (${formData.srd_publication_date}) tidak boleh lebih awal dari Goodwill Statement Date (${formData.goodwill_statement_date}).`;
+      }
+    }
+    return null;
+  }, [formData.goodwill_statement_date, formData.srd_publication_date]);
+
+  // 5. Checkpoint Chronology Soft Warning (Same day is allowed; only warn if strictly date < previous date)
+  const checkpointWarnings = useMemo(() => {
+    const warnings: string[] = [];
+    let lastDate = '';
+    let lastLabel = '';
+
+    for (const step of CHECKPOINT_STEPS) {
+      const currentDate = formData.checkpoints[step.code];
+      if (currentDate && currentDate.trim()) {
+        if (lastDate && currentDate < lastDate) {
+          // Strictly going backward in time
+          warnings.push(
+            `"${step.label}" (${currentDate}) tercatat sebelum tahapan sebelumnya "${lastLabel}" (${lastDate}).`
+          );
+        }
+        lastDate = currentDate;
+        lastLabel = step.label;
+      }
+    }
+    return warnings;
+  }, [formData.checkpoints]);
+
+  const hasHardValidationError = Boolean(
+    deliveryDateError || closingDateWoError || closingByRfuError || srdDateError
+  );
+
   if (!isOpen) return null;
 
   // Calculate completion percentage across 5 stages
   const getStageCompletion = () => {
     let completed = 0;
-    // Step 1: Unit & Intake
     if (formData.branch_id && formData.customer_id && formData.unit_asset_id && formData.complaint_date) completed++;
-    // Step 2: Diagnosis
     if (formData.root_cause_id || formData.symptom_text) completed++;
-    // Step 3: Checkpoints
     if (Object.keys(formData.checkpoints).length > 0) completed++;
-    // Step 4: Parts
     if (formData.parts.length > 0) completed++;
-    // Step 5: Claim
     if (formData.claimable_status_id) completed++;
-
     return Math.round((completed / 5) * 100);
   };
 
@@ -219,24 +352,25 @@ export function IssueEditorModal({
     });
   };
 
-  const handleRemovePartRow = (idx: number) => {
+  const handleRemovePartRow = (index: number) => {
+    setFormData({
+      ...formData,
+      parts: formData.parts.filter((_, i) => i !== index),
+    });
+  };
+
+  const handlePartChange = (index: number, field: string, value: any) => {
     const updated = [...formData.parts];
-    updated.splice(idx, 1);
+    updated[index] = { ...updated[index], [field]: value };
     setFormData({ ...formData, parts: updated });
   };
 
-  const handlePartChange = (idx: number, field: keyof IssuePartInput, value: any) => {
-    const updated = [...formData.parts];
-    updated[idx] = { ...updated[idx], [field]: value };
-    setFormData({ ...formData, parts: updated });
-  };
-
-  const handleCheckpointChange = (code: string, date: string) => {
+  const handleCheckpointChange = (code: string, dateStr: string) => {
     setFormData({
       ...formData,
       checkpoints: {
         ...formData.checkpoints,
-        [code]: date,
+        [code]: dateStr,
       },
     });
   };
@@ -245,12 +379,22 @@ export function IssueEditorModal({
     if (e) e.preventDefault();
     setIsSubmitting(true);
     setErrorMsg(null);
+    setConcurrencyConflict(null);
 
-    // Basic validation
+    // Basic required check
     if (!formData.complaint_date || !formData.branch_id || !formData.customer_id || !formData.unit_asset_id) {
-      setErrorMsg('Please ensure Complaint Date, Branch, Customer, and Unit Asset are filled.');
+      setErrorMsg('Harap lengkapi Complaint Date, Branch, Customer, dan Unit Asset.');
       setIsSubmitting(false);
       setCurrentStep(1);
+      return;
+    }
+
+    // Hard business logic check
+    if (hasHardValidationError) {
+      setErrorMsg('Mohon perbaiki kesalahan tanggal logika sebelum menyimpan.');
+      setIsSubmitting(false);
+      if (deliveryDateError) setCurrentStep(1);
+      else if (closingDateWoError || closingByRfuError || srdDateError) setCurrentStep(5);
       return;
     }
 
@@ -258,19 +402,35 @@ export function IssueEditorModal({
       const url = editCaseId ? `/api/issues/${editCaseId}` : '/api/issues';
       const method = editCaseId ? 'PUT' : 'POST';
 
+      const payload = {
+        ...formData,
+        row_version: editCaseId ? loadedRowVersion : undefined,
+      };
+
       const res = await fetch(url, {
         method,
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(formData),
+        body: JSON.stringify(payload),
       });
 
       const data = await res.json();
-      if (!res.ok) throw new Error(data.error || 'Failed to save issue case');
+
+      if (res.status === 409) {
+        // Concurrency conflict detected
+        setConcurrencyConflict(
+          data.error ||
+            'Konflik Data (Optimistic Locking): Kasus ini telah diperbarui oleh pengguna lain sejak Anda membuka form.'
+        );
+        setIsSubmitting(false);
+        return;
+      }
+
+      if (!res.ok) throw new Error(data.error || 'Gagal menyimpan data kasus');
 
       onSaved();
       onClose();
     } catch (err: any) {
-      setErrorMsg(err.message || 'An error occurred while saving.');
+      setErrorMsg(err.message || 'Terjadi kesalahan saat menyimpan.');
     } finally {
       setIsSubmitting(false);
     }
@@ -298,9 +458,17 @@ export function IssueEditorModal({
                 <h3 className="text-base font-bold text-ink-primary">
                   {editCaseId ? 'Issue Case & Process Tracking' : 'Create Operational Issue Case'}
                 </h3>
+                {loadedRowVersion && (
+                  <span
+                    title="Optimistic Locking Version"
+                    className="font-mono text-[10px] px-1.5 py-0.2 rounded bg-base border border-border text-ink-muted"
+                  >
+                    v{loadedRowVersion}
+                  </span>
+                )}
               </div>
               <p className="text-xs text-ink-muted mt-0.5">
-                Multi-stage tracking intake. Fields can be saved partially and completed anytime as manufacturing events unfold.
+                Multi-stage tracking intake. Disertai validasi logika bisnis dan deteksi konflik konkurensi data.
               </p>
             </div>
 
@@ -324,9 +492,9 @@ export function IssueEditorModal({
                   key={s.num}
                   type="button"
                   onClick={() => setCurrentStep(s.num)}
-                  className={`flex items-center gap-2 px-3 py-2 rounded-lg text-xs font-medium transition-all shrink-0 border ${
+                  className={`flex items-center gap-2 px-3 py-1.5 rounded-lg text-xs font-semibold transition-all shrink-0 border ${
                     isCurrent
-                      ? 'bg-surface border-accent-brass text-accent-brass shadow-xs font-semibold'
+                      ? 'bg-surface border-accent-brass text-accent-brass shadow-xs'
                       : isPast
                       ? 'bg-base/60 border-border text-ink-primary hover:border-accent-brass/40'
                       : 'border-transparent text-ink-muted hover:text-ink-primary hover:bg-base/40'
@@ -363,13 +531,41 @@ export function IssueEditorModal({
           {isLoading ? (
             <div className="py-16 flex flex-col items-center justify-center gap-2 text-ink-muted">
               <Loader2 className="w-6 h-6 animate-spin text-accent-brass" />
-              <span>Loading issue case details...</span>
+              <span>Memuat rincian data kasus...</span>
             </div>
           ) : (
             <form onSubmit={handleSubmit} className="space-y-5">
+              {/* CONCURRENCY CONFLICT BANNER */}
+              {concurrencyConflict && (
+                <div className="p-4 rounded-lg bg-amber-500/10 border border-amber-500/30 text-amber-900 dark:text-amber-200 space-y-2 animate-in fade-in">
+                  <div className="flex items-start gap-2.5">
+                    <AlertTriangle className="w-5 h-5 text-amber-600 dark:text-amber-400 shrink-0 mt-0.5" />
+                    <div className="flex-1">
+                      <strong className="block text-xs font-bold text-amber-700 dark:text-amber-300">
+                        Peringatan Konflik Data (Optimistic Concurrency Control)
+                      </strong>
+                      <p className="text-[11px] mt-0.5 leading-relaxed">
+                        {concurrencyConflict}
+                      </p>
+                    </div>
+                  </div>
+                  <div className="flex items-center justify-end gap-2 pt-1 border-t border-amber-500/20">
+                    <button
+                      type="button"
+                      onClick={handleReloadLatest}
+                      className="flex items-center gap-1.5 px-3 py-1.5 bg-amber-600 hover:bg-amber-700 text-white rounded text-xs font-semibold transition-colors shadow-xs"
+                    >
+                      <RefreshCw className="w-3.5 h-3.5" />
+                      <span>Muat Ulang Data Terbaru</span>
+                    </button>
+                  </div>
+                </div>
+              )}
+
+              {/* GENERAL ERROR BANNER */}
               {errorMsg && (
-                <div className="p-3 rounded-lg bg-red-500/10 border border-red-500/30 text-red-600 dark:text-red-400 flex items-start gap-2.5">
-                  <AlertTriangle className="w-4 h-4 shrink-0 mt-0.5" />
+                <div className="p-3 rounded-lg bg-red-500/10 border border-red-500/30 text-red-600 dark:text-red-400 flex items-start gap-2.5 animate-in fade-in">
+                  <AlertCircle className="w-4 h-4 shrink-0 mt-0.5" />
                   <span>{errorMsg}</span>
                 </div>
               )}
@@ -392,8 +588,16 @@ export function IssueEditorModal({
                         required
                         value={formData.complaint_date}
                         onChange={(e) => setFormData({ ...formData, complaint_date: e.target.value })}
-                        className="w-full px-3 py-2 bg-surface border border-border rounded-md focus:border-accent-brass font-mono"
+                        className={`w-full px-3 py-2 bg-surface border rounded-md font-mono focus:outline-none transition-colors ${
+                          deliveryDateError ? 'border-red-500 text-red-600' : 'border-border focus:border-accent-brass'
+                        }`}
                       />
+                      {deliveryDateError && (
+                        <p className="text-[11px] text-red-600 dark:text-red-400 mt-1 flex items-start gap-1">
+                          <AlertCircle className="w-3.5 h-3.5 shrink-0 mt-0.5" />
+                          <span>{deliveryDateError}</span>
+                        </p>
+                      )}
                     </div>
 
                     <div>
@@ -442,30 +646,36 @@ export function IssueEditorModal({
                         required
                         value={formData.unit_asset_id}
                         onChange={(e) => setFormData({ ...formData, unit_asset_id: e.target.value })}
-                        className="w-full px-3 py-2 bg-surface border border-border rounded-md focus:border-accent-brass"
+                        className="w-full px-3 py-2 bg-surface border border-border rounded-md focus:border-accent-brass font-mono"
                       >
                         <option value="">-- Select Unit Asset --</option>
                         {lookups.assets.map((a) => (
                           <option key={a.unit_asset_id} value={a.unit_asset_id}>
-                            [{a.product_code}] {a.unit_model_name} • S/N: {a.serial_number || 'N/A'}
+                            [{a.product_code}] {a.unit_model_name} - S/N: {a.serial_number || 'No Serial'}
+                            {a.delivery_date ? ` (Delivered: ${a.delivery_date})` : ''}
                           </option>
                         ))}
                       </select>
+                      {selectedAsset?.delivery_date && (
+                        <p className="text-[10px] text-ink-muted mt-1 font-mono">
+                          Delivery Date Unit: {selectedAsset.delivery_date}
+                        </p>
+                      )}
                     </div>
 
                     <div>
                       <label className="block font-semibold text-ink-muted mb-1 text-[11px]">
-                        Assigned PIC (Lead Engineer)
+                        Person In Charge (PIC)
                       </label>
                       <select
                         value={formData.pic_id || ''}
                         onChange={(e) => setFormData({ ...formData, pic_id: e.target.value || null })}
                         className="w-full px-3 py-2 bg-surface border border-border rounded-md focus:border-accent-brass"
                       >
-                        <option value="">-- Select PIC --</option>
+                        <option value="">-- Unassigned / Select PIC --</option>
                         {lookups.pics.map((p) => (
                           <option key={p.pic_id} value={p.pic_id}>
-                            {p.pic_name} ({p.pic_role_code || 'SDH'})
+                            {p.pic_name} {p.pic_role_code ? `(${p.pic_role_code})` : ''}
                           </option>
                         ))}
                       </select>
@@ -478,16 +688,21 @@ export function IssueEditorModal({
                       <input
                         type="number"
                         step="0.1"
-                        placeholder="e.g. 1250.5"
                         value={formData.hm_value ?? ''}
-                        onChange={(e) => setFormData({ ...formData, hm_value: e.target.value ? parseFloat(e.target.value) : null })}
+                        onChange={(e) =>
+                          setFormData({
+                            ...formData,
+                            hm_value: e.target.value === '' ? null : parseFloat(e.target.value),
+                          })
+                        }
+                        placeholder="e.g. 1450.5"
                         className="w-full px-3 py-2 bg-surface border border-border rounded-md focus:border-accent-brass font-mono"
                       />
                     </div>
 
                     <div>
                       <label className="block font-semibold text-ink-muted mb-1 text-[11px]">
-                        Unit Operating Condition
+                        Unit Condition (ref_unit_condition)
                       </label>
                       <select
                         value={formData.unit_condition_id || ''}
@@ -505,15 +720,15 @@ export function IssueEditorModal({
 
                     <div>
                       <label className="block font-semibold text-ink-muted mb-1 text-[11px]">
-                        Issue Classification
+                        Issue Type Classification
                       </label>
                       <select
                         value={formData.old_or_new_issue}
                         onChange={(e) => setFormData({ ...formData, old_or_new_issue: e.target.value as any })}
-                        className="w-full px-3 py-2 bg-surface border border-border rounded-md focus:border-accent-brass"
+                        className="w-full px-3 py-2 bg-surface border border-border rounded-md focus:border-accent-brass font-medium"
                       >
-                        <option value="New Issue">New Issue (Baru)</option>
-                        <option value="Old Issue">Old Issue (Kasus Berulang / Lama)</option>
+                        <option value="New Issue">New Issue</option>
+                        <option value="Old Issue">Old Issue (Recurring)</option>
                       </select>
                     </div>
                   </div>
@@ -664,9 +879,27 @@ export function IssueEditorModal({
                   <div className="border-b border-border pb-2">
                     <h4 className="font-bold text-ink-primary text-sm">Step 3: 8 Standard Process Checkpoints</h4>
                     <p className="text-ink-muted text-[11px]">
-                      Record event completion dates. All checkpoints are flexible—fill completed milestones and update later as events conclude.
+                      Catat tanggal penyelesaian tiap checkpoint proses. Dua atau lebih checkpoint yang selesai pada hari yang sama adalah sah.
                     </p>
                   </div>
+
+                  {/* SOFT WARNING BANNER: Only if chronological regression occurs (date strictly < previous date) */}
+                  {checkpointWarnings.length > 0 && (
+                    <div className="p-3.5 rounded-lg bg-amber-500/10 border border-amber-500/30 text-amber-900 dark:text-amber-200 space-y-1.5 animate-in fade-in">
+                      <div className="flex items-center gap-2 font-bold text-xs text-amber-700 dark:text-amber-300">
+                        <AlertTriangle className="w-4 h-4 text-amber-600 dark:text-amber-400 shrink-0" />
+                        <span>Peringatan Urutan Checkpoint Non-Linear (Informatif)</span>
+                      </div>
+                      <p className="text-[11px] leading-relaxed text-amber-800 dark:text-amber-300/90">
+                        Terdeteksi tanggal checkpoint yang mendahului tahapan proses standarnya. Peringatan ini bersifat <strong>informatif</strong> untuk mengakomodasi fleksibilitas operasional nyata di lapangan, dan data <strong>tetap dapat disimpan</strong>.
+                      </p>
+                      <ul className="list-disc list-inside text-[10px] space-y-0.5 text-amber-800 dark:text-amber-300/80 pt-0.5">
+                        {checkpointWarnings.map((w, idx) => (
+                          <li key={idx}>{w}</li>
+                        ))}
+                      </ul>
+                    </div>
+                  )}
 
                   <div className="grid grid-cols-1 sm:grid-cols-2 gap-3.5">
                     {CHECKPOINT_STEPS.map((step) => {
@@ -729,28 +962,27 @@ export function IssueEditorModal({
                   <div className="border-b border-border pb-2 flex items-center justify-between">
                     <div>
                       <h4 className="font-bold text-ink-primary text-sm">Step 4: Spare Parts Requirements</h4>
-                      <p className="text-ink-muted text-[11px]">List spare parts, delivery readiness, and ETA tracking</p>
+                      <p className="text-ink-muted text-[11px]">Track required part numbers, readiness status, and ETA dates</p>
                     </div>
                     <button
                       type="button"
                       onClick={handleAddPartRow}
-                      className="flex items-center gap-1 px-3 py-1.5 rounded-md bg-accent-brass text-white text-xs font-semibold hover:bg-accent-brass/90 transition-colors shadow-xs"
+                      className="flex items-center gap-1 px-3 py-1.5 bg-accent-brass/10 hover:bg-accent-brass/20 text-accent-brass border border-accent-brass/30 rounded-md text-xs font-semibold transition-colors"
                     >
                       <Plus className="w-3.5 h-3.5" />
-                      <span>Add Part</span>
+                      <span>Add Part Item</span>
                     </button>
                   </div>
 
                   {formData.parts.length === 0 ? (
-                    <div className="p-8 text-center border border-dashed border-border rounded-lg bg-base/20">
-                      <PackageCheck className="w-8 h-8 text-ink-muted mx-auto mb-2 opacity-50" />
-                      <p className="text-ink-muted text-xs">No spare parts recorded for this issue case yet.</p>
+                    <div className="p-8 border border-dashed border-border rounded-lg text-center space-y-2 text-ink-muted">
+                      <p className="text-xs italic">Belum ada kebutuhan spare part yang dicatat untuk kasus ini.</p>
                       <button
                         type="button"
                         onClick={handleAddPartRow}
-                        className="mt-3 text-accent-brass text-xs font-semibold hover:underline"
+                        className="text-accent-brass hover:underline text-xs font-semibold"
                       >
-                        + Add First Spare Part Requirement
+                        + Tambahkan part pertama
                       </button>
                     </div>
                   ) : (
@@ -758,7 +990,7 @@ export function IssueEditorModal({
                       {formData.parts.map((part, idx) => (
                         <div
                           key={idx}
-                          className="p-3.5 rounded-lg border border-border bg-base/20 grid grid-cols-1 sm:grid-cols-12 gap-3 items-center"
+                          className="p-3 bg-base/30 border border-border rounded-lg grid grid-cols-1 sm:grid-cols-12 gap-2.5 items-center"
                         >
                           <div className="sm:col-span-3">
                             <label className="block text-[10px] font-semibold text-ink-muted mb-0.5">
@@ -766,27 +998,27 @@ export function IssueEditorModal({
                             </label>
                             <input
                               type="text"
-                              placeholder="e.g. 2645K012"
                               value={part.part_number || ''}
                               onChange={(e) => handlePartChange(idx, 'part_number', e.target.value)}
-                              className="w-full px-2.5 py-1.5 bg-surface border border-border rounded font-mono text-xs focus:border-accent-brass"
+                              placeholder="e.g. 10000-01234"
+                              className="w-full px-2 py-1.5 bg-surface border border-border rounded font-mono text-xs focus:border-accent-brass"
                             />
                           </div>
 
-                          <div className="sm:col-span-4">
+                          <div className="sm:col-span-3">
                             <label className="block text-[10px] font-semibold text-ink-muted mb-0.5">
                               Part Description / Name
                             </label>
                             <input
                               type="text"
-                              placeholder="e.g. Fuel Injector Nozzle"
                               value={part.part_name || ''}
                               onChange={(e) => handlePartChange(idx, 'part_name', e.target.value)}
-                              className="w-full px-2.5 py-1.5 bg-surface border border-border rounded text-xs focus:border-accent-brass"
+                              placeholder="e.g. GASKET KIT"
+                              className="w-full px-2 py-1.5 bg-surface border border-border rounded text-xs focus:border-accent-brass"
                             />
                           </div>
 
-                          <div className="sm:col-span-2">
+                          <div className="sm:col-span-3">
                             <label className="block text-[10px] font-semibold text-ink-muted mb-0.5">
                               Readiness Status
                             </label>
@@ -795,7 +1027,6 @@ export function IssueEditorModal({
                               onChange={(e) => handlePartChange(idx, 'part_readiness_id', e.target.value || null)}
                               className="w-full px-2 py-1.5 bg-surface border border-border rounded text-xs focus:border-accent-brass"
                             >
-                              <option value="">-- Status --</option>
                               {lookups.readinesses.map((r) => (
                                 <option key={r.part_readiness_id} value={r.part_readiness_id}>
                                   {r.readiness_name}
@@ -900,8 +1131,16 @@ export function IssueEditorModal({
                         type="date"
                         value={formData.closing_date_wo || ''}
                         onChange={(e) => setFormData({ ...formData, closing_date_wo: e.target.value })}
-                        className="w-full px-3 py-2 bg-surface border border-border rounded-md focus:border-accent-brass font-mono"
+                        className={`w-full px-3 py-2 bg-surface border rounded-md font-mono focus:outline-none transition-colors ${
+                          closingDateWoError ? 'border-red-500 text-red-600' : 'border-border focus:border-accent-brass'
+                        }`}
                       />
+                      {closingDateWoError && (
+                        <p className="text-[11px] text-red-600 dark:text-red-400 mt-1 flex items-start gap-1">
+                          <AlertCircle className="w-3.5 h-3.5 shrink-0 mt-0.5" />
+                          <span>{closingDateWoError}</span>
+                        </p>
+                      )}
                     </div>
 
                     <div>
@@ -912,8 +1151,16 @@ export function IssueEditorModal({
                         type="date"
                         value={formData.closing_by_rfu_date || ''}
                         onChange={(e) => setFormData({ ...formData, closing_by_rfu_date: e.target.value })}
-                        className="w-full px-3 py-2 bg-surface border border-border rounded-md focus:border-accent-brass font-mono"
+                        className={`w-full px-3 py-2 bg-surface border rounded-md font-mono focus:outline-none transition-colors ${
+                          closingByRfuError ? 'border-red-500 text-red-600' : 'border-border focus:border-accent-brass'
+                        }`}
                       />
+                      {closingByRfuError && (
+                        <p className="text-[11px] text-red-600 dark:text-red-400 mt-1 flex items-start gap-1">
+                          <AlertCircle className="w-3.5 h-3.5 shrink-0 mt-0.5" />
+                          <span>{closingByRfuError}</span>
+                        </p>
+                      )}
                     </div>
 
                     <div>
@@ -936,8 +1183,16 @@ export function IssueEditorModal({
                         type="date"
                         value={formData.srd_publication_date || ''}
                         onChange={(e) => setFormData({ ...formData, srd_publication_date: e.target.value })}
-                        className="w-full px-3 py-2 bg-surface border border-border rounded-md focus:border-accent-brass font-mono"
+                        className={`w-full px-3 py-2 bg-surface border rounded-md font-mono focus:outline-none transition-colors ${
+                          srdDateError ? 'border-red-500 text-red-600' : 'border-border focus:border-accent-brass'
+                        }`}
                       />
+                      {srdDateError && (
+                        <p className="text-[11px] text-red-600 dark:text-red-400 mt-1 flex items-start gap-1">
+                          <AlertCircle className="w-3.5 h-3.5 shrink-0 mt-0.5" />
+                          <span>{srdDateError}</span>
+                        </p>
+                      )}
                     </div>
                   </div>
 
@@ -988,12 +1243,17 @@ export function IssueEditorModal({
               onClick={onClose}
               className="px-3.5 py-1.5 rounded-md border border-border text-xs text-ink-muted hover:text-ink-primary hover:bg-base transition-colors"
             >
-              Cancel
+              Batal
             </button>
             <button
               type="button"
               onClick={() => handleSubmit()}
-              disabled={isSubmitting || isLoading}
+              disabled={isSubmitting || isLoading || hasHardValidationError}
+              title={
+                hasHardValidationError
+                  ? 'Harap perbaiki kesalahan tanggal logika sebelum menyimpan'
+                  : undefined
+              }
               className="flex items-center gap-1.5 px-4 py-1.5 rounded-md bg-accent-brass text-white text-xs font-bold hover:bg-accent-brass/90 transition-colors shadow-xs disabled:opacity-50"
             >
               {isSubmitting ? (

@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { getIssueDetailFull, updateIssueCase, deleteIssueCase } from '@/lib/queries/issues';
+import { getIssueDetailFull, updateIssueCase, deleteIssueCase, ConcurrencyConflictError } from '@/lib/queries/issues';
 
 export async function GET(
   req: NextRequest,
@@ -37,7 +37,28 @@ export async function PUT(
     await updateIssueCase(id, body);
     return NextResponse.json({ success: true });
   } catch (error: any) {
-    return NextResponse.json({ error: error.message }, { status: 400 });
+    if (error instanceof ConcurrencyConflictError || error.code === 'CONCURRENCY_CONFLICT') {
+      return NextResponse.json(
+        {
+          error: error.message || 'Konflik Data: Kasus ini telah diubah oleh pengguna lain sejak Anda membuka form.',
+          code: 'CONCURRENCY_CONFLICT',
+        },
+        { status: 409 }
+      );
+    }
+
+    // PostgreSQL Check Violation
+    if (error.code === '23514') {
+      return NextResponse.json(
+        {
+          error: `Validasi Database: ${error.message || 'Nilai yang dimasukkan melanggar batasan logika bisnis.'}`,
+          code: 'CHECK_VIOLATION',
+        },
+        { status: 400 }
+      );
+    }
+
+    return NextResponse.json({ error: error.message || 'Failed to update issue case' }, { status: 400 });
   }
 }
 

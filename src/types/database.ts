@@ -297,6 +297,8 @@ export interface IssueManagementItem {
   solution_time_days: number;
   achievement_threshold_days: number;
   achievement: string;
+  case_row_version?: number;
+  claim_row_version?: number;
   created_at: string;
   updated_at: string;
 }
@@ -317,6 +319,9 @@ export interface IssueTimelineInput {
 }
 
 export interface IssueFormData {
+  // Concurrency control
+  row_version?: number;
+
   // Step 1: Intake & Unit Info
   branch_id: string;
   customer_id: string;
