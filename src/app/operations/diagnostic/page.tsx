@@ -4,8 +4,9 @@ import {
   getCaseDiagnosticData,
 } from '@/lib/queries/diagnostic';
 import { CaseSelector } from '@/components/diagnostic/CaseSelector';
+import { CaseHeaderCard } from '@/components/diagnostic/CaseHeaderCard';
 import { CheckpointProgressBar } from '@/components/diagnostic/CheckpointProgressBar';
-import { DiagnosticDetails } from '@/components/diagnostic/DiagnosticDetails';
+import { DiagnosticTabs } from '@/components/diagnostic/DiagnosticTabs';
 import { EmptyState } from '@/components/common/EmptyState';
 
 export const revalidate = 0;
@@ -26,13 +27,13 @@ export default async function CaseDiagnosticPage({ searchParams }: PageProps) {
     : null;
 
   return (
-    <div className="space-y-6 max-w-7xl mx-auto">
+    <div className="space-y-6 max-w-7xl mx-auto pb-12">
       {/* Top Bar: Title & Searchable Case Selector */}
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         <div>
           <h2 className="text-xl font-bold text-ink-primary tracking-tight">Case Diagnostic</h2>
           <p className="text-xs text-ink-muted mt-0.5">
-            Single-case deep dive: checkpoint timeline breakdown, spare parts, and progress log
+            Single-case deep dive: rincian kasus, timeline checkpoint, spare part, dan log proses harian
           </p>
         </div>
 
@@ -42,15 +43,18 @@ export default async function CaseDiagnosticPage({ searchParams }: PageProps) {
       </div>
 
       {diagnosticData && diagnosticData.caseDetail ? (
-        <div className="space-y-6">
-          {/* Signature Interactive Checkpoint Progress Bar */}
+        <div className="space-y-6 animate-in fade-in">
+          {/* SECTION 1 (TOP): Customer Details & Issue Metadata (Compact, Vertical Space Optimized) */}
+          <CaseHeaderCard caseDetail={diagnosticData.caseDetail} />
+
+          {/* SECTION 2 (MIDDLE): Interactive Checkpoint Timeline Progress Bar (Center Focus) */}
           <CheckpointProgressBar
             checkpoints={diagnosticData.checkpoints}
             totalDays={diagnosticData.caseDetail.solution_time_days}
           />
 
-          {/* Header Specs & 2-Column Section (Spare Parts & Progress Log) */}
-          <DiagnosticDetails
+          {/* SECTION 3 (BOTTOM): Diagnostic Tabs (Product Specs/Spare Parts & Progress Log CRUD Feed) */}
+          <DiagnosticTabs
             caseDetail={diagnosticData.caseDetail}
             parts={diagnosticData.parts}
             logs={diagnosticData.logs}

@@ -99,9 +99,13 @@ export interface CasePartRequirement {
 }
 
 export interface CaseProgressLog {
+  log_id?: string;
+  issue_case_id?: string;
   log_date: string;
   log_text: string;
-  pic_name: string | null;
+  logged_by_pic_id?: string | null;
+  pic_name?: string | null;
+  created_at?: string;
 }
 
 export interface SingleCaseDetail {
@@ -122,6 +126,22 @@ export interface SingleCaseDetail {
   solution_time_days: number;
   achievement: string;
   achievement_threshold_days: number;
+  // Extended Technical & ERP Fields
+  delivery_date?: string | null;
+  unit_condition?: string | null;
+  symptom_text?: string | null;
+  technical_analysis_text?: string | null;
+  corrective_action_text?: string | null;
+  preventive_action_text?: string | null;
+  wo_checking_number?: string | null;
+  wo_warranty_repair_number?: string | null;
+  tr_document_ref?: string | null;
+  tsr_document_ref?: string | null;
+  bottleneck_name?: string | null;
+  goodwill_statement_date?: string | null;
+  srd_publication_date?: string | null;
+  closing_date_wo?: string | null;
+  closing_by_rfu_date?: string | null;
 }
 
 export interface ProductRootCauseItem {
