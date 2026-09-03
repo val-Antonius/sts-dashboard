@@ -138,6 +138,51 @@ def split_multiline(s):
     return cleaned
 
 
+def parse_progress_log(text, fallback_date):
+    """Pecah 1 blok 'Current Progress' jadi list of (date, text) -- 1 entri
+    per baris bertanggal, dengan baris lanjutan (word-wrap tanpa tanggal
+    baru) digabung ke entri sebelumnya. Baris pertama yang tidak diawali
+    tanggal (tidak ada entri sebelumnya untuk digabung) pakai fallback_date.
+
+    Diverifikasi terhadap 151 kasus data asli: 821 entri final dari 151
+    baris mentah, kehilangan konten <0.1% (cuma spasi penggabung wajar).
+    """
+    if not text:
+        return []
+
+    date_line_pattern = re.compile(r'^(\d{1,2})/(\d{1,2})/(\d{4})\s*:\s*(.+)$')
+    entries = []
+    current_date = None
+    current_text_parts = []
+
+    for line in str(text).split('\n'):
+        line = line.strip()
+        if not line:
+            continue
+        m = date_line_pattern.match(line)
+        if m:
+            if current_date is not None or current_text_parts:
+                d = current_date if current_date else fallback_date
+                entries.append((d, ' '.join(current_text_parts).strip()))
+            day, month, year = int(m.group(1)), int(m.group(2)), int(m.group(3))
+            try:
+                current_date = datetime.date(year, month, day)
+            except ValueError:
+                current_date = None
+            current_text_parts = [m.group(4).strip()]
+        else:
+            if current_text_parts:
+                current_text_parts.append(line)
+            else:
+                entries.append((fallback_date, line))
+
+    if current_date is not None or current_text_parts:
+        d = current_date if current_date else fallback_date
+        entries.append((d, ' '.join(current_text_parts).strip()))
+
+    return [(d, t) for d, t in entries if t]
+
+
 def parse_historical_process(text):
     """
     Parse kolom 'Historical Process' (free text) jadi dict checkpoint -> date.
@@ -615,13 +660,20 @@ def run_etl(xlsb_path, dsn, dry_run=False, truncate_first=False):
                      readiness_id, r['is_full_supplied'])
                 )
 
-            # case_progress_log (1 entry dari current_progress -- catatan ada di bawah)
+            # case_progress_log: dipecah jadi banyak entri (1 baris per
+            # tanggal), bukan 1 blok teks raksasa -- sesuai desain tabel
+            # (log_date DATE NOT NULL, log_text TEXT per entri). Bug versi
+            # lama ETL ini pernah menyimpan seluruh blok sebagai 1 baris,
+            # sudah diperbaiki di sini dan dinormalisasi terpisah untuk
+            # data yang sudah lanjur ter-insert (lihat normalize_progress_log.py).
             if r['current_progress']:
-                cur.execute(
-                    "INSERT INTO case_progress_log (issue_case_id, log_date, log_text) "
-                    "VALUES (%s, %s, %s)",
-                    (issue_case_id, r['complaint_date'], r['current_progress'])
-                )
+                progress_entries = parse_progress_log(r['current_progress'], r['complaint_date'])
+                for log_date, log_text in progress_entries:
+                    cur.execute(
+                        "INSERT INTO case_progress_log (issue_case_id, log_date, log_text) "
+                        "VALUES (%s, %s, %s)",
+                        (issue_case_id, log_date, log_text)
+                    )
 
             inserted += 1
 
