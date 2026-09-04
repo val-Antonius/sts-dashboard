@@ -85,7 +85,7 @@ export function IssueEditorModal({
     customer_id: '',
     unit_asset_id: '',
     pic_id: '',
-    complaint_date: new Date().toISOString().split('T')[0],
+    complaint_date: '',
     hm_value: null,
     unit_condition_id: '',
     old_or_new_issue: 'New Issue',
@@ -158,19 +158,20 @@ export function IssueEditorModal({
             srd_publication_date: c.srd_publication_date || '',
           });
         })
-        .catch((err) => setErrorMsg(err.message))
-        .finally(() => setIsLoading(false));
-    } else if (isOpen) {
-      // Reset for new creation
+        .catch((err) => {
+          setErrorMsg(err.message || 'Gagal memuat rincian kasus.');
+        })
+        .finally(() => {
+          setIsLoading(false);
+        });
+    } else if (!editCaseId && isOpen) {
       setLoadedRowVersion(null);
-      setConcurrencyConflict(null);
-      setErrorMsg(null);
       setFormData({
-        branch_id: lookups.branches[0]?.branch_id || '',
-        customer_id: lookups.customers[0]?.customer_id || '',
-        unit_asset_id: lookups.assets[0]?.unit_asset_id || '',
-        pic_id: lookups.pics[0]?.pic_id || '',
-        complaint_date: new Date().toISOString().split('T')[0],
+        branch_id: '',
+        customer_id: '',
+        unit_asset_id: '',
+        pic_id: '',
+        complaint_date: '',
         hm_value: null,
         unit_condition_id: '',
         old_or_new_issue: 'New Issue',
@@ -195,7 +196,7 @@ export function IssueEditorModal({
       });
       setCurrentStep(1);
     }
-  }, [editCaseId, isOpen]);
+  }, [editCaseId, isOpen, lookups.claimableStatuses]);
 
   // Reload handler when optimistic concurrency conflict occurs
   const handleReloadLatest = async () => {
@@ -204,8 +205,8 @@ export function IssueEditorModal({
     setConcurrencyConflict(null);
     setErrorMsg(null);
     try {
-      const res = await fetch(`/api/issues/${editCaseId}`);
-      const data = await res.json();
+      const r = await fetch(`/api/issues/${editCaseId}`);
+      const data = await r.json();
       if (data.error) throw new Error(data.error);
       const c: IssueManagementItem = data.caseData;
       const ver = c.case_row_version ?? 1;
@@ -246,13 +247,15 @@ export function IssueEditorModal({
         srd_publication_date: c.srd_publication_date || '',
       });
     } catch (err: any) {
-      setErrorMsg('Gagal memuat data terbaru: ' + err.message);
+      setErrorMsg(err.message || 'Gagal memuat ulang data terbaru.');
     } finally {
       setIsLoading(false);
     }
   };
 
   // --- VALIDATION RULES COMPUTATION ---
+  const today = useMemo(() => new Date().toISOString().split('T')[0], []);
+
   // 1. Delivery Date vs Complaint Date
   const selectedAsset = useMemo(() => {
     return lookups.assets.find((a) => a.unit_asset_id === formData.unit_asset_id);
@@ -297,7 +300,75 @@ export function IssueEditorModal({
     return null;
   }, [formData.goodwill_statement_date, formData.srd_publication_date]);
 
-  // 5. Checkpoint Chronology Soft Warning (Same day is allowed; only warn if strictly date < previous date)
+  // 5. Closed WO Requires Closing Date
+  const closedDateMissingError = useMemo(() => {
+    if (formData.status_wo === 'Closed') {
+      if (!formData.closing_date_wo && !formData.closing_by_rfu_date) {
+        return "Status WO diatur 'Closed', harap isi minimal salah satu: Closing Date WO atau Closing by RFU Date.";
+      }
+    }
+    return null;
+  }, [formData.status_wo, formData.closing_date_wo, formData.closing_by_rfu_date]);
+
+  // 6. Part Readiness vs ETA Date
+  const partEtaErrors = useMemo(() => {
+    const errors: string[] = [];
+    formData.parts.forEach((p, idx) => {
+      const r = lookups.readinesses.find((rd) => rd.part_readiness_id === p.part_readiness_id);
+      const isBackOrderOrIndent =
+        r &&
+        (r.readiness_name === 'Back Order' ||
+          r.readiness_name === 'Indent (Besi Baja)' ||
+          r.readiness_name === 'Fabrikasi Lokal');
+      if (isBackOrderOrIndent && (!p.eta_part_date || !p.eta_part_date.trim())) {
+        errors.push(
+          `Part #${idx + 1} (${p.part_name || p.part_number || 'Unnamed'}) berstatus '${r.readiness_name}' sehingga ETA Date wajib diisi.`
+        );
+      }
+    });
+    return errors;
+  }, [formData.parts, lookups.readinesses]);
+
+  // 7. Future Date Validation (Factual fields cannot exceed today)
+  const futureDateErrors = useMemo(() => {
+    const errors: string[] = [];
+
+    if (formData.complaint_date && formData.complaint_date > today) {
+      errors.push(`Complaint Date (${formData.complaint_date}) tidak boleh tanggal masa depan (maksimal hari ini: ${today}).`);
+    }
+    if (formData.closing_date_wo && formData.closing_date_wo > today) {
+      errors.push(`Closing Date WO (${formData.closing_date_wo}) tidak boleh tanggal masa depan.`);
+    }
+    if (formData.closing_by_rfu_date && formData.closing_by_rfu_date > today) {
+      errors.push(`Closing by RFU Date (${formData.closing_by_rfu_date}) tidak boleh tanggal masa depan.`);
+    }
+    if (formData.goodwill_statement_date && formData.goodwill_statement_date > today) {
+      errors.push(`Goodwill Statement Date (${formData.goodwill_statement_date}) tidak boleh tanggal masa depan.`);
+    }
+    if (formData.srd_publication_date && formData.srd_publication_date > today) {
+      errors.push(`SRD Publication Date (${formData.srd_publication_date}) tidak boleh tanggal masa depan.`);
+    }
+
+    // Checkpoint dates
+    for (const step of CHECKPOINT_STEPS) {
+      const dt = step.code === 'COMPLAINT_DATE' ? formData.complaint_date : formData.checkpoints[step.code];
+      if (dt && dt > today) {
+        errors.push(`Checkpoint '${step.label}' (${dt}) tidak boleh tanggal masa depan.`);
+      }
+    }
+
+    return errors;
+  }, [
+    today,
+    formData.complaint_date,
+    formData.closing_date_wo,
+    formData.closing_by_rfu_date,
+    formData.goodwill_statement_date,
+    formData.srd_publication_date,
+    formData.checkpoints,
+  ]);
+
+  // 8. Checkpoint Chronology Soft Warning
   const checkpointWarnings = useMemo(() => {
     const warnings: string[] = [];
     let lastDate = '';
@@ -310,7 +381,6 @@ export function IssueEditorModal({
 
       if (currentDate && currentDate.trim()) {
         if (lastDate && currentDate < lastDate) {
-          // Strictly going backward in time
           warnings.push(
             `"${step.label}" (${currentDate}) tercatat sebelum tahapan sebelumnya "${lastLabel}" (${lastDate}).`
           );
@@ -323,7 +393,13 @@ export function IssueEditorModal({
   }, [formData.checkpoints, formData.complaint_date]);
 
   const hasHardValidationError = Boolean(
-    deliveryDateError || closingDateWoError || closingByRfuError || srdDateError
+    deliveryDateError ||
+    closingDateWoError ||
+    closingByRfuError ||
+    srdDateError ||
+    closedDateMissingError ||
+    partEtaErrors.length > 0 ||
+    futureDateErrors.length > 0
   );
 
   if (!isOpen) return null;
@@ -394,10 +470,29 @@ export function IssueEditorModal({
 
     // Hard business logic check
     if (hasHardValidationError) {
-      setErrorMsg('Mohon perbaiki kesalahan tanggal logika sebelum menyimpan.');
+      if (deliveryDateError || futureDateErrors.some((e) => e.includes('Complaint Date'))) {
+        setErrorMsg(deliveryDateError || futureDateErrors.find((e) => e.includes('Complaint Date')) || 'Kesalahan pada Step 1.');
+        setCurrentStep(1);
+      } else if (futureDateErrors.some((e) => e.includes('Checkpoint'))) {
+        setErrorMsg(futureDateErrors.find((e) => e.includes('Checkpoint')) || 'Kesalahan tanggal checkpoint masa depan.');
+        setCurrentStep(3);
+      } else if (partEtaErrors.length > 0) {
+        setErrorMsg(partEtaErrors[0]);
+        setCurrentStep(4);
+      } else if (closedDateMissingError || closingDateWoError || closingByRfuError || srdDateError || futureDateErrors.length > 0) {
+        setErrorMsg(
+          closedDateMissingError ||
+            closingDateWoError ||
+            closingByRfuError ||
+            srdDateError ||
+            futureDateErrors[0] ||
+            'Mohon perbaiki kesalahan tanggal logika sebelum menyimpan.'
+        );
+        setCurrentStep(5);
+      } else {
+        setErrorMsg('Mohon perbaiki kesalahan data sebelum menyimpan.');
+      }
       setIsSubmitting(false);
-      if (deliveryDateError) setCurrentStep(1);
-      else if (closingDateWoError || closingByRfuError || srdDateError) setCurrentStep(5);
       return;
     }
 
@@ -592,7 +687,9 @@ export function IssueEditorModal({
                         value={formData.complaint_date}
                         onChange={(e) => setFormData({ ...formData, complaint_date: e.target.value })}
                         className={`w-full px-3 py-2 bg-surface border rounded-md font-mono focus:outline-none transition-colors ${
-                          deliveryDateError ? 'border-red-500 text-red-600' : 'border-border focus:border-accent-brass'
+                          deliveryDateError || futureDateErrors.some((e) => e.includes('Complaint Date'))
+                            ? 'border-red-500 text-red-600'
+                            : 'border-border focus:border-accent-brass'
                         }`}
                       />
                       {deliveryDateError && (
@@ -601,6 +698,14 @@ export function IssueEditorModal({
                           <span>{deliveryDateError}</span>
                         </p>
                       )}
+                      {futureDateErrors
+                        .filter((e) => e.includes('Complaint Date'))
+                        .map((err, i) => (
+                          <p key={i} className="text-[11px] text-red-600 dark:text-red-400 mt-1 flex items-start gap-1">
+                            <AlertCircle className="w-3.5 h-3.5 shrink-0 mt-0.5" />
+                            <span>{err}</span>
+                          </p>
+                        ))}
                     </div>
 
                     <div>
@@ -641,9 +746,9 @@ export function IssueEditorModal({
                       </select>
                     </div>
 
-                    <div>
+                    <div className="sm:col-span-2 lg:col-span-3">
                       <label className="block font-semibold text-ink-muted mb-1 text-[11px]">
-                        Unit Asset & Serial *
+                        Unit Asset & Serial (dim_unit_asset) *
                       </label>
                       <select
                         required
@@ -659,10 +764,22 @@ export function IssueEditorModal({
                           </option>
                         ))}
                       </select>
-                      {selectedAsset?.delivery_date && (
-                        <p className="text-[10px] text-ink-muted mt-1 font-mono">
-                          Delivery Date Unit: {selectedAsset.delivery_date}
-                        </p>
+                      {selectedAsset && (
+                        <div className="mt-2 p-2.5 rounded-md bg-base/60 border border-border text-[11px] space-y-1 animate-in fade-in">
+                          <div className="flex flex-wrap items-center justify-between gap-2 text-ink-primary">
+                            <span>
+                              Riwayat Kasus Unit: <strong className="font-mono text-accent-brass">{selectedAsset.total_issue_cases ?? 0} kasus</strong> tercatat sebelumnya di sistem
+                            </span>
+                            <span className="font-mono text-[10px] text-ink-muted px-1.5 py-0.5 rounded bg-surface border border-border">
+                              Model: {selectedAsset.unit_model_name} | S/N: {selectedAsset.serial_number || '—'}
+                            </span>
+                          </div>
+                          {selectedAsset.delivery_date && (
+                            <p className="text-[10px] text-ink-muted font-mono">
+                              Delivery Date Unit: {selectedAsset.delivery_date}
+                            </p>
+                          )}
+                        </div>
                       )}
                     </div>
 
@@ -986,20 +1103,58 @@ export function IssueEditorModal({
               {/* ----------------- STEP 4: SPARE PARTS REQUIREMENTS ----------------- */}
               {currentStep === 4 && (
                 <div className="space-y-4 animate-in fade-in">
-                  <div className="border-b border-border pb-2 flex items-center justify-between">
+                  <div className="border-b border-border pb-2 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2">
                     <div>
                       <h4 className="font-bold text-ink-primary text-sm">Step 4: Spare Parts Requirements</h4>
-                      <p className="text-ink-muted text-[11px]">Track required part numbers, readiness status, and ETA dates</p>
+                      <p className="text-ink-muted text-[11px]">Catat kebutuhan spare part, status kesiapan part, dan estimasi tiba (ETA)</p>
                     </div>
                     <button
                       type="button"
                       onClick={handleAddPartRow}
-                      className="flex items-center gap-1 px-3 py-1.5 bg-accent-brass/10 hover:bg-accent-brass/20 text-accent-brass border border-accent-brass/30 rounded-md text-xs font-semibold transition-colors"
+                      className="flex items-center gap-1 px-3 py-1.5 bg-accent-brass/10 hover:bg-accent-brass/20 text-accent-brass border border-accent-brass/30 rounded-md text-xs font-semibold transition-colors self-start sm:self-auto"
                     >
                       <Plus className="w-3.5 h-3.5" />
                       <span>Add Part Item</span>
                     </button>
                   </div>
+
+                  {/* Aggregate Supply Status Callout */}
+                  {formData.parts.length > 0 && (
+                    <div className="p-3 rounded-lg border bg-base/40 flex items-center justify-between gap-3 text-xs">
+                      <div className="flex items-center gap-2">
+                        <span className="font-semibold text-ink-primary">Status Agregat Pasokan Part:</span>
+                        {formData.parts.every((p) => p.is_full_supplied) ? (
+                          <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[11px] font-bold bg-[#3B7A57]/15 text-[#3B7A57] border border-[#3B7A57]/30">
+                            <CheckCircle2 className="w-3 h-3" />
+                            Full Supplied (Semua part telah lengkap)
+                          </span>
+                        ) : (
+                          <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[11px] font-bold bg-amber-500/15 text-amber-600 dark:text-amber-400 border border-amber-500/30">
+                            <AlertTriangle className="w-3 h-3" />
+                            Belum Full Supplied ({formData.parts.filter((p) => !p.is_full_supplied).length} part belum lengkap)
+                          </span>
+                        )}
+                      </div>
+                      <span className="text-[10px] text-ink-muted font-mono hidden sm:inline">
+                        Total {formData.parts.length} Part Item
+                      </span>
+                    </div>
+                  )}
+
+                  {/* PART ETA ERROR BANNER */}
+                  {partEtaErrors.length > 0 && (
+                    <div className="p-3 rounded-lg bg-red-500/10 border border-red-500/30 text-red-700 dark:text-red-300 space-y-1">
+                      <div className="flex items-center gap-1.5 font-bold text-xs">
+                        <AlertCircle className="w-4 h-4 shrink-0" />
+                        <span>Validasi Kesiapan Part & ETA</span>
+                      </div>
+                      <ul className="list-disc list-inside text-[11px] space-y-0.5">
+                        {partEtaErrors.map((err, idx) => (
+                          <li key={idx}>{err}</li>
+                        ))}
+                      </ul>
+                    </div>
+                  )}
 
                   {formData.parts.length === 0 ? (
                     <div className="p-8 border border-dashed border-border rounded-lg text-center space-y-2 text-ink-muted">
@@ -1014,77 +1169,115 @@ export function IssueEditorModal({
                     </div>
                   ) : (
                     <div className="space-y-3">
-                      {formData.parts.map((part, idx) => (
-                        <div
-                          key={idx}
-                          className="p-3 bg-base/30 border border-border rounded-lg grid grid-cols-1 sm:grid-cols-12 gap-2.5 items-center"
-                        >
-                          <div className="sm:col-span-3">
-                            <label className="block text-[10px] font-semibold text-ink-muted mb-0.5">
-                              Part Number
-                            </label>
-                            <input
-                              type="text"
-                              value={part.part_number || ''}
-                              onChange={(e) => handlePartChange(idx, 'part_number', e.target.value)}
-                              placeholder="e.g. 10000-01234"
-                              className="w-full px-2 py-1.5 bg-surface border border-border rounded font-mono text-xs focus:border-accent-brass"
-                            />
-                          </div>
+                      {formData.parts.map((part, idx) => {
+                        const readiness = lookups.readinesses.find((r) => r.part_readiness_id === part.part_readiness_id);
+                        const isBackOrderOrIndent =
+                          readiness &&
+                          (readiness.readiness_name === 'Back Order' ||
+                            readiness.readiness_name === 'Indent (Besi Baja)' ||
+                            readiness.readiness_name === 'Fabrikasi Lokal');
+                        const isMissingEta = isBackOrderOrIndent && (!part.eta_part_date || !part.eta_part_date.trim());
 
-                          <div className="sm:col-span-3">
-                            <label className="block text-[10px] font-semibold text-ink-muted mb-0.5">
-                              Part Description / Name
-                            </label>
-                            <input
-                              type="text"
-                              value={part.part_name || ''}
-                              onChange={(e) => handlePartChange(idx, 'part_name', e.target.value)}
-                              placeholder="e.g. GASKET KIT"
-                              className="w-full px-2 py-1.5 bg-surface border border-border rounded text-xs focus:border-accent-brass"
-                            />
-                          </div>
+                        return (
+                          <div
+                            key={idx}
+                            className={`p-3.5 bg-base/30 border rounded-lg transition-all space-y-2.5 ${
+                              isMissingEta ? 'border-red-500/50 bg-red-500/5' : 'border-border'
+                            }`}
+                          >
+                            <div className="grid grid-cols-1 sm:grid-cols-12 gap-2.5 items-start">
+                              <div className="sm:col-span-3">
+                                <label className="block text-[10px] font-semibold text-ink-muted mb-0.5">
+                                  Part Number
+                                </label>
+                                <input
+                                  type="text"
+                                  value={part.part_number || ''}
+                                  onChange={(e) => handlePartChange(idx, 'part_number', e.target.value)}
+                                  placeholder="e.g. 10000-01234"
+                                  className="w-full px-2.5 py-1.5 bg-surface border border-border rounded font-mono text-xs focus:border-accent-brass"
+                                />
+                              </div>
 
-                          <div className="sm:col-span-3">
-                            <label className="block text-[10px] font-semibold text-ink-muted mb-0.5">
-                              Readiness Status
-                            </label>
-                            <select
-                              value={part.part_readiness_id || ''}
-                              onChange={(e) => handlePartChange(idx, 'part_readiness_id', e.target.value || null)}
-                              className="w-full px-2 py-1.5 bg-surface border border-border rounded text-xs focus:border-accent-brass"
-                            >
-                              {lookups.readinesses.map((r) => (
-                                <option key={r.part_readiness_id} value={r.part_readiness_id}>
-                                  {r.readiness_name}
-                                </option>
-                              ))}
-                            </select>
-                          </div>
+                              <div className="sm:col-span-3">
+                                <label className="block text-[10px] font-semibold text-ink-muted mb-0.5">
+                                  Part Description / Name
+                                </label>
+                                <input
+                                  type="text"
+                                  value={part.part_name || ''}
+                                  onChange={(e) => handlePartChange(idx, 'part_name', e.target.value)}
+                                  placeholder="e.g. GASKET KIT"
+                                  className="w-full px-2.5 py-1.5 bg-surface border border-border rounded text-xs focus:border-accent-brass"
+                                />
+                              </div>
 
-                          <div className="sm:col-span-2">
-                            <label className="block text-[10px] font-semibold text-ink-muted mb-0.5">
-                              ETA Date
-                            </label>
-                            <input
-                              type="date"
-                              value={part.eta_part_date || ''}
-                              onChange={(e) => handlePartChange(idx, 'eta_part_date', e.target.value)}
-                              className="w-full px-2 py-1.5 bg-surface border border-border rounded font-mono text-xs focus:border-accent-brass"
-                            />
-                          </div>
+                              <div className="sm:col-span-3">
+                                <label className="block text-[10px] font-semibold text-ink-muted mb-0.5">
+                                  Readiness Status
+                                </label>
+                                <select
+                                  value={part.part_readiness_id || ''}
+                                  onChange={(e) => handlePartChange(idx, 'part_readiness_id', e.target.value || null)}
+                                  className="w-full px-2.5 py-1.5 bg-surface border border-border rounded text-xs focus:border-accent-brass"
+                                >
+                                  {lookups.readinesses.map((r) => (
+                                    <option key={r.part_readiness_id} value={r.part_readiness_id}>
+                                      {r.readiness_name}
+                                    </option>
+                                  ))}
+                                </select>
+                              </div>
 
-                          <div className="sm:col-span-1 flex items-center justify-end pt-3 sm:pt-0">
-                            <button
-                              type="button"
-                              onClick={() => handleRemovePartRow(idx)}
-                              className="p-1.5 rounded hover:bg-base text-red-500 hover:text-red-600 transition-colors"
-                            >
-                              <Trash2 className="w-4 h-4" />
-                            </button>
+                              <div className="sm:col-span-2">
+                                <label className="block text-[10px] font-semibold text-ink-muted mb-0.5">
+                                  ETA Date {isBackOrderOrIndent && <span className="text-red-500 font-bold">*</span>}
+                                </label>
+                                <input
+                                  type="date"
+                                  value={part.eta_part_date || ''}
+                                  onChange={(e) => handlePartChange(idx, 'eta_part_date', e.target.value)}
+                                  className={`w-full px-2 py-1.5 bg-surface border rounded font-mono text-xs focus:outline-none transition-colors ${
+                                    isMissingEta
+                                      ? 'border-red-500 text-red-600 focus:border-red-500'
+                                      : 'border-border focus:border-accent-brass'
+                                  }`}
+                                />
+                              </div>
+
+                              <div className="sm:col-span-1 flex items-center justify-end pt-3 sm:pt-4">
+                                <button
+                                  type="button"
+                                  onClick={() => handleRemovePartRow(idx)}
+                                  className="p-1.5 rounded hover:bg-base text-red-500 hover:text-red-600 transition-colors"
+                                  title="Hapus baris part"
+                                >
+                                  <Trash2 className="w-4 h-4" />
+                                </button>
+                              </div>
+                            </div>
+
+                            <div className="flex flex-wrap items-center justify-between gap-2 pt-1.5 border-t border-border/50 text-[11px]">
+                              <label className="flex items-center gap-2 cursor-pointer select-none text-ink-primary hover:text-accent-brass transition-colors">
+                                <input
+                                  type="checkbox"
+                                  checked={Boolean(part.is_full_supplied)}
+                                  onChange={(e) => handlePartChange(idx, 'is_full_supplied', e.target.checked)}
+                                  className="rounded border-border text-accent-brass focus:ring-accent-brass/20 w-3.5 h-3.5"
+                                />
+                                <span className="font-semibold">Part Sudah Diterima Lengkap (Full Supplied)</span>
+                              </label>
+
+                              {isMissingEta && (
+                                <span className="text-red-500 text-[10px] font-semibold flex items-center gap-1">
+                                  <AlertCircle className="w-3 h-3" />
+                                  Status {readiness?.readiness_name} mewajibkan pengisian ETA Date.
+                                </span>
+                              )}
+                            </div>
                           </div>
-                        </div>
-                      ))}
+                        );
+                      })}
                     </div>
                   )}
                 </div>
@@ -1097,6 +1290,19 @@ export function IssueEditorModal({
                     <h4 className="font-bold text-ink-primary text-sm">Step 5: Claim & Resolution Closure</h4>
                     <p className="text-ink-muted text-[11px]">Warranty claim categorization, bottleneck reasons, and final closing dates</p>
                   </div>
+
+                  {/* CLOSED WO DATE REQUIREMENT BANNER */}
+                  {closedDateMissingError && (
+                    <div className="p-3.5 rounded-lg bg-red-500/10 border border-red-500/30 text-red-700 dark:text-red-300 flex items-start gap-2.5 animate-in fade-in">
+                      <AlertCircle className="w-4 h-4 shrink-0 mt-0.5" />
+                      <div>
+                        <strong className="block text-xs font-bold">Validasi Penutupan Kasus (WO Closure)</strong>
+                        <p className="text-[11px] mt-0.5 leading-relaxed">
+                          {closedDateMissingError}
+                        </p>
+                      </div>
+                    </div>
+                  )}
 
                   <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
                     <div>
@@ -1125,7 +1331,9 @@ export function IssueEditorModal({
                       <select
                         value={formData.status_wo}
                         onChange={(e) => setFormData({ ...formData, status_wo: e.target.value as any })}
-                        className="w-full px-3 py-2 bg-surface border border-border rounded-md focus:border-accent-brass font-bold"
+                        className={`w-full px-3 py-2 bg-surface border rounded-md focus:border-accent-brass font-bold ${
+                          closedDateMissingError ? 'border-red-500 text-red-600' : 'border-border'
+                        }`}
                       >
                         <option value="Belum Closed">Belum Closed (Active In-Progress)</option>
                         <option value="Closed">Closed (Resolved)</option>
@@ -1159,7 +1367,9 @@ export function IssueEditorModal({
                         value={formData.closing_date_wo || ''}
                         onChange={(e) => setFormData({ ...formData, closing_date_wo: e.target.value })}
                         className={`w-full px-3 py-2 bg-surface border rounded-md font-mono focus:outline-none transition-colors ${
-                          closingDateWoError ? 'border-red-500 text-red-600' : 'border-border focus:border-accent-brass'
+                          closingDateWoError || (formData.closing_date_wo && formData.closing_date_wo > today)
+                            ? 'border-red-500 text-red-600'
+                            : 'border-border focus:border-accent-brass'
                         }`}
                       />
                       {closingDateWoError && (
@@ -1179,7 +1389,9 @@ export function IssueEditorModal({
                         value={formData.closing_by_rfu_date || ''}
                         onChange={(e) => setFormData({ ...formData, closing_by_rfu_date: e.target.value })}
                         className={`w-full px-3 py-2 bg-surface border rounded-md font-mono focus:outline-none transition-colors ${
-                          closingByRfuError ? 'border-red-500 text-red-600' : 'border-border focus:border-accent-brass'
+                          closingByRfuError || (formData.closing_by_rfu_date && formData.closing_by_rfu_date > today)
+                            ? 'border-red-500 text-red-600'
+                            : 'border-border focus:border-accent-brass'
                         }`}
                       />
                       {closingByRfuError && (
@@ -1198,7 +1410,11 @@ export function IssueEditorModal({
                         type="date"
                         value={formData.goodwill_statement_date || ''}
                         onChange={(e) => setFormData({ ...formData, goodwill_statement_date: e.target.value })}
-                        className="w-full px-3 py-2 bg-surface border border-border rounded-md focus:border-accent-brass font-mono"
+                        className={`w-full px-3 py-2 bg-surface border rounded-md font-mono focus:outline-none transition-colors ${
+                          formData.goodwill_statement_date && formData.goodwill_statement_date > today
+                            ? 'border-red-500 text-red-600'
+                            : 'border-border focus:border-accent-brass'
+                        }`}
                       />
                     </div>
 
@@ -1211,7 +1427,9 @@ export function IssueEditorModal({
                         value={formData.srd_publication_date || ''}
                         onChange={(e) => setFormData({ ...formData, srd_publication_date: e.target.value })}
                         className={`w-full px-3 py-2 bg-surface border rounded-md font-mono focus:outline-none transition-colors ${
-                          srdDateError ? 'border-red-500 text-red-600' : 'border-border focus:border-accent-brass'
+                          srdDateError || (formData.srd_publication_date && formData.srd_publication_date > today)
+                            ? 'border-red-500 text-red-600'
+                            : 'border-border focus:border-accent-brass'
                         }`}
                       />
                       {srdDateError && (
