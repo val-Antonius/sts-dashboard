@@ -53,14 +53,14 @@ interface IssueEditorModalProps {
 }
 
 const CHECKPOINT_STEPS = [
-  { code: 'WO_CHECKING_CREATED', label: '1. WO Checking Created', desc: 'Inspection work order created in SAP' },
-  { code: 'WO_CHECKING_CLOSED', label: '2. WO Checking Closed', desc: 'Initial inspection completed' },
-  { code: 'PS_APPROVAL', label: '3. PS Approval', desc: 'Parts specialist approval' },
-  { code: 'WO_REPAIR_RELEASED', label: '4. WO Repair Released', desc: 'Repair work order released' },
-  { code: 'PART_GI', label: '5. Parts Goods Issued', desc: 'Parts issued to technician' },
-  { code: 'UNIT_RFU', label: '6. Unit Ready for Use', desc: 'Unit restored & operational' },
-  { code: 'WO_REPAIR_CLOSED', label: '7. WO Repair Closed', desc: 'Repair paperwork closed' },
-  { code: 'WO_CLOSED', label: '8. Final WO Closed', desc: 'Overall case closed' },
+  { code: 'COMPLAINT_DATE', label: '1. Complaint Received', desc: 'Customer complaint officially recorded (synced from Step 1)', isReadOnly: true },
+  { code: 'WO_CHECKING_CREATED', label: '2. WO Checking Created', desc: 'Inspection work order created in SAP' },
+  { code: 'WO_CHECKING_CLOSED', label: '3. WO Checking Closed', desc: 'Initial inspection completed' },
+  { code: 'PS_APPROVAL', label: '4. PS Approval', desc: 'Parts specialist / technical recommendation approval' },
+  { code: 'WO_REPAIR_RELEASED', label: '5. WO Repair Released', desc: 'Repair work order released' },
+  { code: 'PART_GI', label: '6. Parts Goods Issued', desc: 'Parts issued to technician' },
+  { code: 'UNIT_RFU', label: '7. Unit Ready for Use', desc: 'Unit restored & operational' },
+  { code: 'WO_REPAIR_CLOSED', label: '8. WO Repair Closed', desc: 'Repair paperwork & admin closed' },
 ];
 
 export function IssueEditorModal({
@@ -304,7 +304,10 @@ export function IssueEditorModal({
     let lastLabel = '';
 
     for (const step of CHECKPOINT_STEPS) {
-      const currentDate = formData.checkpoints[step.code];
+      const currentDate = step.code === 'COMPLAINT_DATE'
+        ? (formData.complaint_date || '')
+        : (formData.checkpoints[step.code] || '');
+
       if (currentDate && currentDate.trim()) {
         if (lastDate && currentDate < lastDate) {
           // Strictly going backward in time
@@ -317,7 +320,7 @@ export function IssueEditorModal({
       }
     }
     return warnings;
-  }, [formData.checkpoints]);
+  }, [formData.checkpoints, formData.complaint_date]);
 
   const hasHardValidationError = Boolean(
     deliveryDateError || closingDateWoError || closingByRfuError || srdDateError
@@ -903,14 +906,19 @@ export function IssueEditorModal({
 
                   <div className="grid grid-cols-1 sm:grid-cols-2 gap-3.5">
                     {CHECKPOINT_STEPS.map((step) => {
-                      const currentDate = formData.checkpoints[step.code] || '';
+                      const isComplaintDate = step.code === 'COMPLAINT_DATE';
+                      const currentDate = isComplaintDate
+                        ? formData.complaint_date || ''
+                        : formData.checkpoints[step.code] || '';
                       const isRecorded = Boolean(currentDate);
 
                       return (
                         <div
                           key={step.code}
                           className={`p-3.5 rounded-lg border transition-all ${
-                            isRecorded
+                            isComplaintDate
+                              ? 'bg-accent-brass/5 border-accent-brass/30 shadow-xs'
+                              : isRecorded
                               ? 'bg-[#3B7A57]/5 border-[#3B7A57]/30 shadow-xs'
                               : 'bg-surface border-border'
                           }`}
@@ -919,7 +927,11 @@ export function IssueEditorModal({
                             <div className="flex items-center gap-1.5">
                               <span
                                 className={`w-2 h-2 rounded-full ${
-                                  isRecorded ? 'bg-[#3B7A57]' : 'bg-ink-muted/30'
+                                  isComplaintDate
+                                    ? 'bg-accent-brass'
+                                    : isRecorded
+                                    ? 'bg-[#3B7A57]'
+                                    : 'bg-ink-muted/30'
                                 }`}
                               />
                               <label className="font-semibold text-ink-primary text-xs">
@@ -935,18 +947,33 @@ export function IssueEditorModal({
                             <input
                               type="date"
                               value={currentDate}
-                              onChange={(e) => handleCheckpointChange(step.code, e.target.value)}
-                              className="w-full px-2.5 py-1.5 bg-surface border border-border rounded text-xs font-mono focus:border-accent-brass"
+                              readOnly={isComplaintDate}
+                              onChange={(e) => {
+                                if (!isComplaintDate) {
+                                  handleCheckpointChange(step.code, e.target.value);
+                                }
+                              }}
+                              className={`w-full px-2.5 py-1.5 border rounded text-xs font-mono transition-colors ${
+                                isComplaintDate
+                                  ? 'bg-base/60 border-border text-ink-primary cursor-not-allowed opacity-90'
+                                  : 'bg-surface border-border focus:border-accent-brass'
+                              }`}
                             />
-                            {isRecorded && (
-                              <button
-                                type="button"
-                                onClick={() => handleCheckpointChange(step.code, '')}
-                                title="Clear date"
-                                className="p-1.5 rounded hover:bg-base text-ink-muted hover:text-red-500 transition-colors"
-                              >
-                                <X className="w-3.5 h-3.5" />
-                              </button>
+                            {isComplaintDate ? (
+                              <span className="shrink-0 text-[10px] font-semibold px-2 py-1 rounded bg-accent-brass/10 border border-accent-brass/30 text-accent-brass">
+                                Step 1 Sync
+                              </span>
+                            ) : (
+                              isRecorded && (
+                                <button
+                                  type="button"
+                                  onClick={() => handleCheckpointChange(step.code, '')}
+                                  title="Clear date"
+                                  className="p-1.5 rounded hover:bg-base text-ink-muted hover:text-red-500 transition-colors shrink-0"
+                                >
+                                  <X className="w-3.5 h-3.5" />
+                                </button>
+                              )
                             )}
                           </div>
                         </div>

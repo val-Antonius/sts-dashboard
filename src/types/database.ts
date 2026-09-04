@@ -87,6 +87,9 @@ export interface AnomalyBottleneckRecorded {
 export interface CheckpointDuration {
   checkpoint_code: string;
   checkpoint_date: string;
+  checkpoint_sequence?: number;
+  phase_name?: string | null;
+  from_checkpoint_code?: string | null;
   days_since_prev_checkpoint: number | null;
 }
 

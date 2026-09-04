@@ -358,15 +358,17 @@ export async function createIssueCase(formData: IssueFormData): Promise<{ issue_
   }
 
   // 3. Insert Checkpoints
-  if (formData.checkpoints) {
-    for (const [code, date] of Object.entries(formData.checkpoints)) {
-      if (date && date.trim()) {
-        await query(`
-          INSERT INTO product_issue.case_timeline (issue_case_id, checkpoint_code, checkpoint_date)
-          VALUES ($1, $2, $3)
-          ON CONFLICT (issue_case_id, checkpoint_code) DO UPDATE SET checkpoint_date = EXCLUDED.checkpoint_date;
-        `, [issueCaseId, code, date]);
-      }
+  const checkpointsToSave = { ...formData.checkpoints };
+  if (formData.complaint_date) {
+    checkpointsToSave['COMPLAINT_DATE'] = formData.complaint_date;
+  }
+  for (const [code, date] of Object.entries(checkpointsToSave)) {
+    if (code !== 'WO_CLOSED' && date && date.trim()) {
+      await query(`
+        INSERT INTO product_issue.case_timeline (issue_case_id, checkpoint_code, checkpoint_date)
+        VALUES ($1, $2, $3)
+        ON CONFLICT (issue_case_id, checkpoint_code) DO UPDATE SET checkpoint_date = EXCLUDED.checkpoint_date;
+      `, [issueCaseId, code, date]);
     }
   }
 
@@ -525,8 +527,15 @@ export async function updateIssueCase(issueCaseId: string, formData: IssueFormDa
   }
 
   // 3. Upsert / Sync Checkpoints
-  if (formData.checkpoints) {
-    for (const [code, date] of Object.entries(formData.checkpoints)) {
+  const checkpointsToSync = { ...formData.checkpoints };
+  if (formData.complaint_date) {
+    checkpointsToSync['COMPLAINT_DATE'] = formData.complaint_date;
+  }
+  // Always clean up legacy WO_CLOSED if present
+  await query(`DELETE FROM product_issue.case_timeline WHERE issue_case_id = $1 AND checkpoint_code = 'WO_CLOSED'`, [issueCaseId]);
+
+  for (const [code, date] of Object.entries(checkpointsToSync)) {
+    if (code !== 'WO_CLOSED') {
       if (date && date.trim()) {
         await query(`
           INSERT INTO product_issue.case_timeline (issue_case_id, checkpoint_code, checkpoint_date)
@@ -534,11 +543,13 @@ export async function updateIssueCase(issueCaseId: string, formData: IssueFormDa
           ON CONFLICT (issue_case_id, checkpoint_code) DO UPDATE SET checkpoint_date = EXCLUDED.checkpoint_date;
         `, [issueCaseId, code, date]);
       } else {
-        // If cleared/empty, remove checkpoint
-        await query(`
-          DELETE FROM product_issue.case_timeline
-          WHERE issue_case_id = $1 AND checkpoint_code = $2;
-        `, [issueCaseId, code]);
+        // If cleared/empty, remove checkpoint (except COMPLAINT_DATE which comes from complaint_date)
+        if (code !== 'COMPLAINT_DATE') {
+          await query(`
+            DELETE FROM product_issue.case_timeline
+            WHERE issue_case_id = $1 AND checkpoint_code = $2;
+          `, [issueCaseId, code]);
+        }
       }
     }
   }

@@ -170,10 +170,13 @@ export async function getCaseDiagnosticData(issueCaseId: string): Promise<{
     SELECT
       checkpoint_code,
       TO_CHAR(checkpoint_date, 'YYYY-MM-DD') AS checkpoint_date,
+      checkpoint_sequence::int,
+      phase_name,
+      from_checkpoint_code,
       days_since_prev_checkpoint::int
     FROM product_issue.v_checkpoint_duration
     WHERE issue_case_id = $1
-    ORDER BY checkpoint_date;
+    ORDER BY checkpoint_sequence ASC;
   `, [issueCaseId]);
 
   // 3. Spare Parts
