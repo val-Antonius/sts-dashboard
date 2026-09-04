@@ -33,9 +33,15 @@ import {
   RotateCcw,
 } from 'lucide-react';
 
-interface IssueManagementViewProps {
+export interface IssueManagementViewProps {
   initialItems: IssueManagementItem[];
   initialTotal: number;
+  initialKpis?: {
+    total: number;
+    open_count: number;
+    closed_count: number;
+    overdue_count: number;
+  };
   lookups: {
     branches: DimBranch[];
     customers: DimCustomer[];
@@ -52,10 +58,19 @@ interface IssueManagementViewProps {
 export function IssueManagementView({
   initialItems,
   initialTotal,
+  initialKpis,
   lookups,
 }: IssueManagementViewProps) {
   const [items, setItems] = useState<IssueManagementItem[]>(initialItems);
   const [totalCount, setTotalCount] = useState<number>(initialTotal);
+  const [kpiMetrics, setKpiMetrics] = useState(
+    initialKpis || {
+      total: initialTotal,
+      open_count: initialItems.filter((i) => i.status_wo === 'Belum Closed').length,
+      closed_count: initialItems.filter((i) => i.status_wo === 'Closed').length,
+      overdue_count: initialItems.filter((i) => i.status_wo === 'Belum Closed' && i.achievement === 'Not Achieved').length,
+    }
+  );
   const [isLoading, setIsLoading] = useState(false);
 
   // Filters State
@@ -89,6 +104,9 @@ export function IssueManagementView({
       if (data.items) {
         setItems(data.items);
         setTotalCount(data.total);
+        if (data.kpis) {
+          setKpiMetrics(data.kpis);
+        }
       }
     } catch (err) {
       console.error('Failed to fetch issues:', err);
@@ -116,6 +134,9 @@ export function IssueManagementView({
         if (data.items) {
           setItems(data.items);
           setTotalCount(data.total);
+          if (data.kpis) {
+            setKpiMetrics(data.kpis);
+          }
         }
       })
       .finally(() => setIsLoading(false));
@@ -139,20 +160,14 @@ export function IssueManagementView({
       const data = await res.json();
       if (!res.ok) throw new Error(data.error || 'Failed to delete issue');
 
-      setItems(items.filter((i) => i.issue_case_id !== deleteConfirm.id));
-      setTotalCount((prev) => Math.max(0, prev - 1));
       setDeleteConfirm(null);
+      refetchData();
     } catch (err) {
       console.error('Delete error:', err);
     } finally {
       setIsDeleting(false);
     }
   };
-
-  // KPIs
-  const openCount = items.filter((i) => i.status_wo === 'Belum Closed').length;
-  const closedCount = items.filter((i) => i.status_wo === 'Closed').length;
-  const overdueCount = items.filter((i) => i.status_wo === 'Belum Closed' && i.achievement === 'Not Achieved').length;
 
   // Pagination (15 rows standard)
   const pageSize = 15;
@@ -187,7 +202,7 @@ export function IssueManagementView({
             <span className="font-semibold uppercase tracking-wider text-[10px]">Total Issues Filtered</span>
             <Layers className="w-3.5 h-3.5" />
           </div>
-          <div className="text-2xl font-bold text-ink-primary font-mono">{totalCount}</div>
+          <div className="text-2xl font-bold text-ink-primary font-mono">{kpiMetrics.total}</div>
           <span className="text-[11px] text-ink-muted">Recorded cases in view</span>
         </div>
 
@@ -196,7 +211,7 @@ export function IssueManagementView({
             <span className="font-semibold uppercase tracking-wider text-[10px]">Active In-Progress</span>
             <Clock className="w-3.5 h-3.5 text-accent-brass" />
           </div>
-          <div className="text-2xl font-bold text-accent-brass font-mono">{openCount}</div>
+          <div className="text-2xl font-bold text-accent-brass font-mono">{kpiMetrics.open_count}</div>
           <span className="text-[11px] text-ink-muted">Work order status: Belum Closed</span>
         </div>
 
@@ -205,7 +220,7 @@ export function IssueManagementView({
             <span className="font-semibold uppercase tracking-wider text-[10px]">Closed Cases</span>
             <CheckCircle2 className="w-3.5 h-3.5 text-[#3B7A57]" />
           </div>
-          <div className="text-2xl font-bold text-[#3B7A57] font-mono">{closedCount}</div>
+          <div className="text-2xl font-bold text-[#3B7A57] font-mono">{kpiMetrics.closed_count}</div>
           <span className="text-[11px] text-ink-muted">Resolved & RFU complete</span>
         </div>
 
@@ -214,7 +229,7 @@ export function IssueManagementView({
             <span className="font-semibold uppercase tracking-wider text-[10px]">Overdue Active Cases</span>
             <AlertTriangle className="w-3.5 h-3.5 text-[#A54B3F]" />
           </div>
-          <div className="text-2xl font-bold text-[#A54B3F] font-mono">{overdueCount}</div>
+          <div className="text-2xl font-bold text-[#A54B3F] font-mono">{kpiMetrics.overdue_count}</div>
           <span className="text-[11px] text-ink-muted">Exceeding SLA benchmark</span>
         </div>
       </div>

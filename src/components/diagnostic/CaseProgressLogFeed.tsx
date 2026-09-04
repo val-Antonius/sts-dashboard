@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState, useMemo } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import { CaseProgressLog, SingleCaseDetail } from '@/types/database';
 import {
   MessageSquare,
@@ -63,6 +63,18 @@ export function CaseProgressLogFeed({
 
   // Inline Delete State
   const [deletingLogId, setDeletingLogId] = useState<string | null>(null);
+
+  // Sync state whenever caseDetail or initialLogs change
+  useEffect(() => {
+    setLogs(initialLogs);
+    setEditingLogId(null);
+    setEditDate('');
+    setEditText('');
+    setEditError(null);
+    setAddError(null);
+    setNewText('');
+    setNewDate(defaultDate);
+  }, [caseDetail.issue_case_id, initialLogs, defaultDate]);
   const [isDeleting, setIsDeleting] = useState<boolean>(false);
 
   // Validation function

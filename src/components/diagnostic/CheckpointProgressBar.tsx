@@ -2,11 +2,12 @@
 
 import React, { useState, useMemo } from 'react';
 import { CheckpointDuration } from '@/types/database';
-import { CheckCircle2, Clock, AlertTriangle, Layers, ArrowRight } from 'lucide-react';
+import { CheckCircle2, Clock, AlertTriangle, Layers, ArrowRight, Edit3 } from 'lucide-react';
 
 interface CheckpointProgressBarProps {
   checkpoints: CheckpointDuration[];
-  totalDays: number;
+  totalDays?: number;
+  onEditClick?: () => void;
 }
 
 interface PhaseDefinition {
@@ -106,6 +107,7 @@ const OFFICIAL_CHECKPOINTS: CheckpointDefinition[] = [
 export function CheckpointProgressBar({
   checkpoints,
   totalDays,
+  onEditClick,
 }: CheckpointProgressBarProps) {
   const [hoveredPhaseId, setHoveredPhaseId] = useState<number | null>(null);
   const [hoveredCheckpointCode, setHoveredCheckpointCode] = useState<string | null>(null);
@@ -216,10 +218,17 @@ export function CheckpointProgressBar({
               <span>Anomali Urutan Tanggal Terdeteksi</span>
             </div>
           )}
-          <div className="flex items-center gap-1.5 text-xs font-medium text-ink-primary bg-base px-2.5 py-1 rounded border border-border tabular-nums">
-            <Clock className="w-3.5 h-3.5 text-accent-brass" />
-            <span>Total Lead Time: <strong>{totalDays} days</strong></span>
-          </div>
+          {onEditClick && (
+            <button
+              type="button"
+              onClick={onEditClick}
+              className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-accent-brass/10 hover:bg-accent-brass/20 text-accent-brass border border-accent-brass/30 text-xs font-bold transition-all shadow-xs cursor-pointer"
+              title="Edit rincian data kasus ini"
+            >
+              <Edit3 className="w-3.5 h-3.5" />
+              <span>Edit Case Details</span>
+            </button>
+          )}
         </div>
       </div>
 

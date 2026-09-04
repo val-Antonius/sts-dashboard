@@ -25,9 +25,16 @@ export interface IssueListFilters {
   limit?: number;
 }
 
+export interface IssueManagementKpis {
+  total: number;
+  open_count: number;
+  closed_count: number;
+  overdue_count: number;
+}
+
 export async function getIssueManagementList(
   filters: IssueListFilters = {}
-): Promise<{ items: IssueManagementItem[]; total: number }> {
+): Promise<{ items: IssueManagementItem[]; total: number; kpis: IssueManagementKpis }> {
   let whereClauses: string[] = [];
   let queryParams: any[] = [];
   let paramIdx = 1;
@@ -69,9 +76,18 @@ export async function getIssueManagementList(
 
   const whereSql = whereClauses.length > 0 ? `WHERE ${whereClauses.join(' AND ')}` : '';
 
-  // Get total count
-  const countRes = await query<{ count: string }>(`
-    SELECT COUNT(*)::int AS count
+  // Get total count and aggregate KPI metrics across all matching cases
+  const countRes = await query<{
+    total: number;
+    open_count: number;
+    closed_count: number;
+    overdue_count: number;
+  }>(`
+    SELECT
+      COUNT(*)::int AS total,
+      COUNT(*) FILTER (WHERE COALESCE(cl.status_wo, 'Belum Closed') = 'Belum Closed')::int AS open_count,
+      COUNT(*) FILTER (WHERE cl.status_wo = 'Closed')::int AS closed_count,
+      COUNT(*) FILTER (WHERE COALESCE(cl.status_wo, 'Belum Closed') = 'Belum Closed' AND COALESCE(m.achievement, 'Not Achieved') = 'Not Achieved')::int AS overdue_count
     FROM product_issue.fact_issue_case ic
     JOIN product_issue.dim_branch b ON b.branch_id = ic.branch_id
     JOIN product_issue.dim_customer c ON c.customer_id = ic.customer_id
@@ -80,10 +96,18 @@ export async function getIssueManagementList(
     LEFT JOIN product_issue.dim_pic p ON p.pic_id = ic.pic_id
     LEFT JOIN product_issue.ref_root_cause rc ON rc.root_cause_id = ic.root_cause_id
     LEFT JOIN product_issue.claim cl ON cl.issue_case_id = ic.issue_case_id
+    LEFT JOIN product_issue.v_claim_metrics m ON m.issue_case_id = ic.issue_case_id
     ${whereSql};
   `, queryParams);
 
-  const total = Number(countRes.rows[0]?.count || 0);
+  const kpis = {
+    total: Number(countRes.rows[0]?.total || 0),
+    open_count: Number(countRes.rows[0]?.open_count || 0),
+    closed_count: Number(countRes.rows[0]?.closed_count || 0),
+    overdue_count: Number(countRes.rows[0]?.overdue_count || 0),
+  };
+
+  const total = kpis.total;
 
   // Get data list
   const dataRes = await query<IssueManagementItem>(`
@@ -159,7 +183,7 @@ export async function getIssueManagementList(
     LIMIT ${filters.limit || 50};
   `, queryParams);
 
-  return { items: dataRes.rows, total };
+  return { items: dataRes.rows, total, kpis };
 }
 
 export async function getIssueDetailFull(issueCaseId: string): Promise<{

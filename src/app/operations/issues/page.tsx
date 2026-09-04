@@ -44,6 +44,7 @@ export default async function IssuesPage() {
     <IssueManagementView
       initialItems={issuesData.items}
       initialTotal={issuesData.total}
+      initialKpis={issuesData.kpis}
       lookups={{
         branches,
         customers,

@@ -63,11 +63,12 @@ export function DiagnosticTabs({
       {/* Tab Body */}
       <div className="animate-in fade-in">
         {activeTab === 'specs' && (
-          <CaseProductSpecsTab caseDetail={caseDetail} parts={parts} />
+          <CaseProductSpecsTab key={caseDetail.issue_case_id} caseDetail={caseDetail} parts={parts} />
         )}
 
         {activeTab === 'logs' && (
           <CaseProgressLogFeed
+            key={caseDetail.issue_case_id}
             caseDetail={caseDetail}
             initialLogs={logs}
           />
