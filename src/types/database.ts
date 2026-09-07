@@ -381,3 +381,48 @@ export interface IssueFormData {
   goodwill_statement_date: string | null;
   srd_publication_date: string | null;
 }
+
+// --- PHASE 5: MAIN KPIS (EXCEL MIRROR) TYPES ---
+export interface MainKpiAchievementItem {
+  period_month: string;
+  dimension_key: string; // branch_code | product_code | golongan_customer
+  achieve_count: number;
+  total_count: number;
+  achieve_pct: number;
+}
+
+export interface MainKpiQuantityItem {
+  period_month: string;
+  dimension_key: string;
+  case_count: number;
+}
+
+export interface MainKpiAgingItem {
+  period_month: string;
+  dimension_key: string;
+  avg_solution_time_days: number;
+  n_cases: number;
+}
+
+export interface MainKpiSummary {
+  overall_achieve_count: number;
+  overall_total_count: number;
+  overall_achieve_pct: number;
+  overall_case_volume: number;
+  overall_avg_solution_days: number;
+  overall_n_cases: number;
+}
+
+export interface MainKpiDimensionDataset {
+  achievement: MainKpiAchievementItem[];
+  quantity: MainKpiQuantityItem[];
+  aging: MainKpiAgingItem[];
+}
+
+export interface MainKpiDataPackage {
+  summary: MainKpiSummary;
+  byBranch: MainKpiDimensionDataset;
+  byProduct: MainKpiDimensionDataset;
+  bySegment: MainKpiDimensionDataset;
+}
+

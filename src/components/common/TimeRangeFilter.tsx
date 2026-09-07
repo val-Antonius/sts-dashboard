@@ -56,7 +56,7 @@ export function TimeRangeFilter({
 
   return (
     <div className="flex flex-wrap items-center gap-2">
-      <div className="inline-flex rounded-md border border-border bg-surface p-0.5 shadow-sm">
+      <div className="inline-flex rounded-lg border border-border bg-base/50 p-0.5 shadow-xs">
         {options.map((opt) => {
           const isActive = selectedRange === opt.id;
           return (
@@ -64,9 +64,9 @@ export function TimeRangeFilter({
               key={opt.id}
               type="button"
               onClick={() => handleSelect(opt.id)}
-              className={`px-3 py-1.5 text-xs font-medium rounded transition-colors ${
+              className={`px-3 py-1.5 text-xs font-medium rounded-md transition-all ${
                 isActive
-                  ? 'bg-accent-brass text-white shadow-xs'
+                  ? 'bg-surface text-accent-brass shadow-xs font-semibold'
                   : 'text-ink-muted hover:text-ink-primary hover:bg-surface-hover'
               }`}
             >
@@ -77,26 +77,29 @@ export function TimeRangeFilter({
       </div>
 
       {showCustomPicker && (
-        <form onSubmit={handleApplyCustom} className="flex items-center gap-1.5 text-xs bg-surface border border-border px-2.5 py-1 rounded-md shadow-sm">
-          <Calendar className="w-3.5 h-3.5 text-ink-muted" />
+        <form
+          onSubmit={handleApplyCustom}
+          className="inline-flex items-center gap-1.5 text-xs bg-surface border border-border px-2.5 py-1 rounded-lg shadow-xs animate-in fade-in"
+        >
+          <Calendar className="w-3.5 h-3.5 text-ink-muted shrink-0" />
           <input
             type="date"
             value={start}
             onChange={(e) => setStart(e.target.value)}
-            className="bg-transparent text-ink-primary border border-border rounded px-1.5 py-0.5 text-xs focus:outline-hidden focus:border-accent-brass"
+            className="bg-transparent text-ink-primary font-mono text-xs focus:outline-none"
             required
           />
-          <span className="text-ink-muted">—</span>
+          <span className="text-ink-muted text-xs">—</span>
           <input
             type="date"
             value={end}
             onChange={(e) => setEnd(e.target.value)}
-            className="bg-transparent text-ink-primary border border-border rounded px-1.5 py-0.5 text-xs focus:outline-hidden focus:border-accent-brass"
+            className="bg-transparent text-ink-primary font-mono text-xs focus:outline-none"
             required
           />
           <button
             type="submit"
-            className="bg-accent-brass text-white px-2 py-0.5 rounded text-xs font-medium hover:opacity-90"
+            className="bg-accent-brass text-white px-2.5 py-0.5 rounded text-xs font-bold hover:bg-accent-brass/90 transition-colors shadow-xs cursor-pointer shrink-0"
           >
             Apply
           </button>

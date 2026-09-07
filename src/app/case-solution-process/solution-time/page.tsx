@@ -4,16 +4,19 @@ import {
   getClaimableStatusByRootCause,
   getCheckpointDurationRanking,
 } from '@/lib/queries/performance';
-import { PerformanceOverviewTab } from '@/components/performance/PerformanceOverviewTab';
+import { getMainKpiDataPackage } from '@/lib/queries/main-kpis';
+import { SolutionTimePerformanceTabs } from '@/components/performance/SolutionTimePerformanceTabs';
 
 export const revalidate = 0;
 
 export default async function SolutionTimePerformancePage() {
   const [
+    mainKpiData,
     slaPerformance,
     claimableByRootCause,
     checkpointRanking,
   ] = await Promise.all([
+    getMainKpiDataPackage('last_1_year'),
     getSlaPerformanceByGolongan(),
     getClaimableStatusByRootCause(),
     getCheckpointDurationRanking(),
@@ -27,12 +30,13 @@ export default async function SolutionTimePerformancePage() {
           Solution Time Performance
         </h2>
         <p className="text-xs text-ink-muted mt-0.5">
-          Comprehensive SLA metrics, resolution duration by customer segment, root causes, and checkpoint rankings
+          Standardized Excel-mirror KPI metrics, resolution duration by dimension, root causes, and checkpoint rankings
         </p>
       </div>
 
-      {/* 3 SLA Performance Charts */}
-      <PerformanceOverviewTab
+      {/* Tabbed Performance: Tab 1 (Main KPIs) & Tab 2 (Additional Analytics) */}
+      <SolutionTimePerformanceTabs
+        initialMainKpis={mainKpiData}
         slaPerformance={slaPerformance}
         claimableByRootCause={claimableByRootCause}
         checkpointRanking={checkpointRanking}
@@ -40,3 +44,4 @@ export default async function SolutionTimePerformancePage() {
     </div>
   );
 }
+
