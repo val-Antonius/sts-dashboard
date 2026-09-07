@@ -20,13 +20,23 @@ import {
 interface CaseProgressLogFeedProps {
   caseDetail: SingleCaseDetail;
   initialLogs: CaseProgressLog[];
+  highlightedPhase?: {
+    phaseId: number;
+    phaseName: string;
+    startDate: string;
+    endDate: string;
+  } | null;
+  onClearHighlight?: () => void;
 }
 
 export function CaseProgressLogFeed({
   caseDetail,
   initialLogs,
+  highlightedPhase,
+  onClearHighlight,
 }: CaseProgressLogFeedProps) {
   const [logs, setLogs] = useState<CaseProgressLog[]>(initialLogs);
+  const listContainerRef = React.useRef<HTMLDivElement>(null);
   const issueCaseId = caseDetail.issue_case_id;
   const complaintDate = caseDetail.complaint_date;
   const isClosed = caseDetail.status_wo === 'Closed';
@@ -75,6 +85,21 @@ export function CaseProgressLogFeed({
     setNewText('');
     setNewDate(defaultDate);
   }, [caseDetail.issue_case_id, initialLogs, defaultDate]);
+  
+  // Auto-scroll to first matching log entry when highlightedPhase is set
+  useEffect(() => {
+    if (!highlightedPhase || !listContainerRef.current) return;
+
+    const timer = setTimeout(() => {
+      const firstHighlighted = listContainerRef.current?.querySelector('[data-highlighted-log="true"]');
+      if (firstHighlighted) {
+        firstHighlighted.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+      }
+    }, 120);
+
+    return () => clearTimeout(timer);
+  }, [highlightedPhase]);
+
   const [isDeleting, setIsDeleting] = useState<boolean>(false);
 
   // Validation function
@@ -119,11 +144,21 @@ export function CaseProgressLogFeed({
       const data = await res.json();
       if (!res.ok) throw new Error(data.error || 'Gagal menambahkan log');
 
-      setLogs((prev) => [data, ...prev]);
+      const createdLog: CaseProgressLog = {
+        log_id: data.log.log_id,
+        issue_case_id: issueCaseId,
+        log_date: data.log.log_date,
+        log_text: data.log.log_text,
+        logged_by_pic_id: data.log.logged_by_pic_id,
+        pic_name: data.log.pic_name || 'System User',
+        created_at: data.log.created_at,
+      };
+
+      setLogs((prev) => [createdLog, ...prev]);
       setNewText('');
       setNewDate(defaultDate);
     } catch (err: any) {
-      setAddError(err.message || 'Terjadi kesalahan saat menambah log.');
+      setAddError(err.message || 'Terjadi kesalahan saat menyimpan log.');
     } finally {
       setIsAdding(false);
     }
@@ -131,8 +166,7 @@ export function CaseProgressLogFeed({
 
   // --- 2. HANDLE INLINE EDIT ---
   const handleStartEdit = (log: CaseProgressLog) => {
-    if (!log.log_id) return;
-    setEditingLogId(log.log_id);
+    setEditingLogId(log.log_id || null);
     setEditDate(log.log_date);
     setEditText(log.log_text);
     setEditError(null);
@@ -287,17 +321,25 @@ export function CaseProgressLogFeed({
           Belum ada catatan aktivitas harian yang tercatat untuk kasus ini.
         </div>
       ) : (
-        <div className="divide-y divide-border/60 max-h-[520px] overflow-y-auto">
+        <div ref={listContainerRef} className="divide-y divide-border/60 max-h-[520px] overflow-y-auto">
           {logs.map((log, idx) => {
             const isEditingThis = editingLogId === log.log_id;
             const isDeletingThis = deletingLogId === log.log_id;
+            const isHighlighted = Boolean(
+              highlightedPhase &&
+                log.log_date >= highlightedPhase.startDate &&
+                log.log_date <= highlightedPhase.endDate
+            );
 
             return (
               <div
                 key={log.log_id || idx}
-                className={`group relative px-4 py-2.5 transition-colors ${
+                data-highlighted-log={isHighlighted ? 'true' : undefined}
+                className={`group relative px-4 py-2.5 transition-all duration-300 ${
                   isEditingThis
                     ? 'bg-accent-brass/5'
+                    : isHighlighted
+                    ? 'bg-accent-brass/15 border-l-4 border-l-accent-brass ring-1 ring-accent-brass/25 shadow-xs'
                     : 'hover:bg-surface-hover/50'
                 }`}
               >
@@ -359,9 +401,15 @@ export function CaseProgressLogFeed({
                 ) : (
                   /* NORMAL DENSE ROW (High Horizontal Utilization) */
                   <div className="flex items-start justify-between gap-3 text-xs">
-                    {/* Left: Date Badge + Author */}
+                    {/* Left: Date Badge + Author + Phase Highlight Indicator */}
                     <div className="flex items-center gap-2 shrink-0 pt-0.5">
-                      <span className="font-mono text-[11px] font-bold px-2 py-0.5 rounded bg-base border border-border text-ink-primary whitespace-nowrap">
+                      <span
+                        className={`font-mono text-[11px] font-bold px-2 py-0.5 rounded border transition-colors whitespace-nowrap ${
+                          isHighlighted
+                            ? 'bg-accent-brass text-white border-accent-brass shadow-xs'
+                            : 'bg-base border-border text-ink-primary'
+                        }`}
+                      >
                         {log.log_date}
                       </span>
                       {log.pic_name && (

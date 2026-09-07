@@ -10,14 +10,36 @@ interface DiagnosticTabsProps {
   caseDetail: SingleCaseDetail;
   parts: CasePartRequirement[];
   logs: CaseProgressLog[];
+  activeTab?: 'specs' | 'logs';
+  onTabChange?: (tab: 'specs' | 'logs') => void;
+  highlightedPhase?: {
+    phaseId: number;
+    phaseName: string;
+    startDate: string;
+    endDate: string;
+  } | null;
+  onClearHighlight?: () => void;
 }
 
 export function DiagnosticTabs({
   caseDetail,
   parts,
   logs,
+  activeTab: controlledActiveTab,
+  onTabChange,
+  highlightedPhase,
+  onClearHighlight,
 }: DiagnosticTabsProps) {
-  const [activeTab, setActiveTab] = useState<'specs' | 'logs'>('specs');
+  const [internalTab, setInternalTab] = useState<'specs' | 'logs'>('specs');
+  const currentTab = controlledActiveTab !== undefined ? controlledActiveTab : internalTab;
+
+  const handleTabClick = (tab: 'specs' | 'logs') => {
+    if (onTabChange) {
+      onTabChange(tab);
+    } else {
+      setInternalTab(tab);
+    }
+  };
 
   return (
     <div className="space-y-4">
@@ -25,9 +47,9 @@ export function DiagnosticTabs({
       <div className="flex items-center gap-2 border-b border-border pb-1">
         <button
           type="button"
-          onClick={() => setActiveTab('specs')}
-          className={`flex items-center gap-2 px-3.5 py-2 rounded-lg text-xs font-bold transition-all border ${
-            activeTab === 'specs'
+          onClick={() => handleTabClick('specs')}
+          className={`flex items-center gap-2 px-3.5 py-2 rounded-lg text-xs font-bold transition-all border cursor-pointer ${
+            currentTab === 'specs'
               ? 'bg-surface border-border text-accent-brass shadow-xs'
               : 'border-transparent text-ink-muted hover:text-ink-primary hover:bg-base/40'
           }`}
@@ -43,9 +65,9 @@ export function DiagnosticTabs({
 
         <button
           type="button"
-          onClick={() => setActiveTab('logs')}
-          className={`flex items-center gap-2 px-3.5 py-2 rounded-lg text-xs font-bold transition-all border ${
-            activeTab === 'logs'
+          onClick={() => handleTabClick('logs')}
+          className={`flex items-center gap-2 px-3.5 py-2 rounded-lg text-xs font-bold transition-all border cursor-pointer ${
+            currentTab === 'logs'
               ? 'bg-surface border-border text-accent-brass shadow-xs'
               : 'border-transparent text-ink-muted hover:text-ink-primary hover:bg-base/40'
           }`}
@@ -62,15 +84,17 @@ export function DiagnosticTabs({
 
       {/* Tab Body */}
       <div className="animate-in fade-in">
-        {activeTab === 'specs' && (
+        {currentTab === 'specs' && (
           <CaseProductSpecsTab key={caseDetail.issue_case_id} caseDetail={caseDetail} parts={parts} />
         )}
 
-        {activeTab === 'logs' && (
+        {currentTab === 'logs' && (
           <CaseProgressLogFeed
             key={caseDetail.issue_case_id}
             caseDetail={caseDetail}
             initialLogs={logs}
+            highlightedPhase={highlightedPhase}
+            onClearHighlight={onClearHighlight}
           />
         )}
       </div>

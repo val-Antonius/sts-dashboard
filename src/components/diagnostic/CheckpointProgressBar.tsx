@@ -4,10 +4,21 @@ import React, { useState, useMemo } from 'react';
 import { CheckpointDuration } from '@/types/database';
 import { CheckCircle2, Clock, AlertTriangle, Layers, ArrowRight, Edit3 } from 'lucide-react';
 
+export interface PhaseClickInfo {
+  phaseId: number;
+  phaseName: string;
+  startCheckpoint: string;
+  endCheckpoint: string;
+  startDate: string;
+  endDate: string;
+}
+
 interface CheckpointProgressBarProps {
   checkpoints: CheckpointDuration[];
   totalDays?: number;
   onEditClick?: () => void;
+  selectedPhaseId?: number | null;
+  onPhaseClick?: (phase: PhaseClickInfo) => void;
 }
 
 interface PhaseDefinition {
@@ -24,7 +35,7 @@ const OFFICIAL_PHASES: PhaseDefinition[] = [
   {
     id: 1,
     name: 'Complaint Customer',
-    shortName: '1. Complaint Cust',
+    shortName: '1. Complaint Customer',
     startCheckpoint: 'COMPLAINT_DATE',
     endCheckpoint: 'WO_CHECKING_CREATED',
     color: 'bg-[#A6763C]',
@@ -33,7 +44,7 @@ const OFFICIAL_PHASES: PhaseDefinition[] = [
   {
     id: 2,
     name: 'Warranty Checking',
-    shortName: '2. Checking',
+    shortName: '2. Warranty Checking',
     startCheckpoint: 'WO_CHECKING_CREATED',
     endCheckpoint: 'WO_CHECKING_CLOSED',
     color: 'bg-[#8B897F]',
@@ -51,7 +62,7 @@ const OFFICIAL_PHASES: PhaseDefinition[] = [
   {
     id: 4,
     name: 'WO Repair Preparation',
-    shortName: '4. Repair Prep',
+    shortName: '4. WO Repair Preparation',
     startCheckpoint: 'PS_APPROVAL',
     endCheckpoint: 'WO_REPAIR_RELEASED',
     color: 'bg-[#B8863B]',
@@ -69,7 +80,7 @@ const OFFICIAL_PHASES: PhaseDefinition[] = [
   {
     id: 6,
     name: 'Warranty Repair',
-    shortName: '6. Repair & Assy',
+    shortName: '6. Warranty Repair',
     startCheckpoint: 'PART_GI',
     endCheckpoint: 'UNIT_RFU',
     color: 'bg-[#489369]',
@@ -108,6 +119,8 @@ export function CheckpointProgressBar({
   checkpoints,
   totalDays,
   onEditClick,
+  selectedPhaseId,
+  onPhaseClick,
 }: CheckpointProgressBarProps) {
   const [hoveredPhaseId, setHoveredPhaseId] = useState<number | null>(null);
   const [hoveredCheckpointCode, setHoveredCheckpointCode] = useState<string | null>(null);
@@ -198,17 +211,9 @@ export function CheckpointProgressBar({
       {/* Header */}
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
         <div>
-          <div className="flex items-center gap-2">
-            <h3 className="text-xs font-bold uppercase tracking-wider text-ink-primary">
-              Process Phase & Checkpoint Timeline
-            </h3>
-            <span className="font-mono text-[10px] px-2 py-0.5 rounded bg-accent-brass/10 border border-accent-brass/30 text-accent-brass font-bold">
-              7 Phases & 8 Checkpoints
-            </span>
-          </div>
-          <p className="text-xs text-ink-muted mt-0.5">
-            Durasi dihitung per fase proses (bar atas). Sorot bar fase untuk melihat titik checkpoint awal dan akhir (kotak bawah).
-          </p>
+          <h3 className="text-xs font-bold uppercase tracking-wider text-ink-primary">
+            Process Phase & Checkpoint Timeline
+          </h3>
         </div>
 
         <div className="flex items-center gap-2">
@@ -239,10 +244,7 @@ export function CheckpointProgressBar({
         <div className="flex items-center justify-between text-[11px]">
           <span className="font-semibold text-ink-muted flex items-center gap-1.5">
             <Layers className="w-3.5 h-3.5 text-accent-brass" />
-            <span>Process Phases (7 Fase Proses)</span>
-          </span>
-          <span className="text-[10px] text-ink-muted">
-            Hover pada bar untuk meng-highlight checkpoint terkait
+            <span>Process Phases</span>
           </span>
         </div>
 
@@ -252,6 +254,7 @@ export function CheckpointProgressBar({
               hoveredPhaseId === p.id ||
               hoveredCheckpointCode === p.startCheckpoint ||
               hoveredCheckpointCode === p.endCheckpoint;
+            const isSelected = selectedPhaseId === p.id;
 
             // Proportional flex calculation
             let flexBasis = 1;
@@ -267,6 +270,18 @@ export function CheckpointProgressBar({
                 style={{ flex: `${flexBasis} 0 0` }}
                 onMouseEnter={() => setHoveredPhaseId(p.id)}
                 onMouseLeave={() => setHoveredPhaseId(null)}
+                onClick={() => {
+                  if (p.startDate && p.endDate && onPhaseClick) {
+                    onPhaseClick({
+                      phaseId: p.id,
+                      phaseName: p.name,
+                      startCheckpoint: p.startCheckpoint,
+                      endCheckpoint: p.endCheckpoint,
+                      startDate: p.startDate,
+                      endDate: p.endDate,
+                    });
+                  }
+                }}
                 className={`relative h-full rounded-sm cursor-pointer transition-all duration-150 flex items-center justify-center text-[10px] font-bold px-1.5 select-none ${
                   p.isNegative
                     ? 'bg-red-600/90 text-white border border-red-400 animate-pulse'
@@ -276,7 +291,9 @@ export function CheckpointProgressBar({
                     ? 'bg-amber-500/30 border border-dashed border-amber-500/60 text-amber-900 dark:text-amber-200'
                     : 'bg-base/80 border border-dashed border-border/70 text-ink-muted'
                 } ${
-                  isHovered
+                  isSelected
+                    ? 'ring-2 ring-accent-brass scale-y-110 z-30 brightness-125 shadow-lg'
+                    : isHovered
                     ? 'ring-2 ring-ink-primary scale-y-105 z-20 brightness-110 shadow-md'
                     : ''
                 }`}
@@ -351,10 +368,7 @@ export function CheckpointProgressBar({
       <div className="space-y-2 pt-1 border-t border-border/60">
         <div className="flex items-center justify-between text-[11px]">
           <span className="font-semibold text-ink-muted">
-            Official Process Checkpoints (8 Titik Checkpoint)
-          </span>
-          <span className="text-[10px] text-ink-muted">
-            Urutan proses baku 1 s.d. 8
+            Official Process Checkpoints
           </span>
         </div>
 
@@ -398,7 +412,7 @@ export function CheckpointProgressBar({
                       {isRecorded ? <CheckCircle2 className="w-3 h-3" /> : cp.order}
                     </span>
                     <span className="text-[9px] font-mono text-ink-muted uppercase">
-                      Step {cp.order}
+                      Checkpoint {cp.order}
                     </span>
                   </div>
                 </div>
@@ -413,9 +427,6 @@ export function CheckpointProgressBar({
                   >
                     {cp.label}
                   </h4>
-                  <span className="text-[9px] font-mono text-ink-muted block truncate mt-0.5">
-                    {cp.code}
-                  </span>
                 </div>
 
                 {/* Date */}
