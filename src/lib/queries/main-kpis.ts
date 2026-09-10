@@ -12,32 +12,38 @@ export async function getMainKpiDataPackage(
   customStart?: string,
   customEnd?: string
 ): Promise<MainKpiDataPackage> {
+  const factClosingExpr = `(CASE 
+    WHEN c.closing_date_wo IS NOT NULL AND c.closing_by_rfu_date IS NOT NULL 
+      THEN LEAST(c.closing_date_wo, c.closing_by_rfu_date)
+    ELSE COALESCE(c.closing_date_wo, c.closing_by_rfu_date)
+  END)`;
+
   let dateClause = "period_month >= date_trunc('month', (CURRENT_DATE - INTERVAL '1 year'))";
-  let factDateClause = "ic.complaint_date >= (CURRENT_DATE - INTERVAL '1 year')::date";
+  let factDateClause = `${factClosingExpr} >= (CURRENT_DATE - INTERVAL '1 year')::date`;
   let queryParams: any[] = [];
 
   if (range === 'this_month') {
     dateClause = "period_month >= date_trunc('month', CURRENT_DATE)";
-    factDateClause = "ic.complaint_date >= date_trunc('month', CURRENT_DATE)::date";
+    factDateClause = `${factClosingExpr} >= date_trunc('month', CURRENT_DATE)::date`;
   } else if (range === 'last_3_months') {
     dateClause = "period_month >= date_trunc('month', (CURRENT_DATE - INTERVAL '3 months'))";
-    factDateClause = "ic.complaint_date >= (CURRENT_DATE - INTERVAL '3 months')::date";
+    factDateClause = `${factClosingExpr} >= (CURRENT_DATE - INTERVAL '3 months')::date`;
   } else if (range === 'last_6_months') {
     dateClause = "period_month >= date_trunc('month', (CURRENT_DATE - INTERVAL '6 months'))";
-    factDateClause = "ic.complaint_date >= (CURRENT_DATE - INTERVAL '6 months')::date";
+    factDateClause = `${factClosingExpr} >= (CURRENT_DATE - INTERVAL '6 months')::date`;
   } else if (range === 'last_1_year') {
     dateClause = "period_month >= date_trunc('month', (CURRENT_DATE - INTERVAL '1 year'))";
-    factDateClause = "ic.complaint_date >= (CURRENT_DATE - INTERVAL '1 year')::date";
+    factDateClause = `${factClosingExpr} >= (CURRENT_DATE - INTERVAL '1 year')::date`;
   } else if (range === 'all_time') {
     dateClause = "1=1";
     factDateClause = "1=1";
   } else if (range === 'custom' && customStart && customEnd) {
     dateClause = "period_month BETWEEN date_trunc('month', $1::date) AND date_trunc('month', $2::date)";
-    factDateClause = "ic.complaint_date BETWEEN $1::date AND $2::date";
+    factDateClause = `${factClosingExpr} BETWEEN $1::date AND $2::date`;
     queryParams = [customStart, customEnd];
   }
 
-  // 1. Overall Summary Metric (Filtered by the 4 claimable statuses)
+  // 1. Overall Summary Metric (Filtered by closed cases & 4 claimable statuses)
   const summaryRes = await query<{
     achieve_count: string;
     total_count: string;
@@ -57,7 +63,9 @@ export async function getMainKpiDataPackage(
     JOIN product_issue.claim c ON c.issue_case_id = ic.issue_case_id
     JOIN product_issue.ref_claimable_status cs ON cs.claimable_status_id = c.claimable_status_id
     JOIN product_issue.v_claim_metrics m ON m.issue_case_id = ic.issue_case_id
-    WHERE ${factDateClause}
+    WHERE c.status_wo = 'Closed'
+      AND (c.closing_date_wo IS NOT NULL OR c.closing_by_rfu_date IS NOT NULL)
+      AND ${factDateClause}
       AND cs.status_name IN (
         'Claimable Principal',
         'Claimable Vendor (Attachment)',
