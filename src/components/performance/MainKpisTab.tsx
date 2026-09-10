@@ -20,6 +20,7 @@ import {
   ReferenceLine,
   Cell,
   CartesianGrid,
+  LabelList,
 } from 'recharts';
 import {
   Target,
@@ -396,7 +397,7 @@ export function MainKpisTab({ initialData }: MainKpisTabProps) {
               </div>
             ) : (
               <ResponsiveContainer width="100%" height="100%">
-                <ComposedChart data={dimensionAggregates} margin={{ top: 10, right: 20, bottom: 25, left: 0 }}>
+                <ComposedChart data={dimensionAggregates} margin={{ top: 20, right: 20, bottom: 25, left: 0 }}>
                   <CartesianGrid strokeDasharray="3 3" stroke="var(--border)" opacity={0.6} />
                   <XAxis
                     dataKey="key"
@@ -439,8 +440,23 @@ export function MainKpisTab({ initialData }: MainKpisTabProps) {
                     label={{ value: 'Target 85%', fill: '#A54B3F', fontSize: 10, position: 'insideTopRight' }}
                   />
                   <Bar yAxisId="left" dataKey="total_count" name="Total Cases" fill="#8B897F" radius={[4, 4, 0, 0]} opacity={0.4} maxBarSize={32} />
-                  <Bar yAxisId="left" dataKey="achieve_count" name="Achieved Cases" fill="#3B7A57" radius={[4, 4, 0, 0]} maxBarSize={32} />
-                  <Line yAxisId="right" type="monotone" dataKey="achieve_pct" name="Achievement %" stroke="#A6763C" strokeWidth={2.5} dot={{ r: 4, fill: '#A6763C' }} />
+                  <Bar yAxisId="left" dataKey="achieve_count" name="Achieved Cases" fill="#3B7A57" radius={[4, 4, 0, 0]} maxBarSize={32}>
+                    <LabelList
+                      dataKey="achieve_count"
+                      position="top"
+                      formatter={(val: any) => (val ? `${val}` : '')}
+                      style={{ fontSize: '10px', fontWeight: 600, fill: '#3B7A57' }}
+                    />
+                  </Bar>
+                  <Line yAxisId="right" type="monotone" dataKey="achieve_pct" name="Achievement %" stroke="#A6763C" strokeWidth={2.5} dot={{ r: 4, fill: '#A6763C' }}>
+                    <LabelList
+                      dataKey="achieve_pct"
+                      position="top"
+                      offset={8}
+                      formatter={(val: any) => (val !== undefined && val !== null ? `${val}%` : '')}
+                      style={{ fontSize: '10px', fontWeight: 700, fill: '#A6763C' }}
+                    />
+                  </Line>
                 </ComposedChart>
               </ResponsiveContainer>
             )}
@@ -468,7 +484,7 @@ export function MainKpisTab({ initialData }: MainKpisTabProps) {
               </div>
             ) : (
               <ResponsiveContainer width="100%" height="100%">
-                <BarChart data={dimensionAggregates} margin={{ top: 10, right: 10, bottom: 25, left: 0 }}>
+                <BarChart data={dimensionAggregates} margin={{ top: 20, right: 10, bottom: 25, left: 0 }}>
                   <CartesianGrid strokeDasharray="3 3" stroke="var(--border)" opacity={0.6} />
                   <XAxis
                     dataKey="key"
@@ -487,6 +503,12 @@ export function MainKpisTab({ initialData }: MainKpisTabProps) {
                   />
                   <Tooltip contentStyle={customTooltipStyle} formatter={(val: any) => [`${val} cases`, 'Case Volume']} />
                   <Bar dataKey="case_volume" fill="#A6763C" radius={[4, 4, 0, 0]} maxBarSize={36}>
+                    <LabelList
+                      dataKey="case_volume"
+                      position="top"
+                      formatter={(val: any) => (val ? `${val}` : '')}
+                      style={{ fontSize: '10px', fontWeight: 600, fill: '#A6763C' }}
+                    />
                     {dimensionAggregates.map((entry, index) => (
                       <Cell key={`cell-qty-${index}`} fill={index % 2 === 0 ? '#A6763C' : '#B8863B'} />
                     ))}
@@ -518,7 +540,7 @@ export function MainKpisTab({ initialData }: MainKpisTabProps) {
               </div>
             ) : (
               <ResponsiveContainer width="100%" height="100%">
-                <BarChart data={dimensionAggregates} margin={{ top: 10, right: 10, bottom: 25, left: 0 }}>
+                <BarChart data={dimensionAggregates} margin={{ top: 20, right: 10, bottom: 25, left: 0 }}>
                   <CartesianGrid strokeDasharray="3 3" stroke="var(--border)" opacity={0.6} />
                   <XAxis
                     dataKey="key"
@@ -545,6 +567,12 @@ export function MainKpisTab({ initialData }: MainKpisTabProps) {
                   <ReferenceLine y={20} stroke="#A54B3F" strokeDasharray="3 3" label={{ value: 'SLA 20d', fill: '#A54B3F', fontSize: 10 }} />
                   <ReferenceLine y={15} stroke="#3B7A57" strokeDasharray="3 3" label={{ value: 'KA 15d', fill: '#3B7A57', fontSize: 10 }} />
                   <Bar dataKey="avg_solution_time_days" radius={[4, 4, 0, 0]} maxBarSize={36}>
+                    <LabelList
+                      dataKey="avg_solution_time_days"
+                      position="top"
+                      formatter={(val: any) => (val ? `${val}d` : '')}
+                      style={{ fontSize: '10px', fontWeight: 600, fill: 'var(--ink-primary)' }}
+                    />
                     {dimensionAggregates.map((entry, idx) => {
                       const color =
                         entry.avg_solution_time_days <= 15

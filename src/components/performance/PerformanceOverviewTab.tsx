@@ -15,6 +15,7 @@ import {
   Tooltip,
   Legend,
   Cell,
+  LabelList,
 } from 'recharts';
 import { EmptyState } from '@/components/common/EmptyState';
 
@@ -97,12 +98,12 @@ export function PerformanceOverviewTab({
               </h3>
             </div>
             <p className="text-xs text-ink-muted mb-4">
-              All-time case resolution status by customer segment
+              All-time case resolution status by customer segment (Label on bar: average solution days)
             </p>
 
             <div className="h-64 w-full">
               <ResponsiveContainer width="100%" height="100%">
-                <BarChart data={slaChartData} margin={{ top: 10, right: 10, left: -20, bottom: 20 }}>
+                <BarChart data={slaChartData} margin={{ top: 20, right: 15, left: -20, bottom: 20 }}>
                   <XAxis dataKey="segment" tick={{ fontSize: 11, fill: 'var(--ink-muted)' }} />
                   <YAxis allowDecimals={false} tick={{ fontSize: 11, fill: 'var(--ink-muted)' }} />
                   <Tooltip
@@ -116,8 +117,22 @@ export function PerformanceOverviewTab({
                     }}
                   />
                   <Legend wrapperStyle={{ fontSize: '11px', paddingTop: '10px' }} />
-                  <Bar dataKey="achieved" fill="#3B7A57" name="Achieved" radius={[4, 4, 0, 0]} />
-                  <Bar dataKey="notAchieved" fill="#A54B3F" name="Not Achieved" radius={[4, 4, 0, 0]} />
+                  <Bar dataKey="achieved" fill="#3B7A57" name="Achieved" radius={[4, 4, 0, 0]}>
+                    <LabelList
+                      dataKey="achievedAvgDays"
+                      position="top"
+                      formatter={(val: any) => (val ? `avg ${val}d` : '')}
+                      style={{ fontSize: '10px', fontWeight: 600, fill: '#3B7A57' }}
+                    />
+                  </Bar>
+                  <Bar dataKey="notAchieved" fill="#A54B3F" name="Not Achieved" radius={[4, 4, 0, 0]}>
+                    <LabelList
+                      dataKey="notAchievedAvgDays"
+                      position="top"
+                      formatter={(val: any) => (val ? `avg ${val}d` : '')}
+                      style={{ fontSize: '10px', fontWeight: 600, fill: '#A54B3F' }}
+                    />
+                  </Bar>
                 </BarChart>
               </ResponsiveContainer>
             </div>
@@ -133,7 +148,7 @@ export function PerformanceOverviewTab({
               </h3>
             </div>
             <p className="text-xs text-ink-muted mb-4">
-              Top volume distribution of claimable status and root causes
+              Top volume distribution of claimable status and root causes (Label on bar: average solution days)
             </p>
 
             <div className="h-64 w-full">
@@ -141,7 +156,7 @@ export function PerformanceOverviewTab({
                 <BarChart
                   data={topClaimableRoot}
                   layout="vertical"
-                  margin={{ top: 5, right: 20, left: 10, bottom: 5 }}
+                  margin={{ top: 5, right: 55, left: 10, bottom: 5 }}
                 >
                   <XAxis type="number" allowDecimals={false} tick={{ fontSize: 11, fill: 'var(--ink-muted)' }} />
                   <YAxis
@@ -157,7 +172,14 @@ export function PerformanceOverviewTab({
                       'Volume',
                     ]}
                   />
-                  <Bar dataKey="jumlah_kasus" fill="#A6763C" radius={[0, 4, 4, 0]} name="Cases" />
+                  <Bar dataKey="jumlah_kasus" fill="#A6763C" radius={[0, 4, 4, 0]} name="Cases">
+                    <LabelList
+                      dataKey="avg_days"
+                      position="right"
+                      formatter={(val: any) => (val ? `avg ${val}d` : '')}
+                      style={{ fontSize: '10px', fontWeight: 600, fill: '#A6763C' }}
+                    />
+                  </Bar>
                 </BarChart>
               </ResponsiveContainer>
             </div>
@@ -181,7 +203,7 @@ export function PerformanceOverviewTab({
             <BarChart
               data={formattedRanking}
               layout="vertical"
-              margin={{ top: 5, right: 30, left: 20, bottom: 5 }}
+              margin={{ top: 5, right: 45, left: 20, bottom: 5 }}
             >
               <XAxis
                 type="number"
@@ -206,7 +228,14 @@ export function PerformanceOverviewTab({
                 fill="#B8863B"
                 radius={[0, 4, 4, 0]}
                 name="Avg Duration (days)"
-              />
+              >
+                <LabelList
+                  dataKey="avg_durasi"
+                  position="right"
+                  formatter={(val: any) => (val ? `${val}d` : '')}
+                  style={{ fontSize: '10px', fontWeight: 600, fill: '#B8863B' }}
+                />
+              </Bar>
             </BarChart>
           </ResponsiveContainer>
         </div>
