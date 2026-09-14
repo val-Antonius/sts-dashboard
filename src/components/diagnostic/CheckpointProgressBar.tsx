@@ -38,8 +38,8 @@ const OFFICIAL_PHASES: PhaseDefinition[] = [
     shortName: '1. Complaint Customer',
     startCheckpoint: 'COMPLAINT_DATE',
     endCheckpoint: 'WO_CHECKING_CREATED',
-    color: 'bg-[#A6763C]',
-    accentColor: '#A6763C',
+    color: 'bg-[#A3462F]',
+    accentColor: '#A3462F',
   },
   {
     id: 2,
@@ -47,8 +47,8 @@ const OFFICIAL_PHASES: PhaseDefinition[] = [
     shortName: '2. Warranty Checking',
     startCheckpoint: 'WO_CHECKING_CREATED',
     endCheckpoint: 'WO_CHECKING_CLOSED',
-    color: 'bg-[#8B897F]',
-    accentColor: '#8B897F',
+    color: 'bg-[#71717A]',
+    accentColor: '#71717A',
   },
   {
     id: 3,
@@ -56,8 +56,8 @@ const OFFICIAL_PHASES: PhaseDefinition[] = [
     shortName: '3. PS Approval',
     startCheckpoint: 'WO_CHECKING_CLOSED',
     endCheckpoint: 'PS_APPROVAL',
-    color: 'bg-[#3B7A57]',
-    accentColor: '#3B7A57',
+    color: 'bg-[#2E7D52]',
+    accentColor: '#2E7D52',
   },
   {
     id: 4,
@@ -65,8 +65,8 @@ const OFFICIAL_PHASES: PhaseDefinition[] = [
     shortName: '4. WO Repair Preparation',
     startCheckpoint: 'PS_APPROVAL',
     endCheckpoint: 'WO_REPAIR_RELEASED',
-    color: 'bg-[#B8863B]',
-    accentColor: '#B8863B',
+    color: 'bg-[#B87A28]',
+    accentColor: '#B87A28',
   },
   {
     id: 5,
@@ -74,8 +74,8 @@ const OFFICIAL_PHASES: PhaseDefinition[] = [
     shortName: '5. Part Supply',
     startCheckpoint: 'WO_REPAIR_RELEASED',
     endCheckpoint: 'PART_GI',
-    color: 'bg-[#5C7080]',
-    accentColor: '#5C7080',
+    color: 'bg-[#52525B]',
+    accentColor: '#52525B',
   },
   {
     id: 6,
@@ -83,8 +83,8 @@ const OFFICIAL_PHASES: PhaseDefinition[] = [
     shortName: '6. Warranty Repair',
     startCheckpoint: 'PART_GI',
     endCheckpoint: 'UNIT_RFU',
-    color: 'bg-[#489369]',
-    accentColor: '#489369',
+    color: 'bg-[#41A86F]',
+    accentColor: '#41A86F',
   },
   {
     id: 7,
@@ -92,8 +92,8 @@ const OFFICIAL_PHASES: PhaseDefinition[] = [
     shortName: '7. Repair Closing',
     startCheckpoint: 'UNIT_RFU',
     endCheckpoint: 'WO_REPAIR_CLOSED',
-    color: 'bg-[#8F5B34]',
-    accentColor: '#8F5B34',
+    color: 'bg-[#8F432B]',
+    accentColor: '#8F432B',
   },
 ];
 
@@ -227,7 +227,7 @@ export function CheckpointProgressBar({
             <button
               type="button"
               onClick={onEditClick}
-              className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-accent-brass/10 hover:bg-accent-brass/20 text-accent-brass border border-accent-brass/30 text-xs font-bold transition-all shadow-xs cursor-pointer"
+              className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-accent/10 hover:bg-accent/20 text-accent border border-accent/30 text-xs font-bold transition-all shadow-xs cursor-pointer"
               title="Edit rincian data kasus ini"
             >
               <Edit3 className="w-3.5 h-3.5" />
@@ -243,7 +243,7 @@ export function CheckpointProgressBar({
       <div className="space-y-1.5">
         <div className="flex items-center justify-between text-[11px]">
           <span className="font-semibold text-ink-muted flex items-center gap-1.5">
-            <Layers className="w-3.5 h-3.5 text-accent-brass" />
+            <Layers className="w-3.5 h-3.5 text-accent" />
             <span>Process Phases</span>
           </span>
         </div>
@@ -292,7 +292,7 @@ export function CheckpointProgressBar({
                     : 'bg-base/80 border border-dashed border-border/70 text-ink-muted'
                 } ${
                   isSelected
-                    ? 'ring-2 ring-accent-brass scale-y-110 z-30 brightness-125 shadow-lg'
+                    ? 'ring-2 ring-accent scale-y-110 z-30 brightness-125 shadow-lg'
                     : isHovered
                     ? 'ring-2 ring-ink-primary scale-y-105 z-20 brightness-110 shadow-md'
                     : ''
@@ -333,7 +333,7 @@ export function CheckpointProgressBar({
                     <div className="text-[11px] text-gray-300 space-y-1">
                       <div className="flex items-center gap-1.5 text-[10px]">
                         <span className="text-gray-400">{p.startCheckpoint}</span>
-                        <ArrowRight className="w-3 h-3 text-accent-brass shrink-0" />
+                        <ArrowRight className="w-3 h-3 text-accent shrink-0" />
                         <span className="text-gray-400">{p.endCheckpoint}</span>
                       </div>
 
@@ -393,9 +393,9 @@ export function CheckpointProgressBar({
                 onMouseLeave={() => setHoveredCheckpointCode(null)}
                 className={`p-2 rounded-lg border transition-all cursor-pointer text-left relative flex flex-col justify-between min-h-[82px] ${
                   isHighlighted
-                    ? 'bg-surface border-accent-brass ring-2 ring-accent-brass/40 shadow-md scale-[1.02] z-10'
+                    ? 'bg-surface border-accent ring-2 ring-accent/40 shadow-md scale-[1.02] z-10'
                     : isRecorded
-                    ? 'bg-surface border-border hover:border-accent-brass/50 hover:bg-surface-hover'
+                    ? 'bg-surface border-border hover:border-accent/50 hover:bg-surface-hover'
                     : 'bg-base/30 border-border/50 text-ink-muted/70 hover:bg-base/60'
                 }`}
               >
@@ -405,7 +405,7 @@ export function CheckpointProgressBar({
                     <span
                       className={`w-4 h-4 rounded-full flex items-center justify-center text-[9px] font-bold ${
                         isRecorded
-                          ? 'bg-[#3B7A57] text-white'
+                          ? 'bg-[#2E7D52] text-white'
                           : 'bg-base border border-border text-ink-muted'
                       }`}
                     >

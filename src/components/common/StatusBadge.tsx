@@ -2,7 +2,7 @@ import React from 'react';
 
 interface StatusBadgeProps {
   status: string;
-  variant?: 'ok' | 'warn' | 'danger' | 'neutral';
+  variant?: 'ok' | 'warn' | 'danger' | 'neutral' | 'invert';
   className?: string;
 }
 
@@ -19,15 +19,16 @@ export function StatusBadge({ status, variant, className = '' }: StatusBadgeProp
   }
 
   const colorStyles = {
-    ok: 'bg-[#3B7A57]/15 text-[#3B7A57] border-[#3B7A57]/30 dark:bg-[#489369]/20 dark:text-[#6ec491] dark:border-[#489369]/40',
-    warn: 'bg-[#B8863B]/15 text-[#B8863B] border-[#B8863B]/30 dark:bg-[#C99645]/20 dark:text-[#e4b568] dark:border-[#C99645]/40',
-    danger: 'bg-[#A54B3F]/15 text-[#A54B3F] border-[#A54B3F]/30 dark:bg-[#BD584B]/20 dark:text-[#e87f71] dark:border-[#BD584B]/40',
-    neutral: 'bg-[#8B897F]/15 text-[#6B6A63] border-[#8B897F]/30 dark:bg-[#9A988F]/20 dark:text-[#b5b3aa] dark:border-[#9A988F]/40',
+    ok: 'bg-[#2E7D52]/10 text-[#2E7D52] border-[#2E7D52]/25 dark:bg-[#41A86F]/15 dark:text-[#60C990] dark:border-[#41A86F]/30 font-medium',
+    warn: 'bg-[#B87A28]/10 text-[#B87A28] border-[#B87A28]/25 dark:bg-[#D4953C]/15 dark:text-[#EBB562] dark:border-[#D4953C]/30 font-medium',
+    danger: 'bg-[#B5302E]/10 text-[#B5302E] border-[#B5302E]/25 dark:bg-[#E05350]/15 dark:text-[#F3817F] dark:border-[#E05350]/30 font-medium',
+    neutral: 'bg-base text-ink-muted border-border font-medium',
+    invert: 'badge-inverted font-semibold shadow-xs',
   };
 
   return (
     <span
-      className={`inline-flex items-center px-2 py-0.5 rounded text-xs font-medium border ${colorStyles[computedVariant]} ${className}`}
+      className={`inline-flex items-center px-2 py-0.5 rounded text-xs border ${colorStyles[computedVariant]} ${className}`}
     >
       {status}
     </span>

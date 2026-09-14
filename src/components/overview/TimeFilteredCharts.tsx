@@ -9,6 +9,7 @@ import {
   YAxis,
   Tooltip,
   Cell,
+  LabelList,
 } from 'recharts';
 import { TimeRangeFilter, TimeRangeOption } from '@/components/common/TimeRangeFilter';
 import { OverviewChartData } from '@/lib/queries/overview';
@@ -81,7 +82,7 @@ export function TimeFilteredCharts({ initialData }: TimeFilteredChartsProps) {
         />
         {loading && (
           <div className="flex items-center gap-1 text-xs text-ink-muted">
-            <Loader2 className="w-3.5 h-3.5 animate-spin text-accent-brass" />
+            <Loader2 className="w-3.5 h-3.5 animate-spin text-accent" />
             <span>Updating charts...</span>
           </div>
         )}
@@ -99,11 +100,18 @@ export function TimeFilteredCharts({ initialData }: TimeFilteredChartsProps) {
           {data.topBranches && data.topBranches.length > 0 ? (
             <div className="h-60 w-full">
               <ResponsiveContainer width="100%" height="100%">
-                <BarChart data={data.topBranches} margin={{ top: 10, right: 10, left: -20, bottom: 20 }}>
+                <BarChart data={data.topBranches} margin={{ top: 15, right: 10, left: -20, bottom: 20 }}>
                   <XAxis dataKey="branch_code" tick={{ fontSize: 11, fill: 'var(--ink-muted)' }} />
                   <YAxis allowDecimals={false} tick={{ fontSize: 11, fill: 'var(--ink-muted)' }} />
                   <Tooltip contentStyle={customTooltipStyle} />
-                  <Bar dataKey="count" fill="#A6763C" radius={[4, 4, 0, 0]} name="Active Cases" />
+                  <Bar dataKey="count" fill="#A3462F" radius={[4, 4, 0, 0]} name="Active Cases">
+                    <LabelList
+                      dataKey="count"
+                      position="top"
+                      formatter={(val: any) => (val ? `${val}` : '')}
+                      style={{ fontSize: '10px', fontWeight: 600, fill: 'var(--ink-primary)' }}
+                    />
+                  </Bar>
                 </BarChart>
               </ResponsiveContainer>
             </div>
@@ -125,7 +133,7 @@ export function TimeFilteredCharts({ initialData }: TimeFilteredChartsProps) {
                 <BarChart
                   data={data.topStatuses}
                   layout="vertical"
-                  margin={{ top: 10, right: 20, left: 40, bottom: 10 }}
+                  margin={{ top: 10, right: 30, left: 40, bottom: 10 }}
                 >
                   <XAxis type="number" allowDecimals={false} tick={{ fontSize: 11, fill: 'var(--ink-muted)' }} />
                   <YAxis
@@ -135,7 +143,14 @@ export function TimeFilteredCharts({ initialData }: TimeFilteredChartsProps) {
                     width={110}
                   />
                   <Tooltip contentStyle={customTooltipStyle} />
-                  <Bar dataKey="count" fill="#3B7A57" radius={[0, 4, 4, 0]} name="Active Cases" />
+                  <Bar dataKey="count" fill="#71717A" radius={[0, 4, 4, 0]} name="Active Cases">
+                    <LabelList
+                      dataKey="count"
+                      position="right"
+                      formatter={(val: any) => (val ? `${val}` : '')}
+                      style={{ fontSize: '10px', fontWeight: 600, fill: 'var(--ink-primary)' }}
+                    />
+                  </Bar>
                 </BarChart>
               </ResponsiveContainer>
             </div>
@@ -144,7 +159,7 @@ export function TimeFilteredCharts({ initialData }: TimeFilteredChartsProps) {
           )}
         </div>
 
-        {/* Chart 3: Top 5 Active Cases by Root Cause (NEW) */}
+        {/* Chart 3: Top 5 Active Cases by Root Cause */}
         <div className="p-4 bg-surface border border-border rounded-lg shadow-xs flex flex-col justify-between">
           <div className="flex items-center justify-between mb-3">
             <h3 className="text-xs font-semibold uppercase tracking-wider text-ink-muted">
@@ -157,7 +172,7 @@ export function TimeFilteredCharts({ initialData }: TimeFilteredChartsProps) {
                 <BarChart
                   data={data.topRootCauses}
                   layout="vertical"
-                  margin={{ top: 10, right: 20, left: 40, bottom: 10 }}
+                  margin={{ top: 10, right: 30, left: 40, bottom: 10 }}
                 >
                   <XAxis type="number" allowDecimals={false} tick={{ fontSize: 11, fill: 'var(--ink-muted)' }} />
                   <YAxis
@@ -167,7 +182,14 @@ export function TimeFilteredCharts({ initialData }: TimeFilteredChartsProps) {
                     width={110}
                   />
                   <Tooltip contentStyle={customTooltipStyle} />
-                  <Bar dataKey="count" fill="#B8863B" radius={[0, 4, 4, 0]} name="Active Cases" />
+                  <Bar dataKey="count" fill="#A3462F" radius={[0, 4, 4, 0]} name="Active Cases">
+                    <LabelList
+                      dataKey="count"
+                      position="right"
+                      formatter={(val: any) => (val ? `${val}` : '')}
+                      style={{ fontSize: '10px', fontWeight: 600, fill: 'var(--ink-primary)' }}
+                    />
+                  </Bar>
                 </BarChart>
               </ResponsiveContainer>
             </div>
@@ -176,7 +198,7 @@ export function TimeFilteredCharts({ initialData }: TimeFilteredChartsProps) {
           )}
         </div>
 
-        {/* Chart 4: Top 5 Active Cases by Product Code (NEW) */}
+        {/* Chart 4: Top 5 Active Cases by Product Code */}
         <div className="p-4 bg-surface border border-border rounded-lg shadow-xs flex flex-col justify-between">
           <div className="flex items-center justify-between mb-3">
             <h3 className="text-xs font-semibold uppercase tracking-wider text-ink-muted">
@@ -186,11 +208,18 @@ export function TimeFilteredCharts({ initialData }: TimeFilteredChartsProps) {
           {data.topProductCodes && data.topProductCodes.length > 0 ? (
             <div className="h-60 w-full">
               <ResponsiveContainer width="100%" height="100%">
-                <BarChart data={data.topProductCodes} margin={{ top: 10, right: 10, left: -20, bottom: 20 }}>
+                <BarChart data={data.topProductCodes} margin={{ top: 15, right: 10, left: -20, bottom: 20 }}>
                   <XAxis dataKey="product_code" tick={{ fontSize: 11, fill: 'var(--ink-muted)' }} />
                   <YAxis allowDecimals={false} tick={{ fontSize: 11, fill: 'var(--ink-muted)' }} />
                   <Tooltip contentStyle={customTooltipStyle} />
-                  <Bar dataKey="count" fill="#A6763C" radius={[4, 4, 0, 0]} name="Active Cases" />
+                  <Bar dataKey="count" fill="#71717A" radius={[4, 4, 0, 0]} name="Active Cases">
+                    <LabelList
+                      dataKey="count"
+                      position="top"
+                      formatter={(val: any) => (val ? `${val}` : '')}
+                      style={{ fontSize: '10px', fontWeight: 600, fill: 'var(--ink-primary)' }}
+                    />
+                  </Bar>
                 </BarChart>
               </ResponsiveContainer>
             </div>
@@ -209,15 +238,21 @@ export function TimeFilteredCharts({ initialData }: TimeFilteredChartsProps) {
           {data.customerSegments && data.customerSegments.length > 0 ? (
             <div className="h-60 w-full">
               <ResponsiveContainer width="100%" height="100%">
-                <BarChart data={data.customerSegments} margin={{ top: 10, right: 20, left: -20, bottom: 20 }}>
+                <BarChart data={data.customerSegments} margin={{ top: 15, right: 20, left: -20, bottom: 20 }}>
                   <XAxis dataKey="golongan_customer" tick={{ fontSize: 11, fill: 'var(--ink-muted)' }} />
                   <YAxis allowDecimals={false} tick={{ fontSize: 11, fill: 'var(--ink-muted)' }} />
                   <Tooltip contentStyle={customTooltipStyle} />
-                  <Bar dataKey="count" fill="#B8863B" radius={[4, 4, 0, 0]} name="Cases">
+                  <Bar dataKey="count" radius={[4, 4, 0, 0]} name="Cases">
+                    <LabelList
+                      dataKey="count"
+                      position="top"
+                      formatter={(val: any) => (val ? `${val}` : '')}
+                      style={{ fontSize: '10px', fontWeight: 600, fill: 'var(--ink-primary)' }}
+                    />
                     {data.customerSegments.map((entry, index) => (
                       <Cell
                         key={`cell-${index}`}
-                        fill={entry.golongan_customer === 'KA Nasional' ? '#A6763C' : '#8B897F'}
+                        fill={entry.golongan_customer === 'KA Nasional' ? '#A3462F' : '#71717A'}
                       />
                     ))}
                   </Bar>
@@ -239,11 +274,18 @@ export function TimeFilteredCharts({ initialData }: TimeFilteredChartsProps) {
           {data.carriedOverByBranch && data.carriedOverByBranch.length > 0 ? (
             <div className="h-60 w-full">
               <ResponsiveContainer width="100%" height="100%">
-                <BarChart data={data.carriedOverByBranch} margin={{ top: 10, right: 10, left: -20, bottom: 20 }}>
+                <BarChart data={data.carriedOverByBranch} margin={{ top: 15, right: 10, left: -20, bottom: 20 }}>
                   <XAxis dataKey="branch_code" tick={{ fontSize: 11, fill: 'var(--ink-muted)' }} />
                   <YAxis allowDecimals={false} tick={{ fontSize: 11, fill: 'var(--ink-muted)' }} />
                   <Tooltip contentStyle={customTooltipStyle} />
-                  <Bar dataKey="count" fill="#A54B3F" radius={[4, 4, 0, 0]} name="Carried-Over Backlog" />
+                  <Bar dataKey="count" fill="#B5302E" radius={[4, 4, 0, 0]} name="Carried-Over Backlog">
+                    <LabelList
+                      dataKey="count"
+                      position="top"
+                      formatter={(val: any) => (val ? `${val}` : '')}
+                      style={{ fontSize: '10px', fontWeight: 600, fill: '#B5302E' }}
+                    />
+                  </Bar>
                 </BarChart>
               </ResponsiveContainer>
             </div>

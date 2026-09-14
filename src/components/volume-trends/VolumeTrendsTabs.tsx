@@ -19,6 +19,7 @@ import {
   YAxis,
   Tooltip,
   Legend,
+  LabelList,
 } from 'recharts';
 import { EmptyState } from '@/components/common/EmptyState';
 import { BarChart3, Tag, Layers, Loader2 } from 'lucide-react';
@@ -107,7 +108,7 @@ export function VolumeTrendsTabs({
           onClick={() => setActiveTab('overview')}
           className={`flex items-center gap-2 px-4 py-2.5 text-xs font-medium border-b-2 transition-colors -mb-px ${
             activeTab === 'overview'
-              ? 'border-accent-brass text-accent-brass font-semibold'
+              ? 'border-accent text-accent font-semibold'
               : 'border-transparent text-ink-muted hover:text-ink-primary hover:border-border'
           }`}
         >
@@ -119,7 +120,7 @@ export function VolumeTrendsTabs({
           onClick={() => setActiveTab('principal')}
           className={`flex items-center gap-2 px-4 py-2.5 text-xs font-medium border-b-2 transition-colors -mb-px ${
             activeTab === 'principal'
-              ? 'border-accent-brass text-accent-brass font-semibold'
+              ? 'border-accent text-accent font-semibold'
               : 'border-transparent text-ink-muted hover:text-ink-primary hover:border-border'
           }`}
         >
@@ -131,12 +132,12 @@ export function VolumeTrendsTabs({
           onClick={() => setActiveTab('root_cause')}
           className={`flex items-center gap-2 px-4 py-2.5 text-xs font-medium border-b-2 transition-colors -mb-px ${
             activeTab === 'root_cause'
-              ? 'border-accent-brass text-accent-brass font-semibold'
+              ? 'border-accent text-accent font-semibold'
               : 'border-transparent text-ink-muted hover:text-ink-primary hover:border-border'
           }`}
         >
           <Layers className="w-4 h-4" />
-          <span>Root Cause Analysis</span>
+          <span>Root Cause Analysis (Pareto)</span>
         </button>
       </div>
 
@@ -159,7 +160,7 @@ export function VolumeTrendsTabs({
                 customStart={customStart}
                 customEnd={customEnd}
               />
-              {loading && <Loader2 className="w-3.5 h-3.5 animate-spin text-accent-brass" />}
+              {loading && <Loader2 className="w-3.5 h-3.5 animate-spin text-accent" />}
             </div>
           </div>
 
@@ -173,11 +174,18 @@ export function VolumeTrendsTabs({
               {volumeData.topBranches.length > 0 ? (
                 <div className="h-52 w-full">
                   <ResponsiveContainer width="100%" height="100%">
-                    <BarChart data={volumeData.topBranches} margin={{ top: 5, right: 10, left: -20, bottom: 20 }}>
+                    <BarChart data={volumeData.topBranches} margin={{ top: 15, right: 10, left: -20, bottom: 20 }}>
                       <XAxis dataKey="branch_code" tick={{ fontSize: 10, fill: 'var(--ink-muted)' }} />
                       <YAxis allowDecimals={false} tick={{ fontSize: 10, fill: 'var(--ink-muted)' }} />
                       <Tooltip contentStyle={customTooltipStyle} />
-                      <Bar dataKey="count" fill="#A6763C" radius={[4, 4, 0, 0]} name="Cases" />
+                      <Bar dataKey="count" fill="#A3462F" radius={[4, 4, 0, 0]} name="Cases">
+                        <LabelList
+                          dataKey="count"
+                          position="top"
+                          formatter={(val: any) => (val ? `${val}` : '')}
+                          style={{ fontSize: '10px', fontWeight: 600, fill: 'var(--ink-primary)' }}
+                        />
+                      </Bar>
                     </BarChart>
                   </ResponsiveContainer>
                 </div>
@@ -197,7 +205,7 @@ export function VolumeTrendsTabs({
                     <BarChart
                       data={volumeData.topStatuses}
                       layout="vertical"
-                      margin={{ top: 5, right: 10, left: 10, bottom: 5 }}
+                      margin={{ top: 5, right: 30, left: 10, bottom: 5 }}
                     >
                       <XAxis type="number" allowDecimals={false} tick={{ fontSize: 10, fill: 'var(--ink-muted)' }} />
                       <YAxis
@@ -207,7 +215,14 @@ export function VolumeTrendsTabs({
                         width={90}
                       />
                       <Tooltip contentStyle={customTooltipStyle} />
-                      <Bar dataKey="count" fill="#3B7A57" radius={[0, 4, 4, 0]} name="Cases" />
+                      <Bar dataKey="count" fill="#71717A" radius={[0, 4, 4, 0]} name="Cases">
+                        <LabelList
+                          dataKey="count"
+                          position="right"
+                          formatter={(val: any) => (val ? `${val}` : '')}
+                          style={{ fontSize: '10px', fontWeight: 600, fill: 'var(--ink-primary)' }}
+                        />
+                      </Bar>
                     </BarChart>
                   </ResponsiveContainer>
                 </div>
@@ -224,15 +239,21 @@ export function VolumeTrendsTabs({
               {volumeData.customerSegments.length > 0 ? (
                 <div className="h-52 w-full">
                   <ResponsiveContainer width="100%" height="100%">
-                    <BarChart data={volumeData.customerSegments} margin={{ top: 5, right: 10, left: -20, bottom: 20 }}>
+                    <BarChart data={volumeData.customerSegments} margin={{ top: 15, right: 10, left: -20, bottom: 20 }}>
                       <XAxis dataKey="golongan_customer" tick={{ fontSize: 10, fill: 'var(--ink-muted)' }} />
                       <YAxis allowDecimals={false} tick={{ fontSize: 10, fill: 'var(--ink-muted)' }} />
                       <Tooltip contentStyle={customTooltipStyle} />
                       <Bar dataKey="count" radius={[4, 4, 0, 0]} name="Cases">
+                        <LabelList
+                          dataKey="count"
+                          position="top"
+                          formatter={(val: any) => (val ? `${val}` : '')}
+                          style={{ fontSize: '10px', fontWeight: 600, fill: 'var(--ink-primary)' }}
+                        />
                         {volumeData.customerSegments.map((entry, idx) => (
                           <Cell
                             key={`seg-${idx}`}
-                            fill={entry.golongan_customer === 'KA Nasional' ? '#A6763C' : '#8B897F'}
+                            fill={entry.golongan_customer === 'KA Nasional' ? '#A3462F' : '#71717A'}
                           />
                         ))}
                       </Bar>
@@ -248,7 +269,7 @@ export function VolumeTrendsTabs({
           {/* Full-width Dual-Line Chart: Cases Opened vs Closed per Month */}
           <div className="p-5 bg-surface border border-border rounded-lg shadow-xs">
             <div className="flex items-center justify-between mb-1">
-              <h4 className="text-xs font-semibold uppercase tracking-wider text-ink-muted">
+              <h4 className="text-xs font-semibold uppercase tracking-wider text-ink-primary font-bold">
                 Monthly Case Flow: Cases Opened vs. Cases Closed
               </h4>
             </div>
@@ -267,19 +288,19 @@ export function VolumeTrendsTabs({
                     <Line
                       type="monotone"
                       dataKey="cases_opened"
-                      stroke="#A6763C"
+                      stroke="#A3462F"
                       strokeWidth={2.5}
                       name="Cases Opened (Intake)"
-                      dot={{ r: 3 }}
+                      dot={{ r: 3.5, fill: '#A3462F' }}
                     />
                     <Line
                       type="monotone"
                       dataKey="cases_closed"
-                      stroke="#3B7A57"
+                      stroke="#2E7D52"
                       strokeWidth={2}
                       strokeDasharray="4 4"
                       name="Cases Closed"
-                      dot={{ r: 3 }}
+                      dot={{ r: 3.5, fill: '#2E7D52' }}
                     />
                   </LineChart>
                 </ResponsiveContainer>
@@ -291,7 +312,7 @@ export function VolumeTrendsTabs({
         </div>
       )}
 
-      {/* Tab 2: Principal & Claimable Status (NEW CHARTS) */}
+      {/* Tab 2: Principal & Claimable Status */}
       {activeTab === 'principal' && (
         <PrincipalClaimableTab initialData={initialPrincipalData} />
       )}
@@ -300,20 +321,20 @@ export function VolumeTrendsTabs({
       {activeTab === 'root_cause' && (
         <div className="p-5 bg-surface border border-border rounded-lg shadow-xs">
           <div className="flex items-center justify-between mb-1">
-            <h3 className="text-xs font-semibold uppercase tracking-wider text-ink-muted">
-              Root Cause & Claimable Status Analysis (Pareto)
+            <h3 className="text-xs font-bold uppercase tracking-wider text-ink-primary">
+              Root Cause & Claimable Status Analysis (Pareto Principle 80/20)
             </h3>
-            <span className="text-[11px] font-mono text-ink-muted bg-base px-2 py-0.5 rounded border border-border">
-              Total n = {totalParetoCases}
+            <span className="text-[11px] font-mono font-semibold text-ink-primary bg-base px-2 py-0.5 rounded border border-border">
+              Total n = {totalParetoCases} cases
             </span>
           </div>
           <p className="text-xs text-ink-muted mb-4">
-            Pareto distribution of case frequency and cumulative percentage across claimable status and root causes
+            Pareto distribution identifying the vital few root causes accounting for up to 80% of total product warranty issues
           </p>
 
           <div className="h-72 w-full">
             <ResponsiveContainer width="100%" height="100%">
-              <ComposedChart data={paretoData} margin={{ top: 10, right: 20, left: -10, bottom: 45 }}>
+              <ComposedChart data={paretoData} margin={{ top: 15, right: 20, left: -10, bottom: 45 }}>
                 <XAxis
                   dataKey="pairLabel"
                   angle={-25}
@@ -345,19 +366,35 @@ export function VolumeTrendsTabs({
                 <Bar
                   yAxisId="left"
                   dataKey="jumlah_kasus"
-                  fill="#A6763C"
+                  fill="#A3462F"
                   name="Case Volume"
                   radius={[4, 4, 0, 0]}
-                />
+                  maxBarSize={40}
+                >
+                  <LabelList
+                    dataKey="jumlah_kasus"
+                    position="top"
+                    formatter={(val: any) => (val ? `${val}` : '')}
+                    style={{ fontSize: '10px', fontWeight: 600, fill: 'var(--ink-primary)' }}
+                  />
+                </Bar>
                 <Line
                   yAxisId="right"
                   type="monotone"
                   dataKey="cumulative_pct"
-                  stroke="#A54B3F"
+                  stroke="#121316"
                   strokeWidth={2.5}
                   name="Cumulative %"
-                  dot={{ r: 3, fill: '#A54B3F' }}
-                />
+                  dot={{ r: 3.5, fill: '#121316' }}
+                >
+                  <LabelList
+                    dataKey="cumulative_pct"
+                    position="top"
+                    offset={6}
+                    formatter={(val: any) => (val !== undefined ? `${val}%` : '')}
+                    style={{ fontSize: '9px', fontWeight: 700, fill: 'var(--ink-primary)' }}
+                  />
+                </Line>
               </ComposedChart>
             </ResponsiveContainer>
           </div>

@@ -1,13 +1,20 @@
 @import "tailwindcss";
 
 @theme {
+  --font-sans: var(--font-space-grotesk), ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+  --font-mono: var(--font-jetbrains-mono), ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace;
+
   --color-base: var(--bg-base);
   --color-surface: var(--surface);
   --color-surface-hover: var(--surface-hover);
+  --color-surface-inverted: var(--surface-inverted);
+  --color-ink-inverted: var(--ink-inverted);
   --color-border: var(--border-subtle);
+  --color-border-inverted: var(--border-inverted);
   --color-ink-primary: var(--ink-primary);
   --color-ink-muted: var(--ink-muted);
-  --color-accent-brass: var(--accent-brass);
+  --color-accent: var(--accent);
+  --color-accent-brass: var(--accent); /* backward-compatibility alias */
   --color-status-ok: var(--status-ok);
   --color-status-warn: var(--status-warn);
   --color-status-danger: var(--status-danger);
@@ -15,31 +22,53 @@
 }
 
 :root {
-  --bg-base: #F7F5F0;
+  /* Surface & Base - Crisp, clean, data-dense */
+  --bg-base: #FAFAFA;
   --surface: #FFFFFF;
-  --surface-hover: #F2EFE9;
-  --border-subtle: #E3E0D6;
-  --ink-primary: #1C1B18;
-  --ink-muted: #6B6A63;
-  --accent-brass: #A6763C;
-  --status-ok: #3B7A57;      /* Achieved, Closed */
-  --status-warn: #B8863B;    /* Warning, Approaching SLA */
-  --status-danger: #A54B3F;  /* Not Achieved, Overdue SLA, Anomaly */
-  --status-neutral: #8B897F; /* Active, normal progression */
+  --surface-hover: #F3F3F5;
+  --surface-inverted: #121316;
+  --border-subtle: #E4E4E7;
+  --border-inverted: #27272A;
+
+  /* Typography */
+  --ink-primary: #121316;
+  --ink-muted: #64666E;
+  --ink-inverted: #FFFFFF;
+
+  /* Single Disciplined Brand Accent: Terracotta / Deep Rust */
+  --accent: #A3462F;
+  --accent-brass: #A3462F;
+
+  /* Functional Status Colors (Muted & Distinct from Brand Accent) */
+  --status-ok: #2E7D52;      /* Achieved, Closed, Success */
+  --status-warn: #B87A28;    /* Warning, Approaching SLA (Warm Ochre) */
+  --status-danger: #B5302E;  /* Overdue SLA, Anomaly, SLA Breach (Crimson) */
+  --status-neutral: #71717A; /* Active, In-progress, Secondary */
 }
 
 [data-theme="dark"] {
-  --bg-base: #141518;
-  --surface: #1C1E22;
-  --surface-hover: #25282D;
-  --border-subtle: #2B2E34;
-  --ink-primary: #EDEBE4;
-  --ink-muted: #9A988F;
-  --accent-brass: #C08C4A;
-  --status-ok: #489369;
-  --status-warn: #C99645;
-  --status-danger: #BD584B;
-  --status-neutral: #9A988F;
+  /* Surface & Base - Deep sleek dark */
+  --bg-base: #0C0D0E;
+  --surface: #16181A;
+  --surface-hover: #202226;
+  --surface-inverted: #F4F4F6;
+  --border-subtle: #272A2E;
+  --border-inverted: #E4E4E7;
+
+  /* Typography */
+  --ink-primary: #F4F4F6;
+  --ink-muted: #91939C;
+  --ink-inverted: #121316;
+
+  /* Brand Accent: Adjusted for Dark Mode Legibility */
+  --accent: #D96B4F;
+  --accent-brass: #D96B4F;
+
+  /* Functional Status Colors (Calibrated for Dark Contrast) */
+  --status-ok: #41A86F;
+  --status-warn: #D4953C;
+  --status-danger: #E05350;
+  --status-neutral: #A1A1AA;
 }
 
 * {
@@ -49,12 +78,13 @@
 body {
   background-color: var(--bg-base);
   color: var(--ink-primary);
+  font-family: var(--font-sans);
   font-feature-settings: "cv02", "cv03", "cv04", "cv11";
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
 }
 
-/* Strict requirement per 04_MASTER_STYLEGUIDE: Tabular Numbers */
+/* Strict requirement per 04_MASTER_STYLEGUIDE: Tabular Numbers & Mono for Data */
 .tabular-nums,
 table,
 .kpi-value,
@@ -64,10 +94,65 @@ table,
   font-feature-settings: "tnum";
 }
 
+/* Interactive Micro-Interactions & Hierarchy Classes */
+.card-interactive {
+  transition: transform 180ms cubic-bezier(0.16, 1, 0.3, 1), box-shadow 180ms ease, border-color 180ms ease;
+}
+
+.card-interactive:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 6px 16px -3px rgba(0, 0, 0, 0.06);
+}
+
+[data-theme="dark"] .card-interactive:hover {
+  box-shadow: 0 6px 16px -3px rgba(0, 0, 0, 0.35);
+}
+
+.card-inverted {
+  background-color: var(--surface-inverted);
+  color: var(--ink-inverted);
+  border: 1px solid var(--border-inverted);
+}
+
+.badge-inverted {
+  background-color: var(--surface-inverted);
+  color: var(--ink-inverted);
+  border: 1px solid transparent;
+}
+
+.pulse-dot {
+  position: relative;
+}
+
+.pulse-dot::before {
+  content: '';
+  position: absolute;
+  inset: -2px;
+  border-radius: 9999px;
+  background-color: currentColor;
+  opacity: 0.4;
+  animation: pulse-ring 2s cubic-bezier(0.4, 0, 0.6, 1) infinite;
+}
+
+@keyframes pulse-ring {
+  0% {
+    transform: scale(0.95);
+    opacity: 0.6;
+  }
+  50% {
+    transform: scale(1.6);
+    opacity: 0;
+  }
+  100% {
+    transform: scale(0.95);
+    opacity: 0;
+  }
+}
+
 /* Custom Scrollbar */
 ::-webkit-scrollbar {
-  width: 6px;
-  height: 6px;
+  width: 5px;
+  height: 5px;
 }
 ::-webkit-scrollbar-track {
   background: transparent;

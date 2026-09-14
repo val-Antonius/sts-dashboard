@@ -21,42 +21,42 @@ interface PrincipalClaimableTabProps {
   initialData: PrincipalClaimableData;
 }
 
-// Consistent categorical color palette for root causes
+// Disciplined, low-noise palette for root causes (Dominant dark + Terracotta + Neutral tones)
 const ROOT_CAUSE_COLORS: Record<string, string> = {
-  'Workmanship/Factory Defect': '#A6763C',
-  'Material Defect': '#3B7A57',
-  'Miss Operation': '#A54B3F',
-  'Miss Maintenance': '#B8863B',
-  'Miss Application': '#5B7B88',
-  'Attachment/Modification/Local Component': '#7D6884',
-  'Inventory Process/Storage': '#8C7D54',
-  'Accident': '#945D60',
-  'Natural Disaster': '#4A7C7A',
-  'Not Recorded': '#8B897F',
+  'Workmanship/Factory Defect': '#18181B',
+  'Material Defect': '#A3462F',
+  'Miss Operation': '#B87A28',
+  'Miss Maintenance': '#2E7D52',
+  'Miss Application': '#4B5563',
+  'Attachment/Modification/Local Component': '#6B7280',
+  'Inventory Process/Storage': '#9CA3AF',
+  'Accident': '#B5302E',
+  'Natural Disaster': '#71717A',
+  'Not Recorded': '#A1A1AA',
 };
 
 const DEFAULT_PALETTE = [
-  '#A6763C',
-  '#3B7A57',
-  '#A54B3F',
-  '#5B7B88',
-  '#B8863B',
-  '#7D6884',
-  '#8C7D54',
-  '#945D60',
-  '#4A7C7A',
-  '#606C38',
+  '#18181B',
+  '#A3462F',
+  '#B87A28',
+  '#2E7D52',
+  '#4B5563',
+  '#6B7280',
+  '#9CA3AF',
+  '#B5302E',
+  '#71717A',
+  '#A1A1AA',
 ];
 
 // Consistent palette for claimable statuses
 const STATUS_COLORS: Record<string, string> = {
-  'Claimable Principal': '#3B7A57',
-  'Claimable GOEM': '#489369',
-  'Claimable Vendor (Attachment)': '#5B7B88',
-  'Goodwill': '#B8863B',
-  'Unclaimable': '#A54B3F',
-  'Progress Checking Unit': '#8C7D54',
-  'Waiting Created WO Checking': '#8B897F',
+  'Claimable Principal': '#2E7D52',
+  'Claimable Vendor (Attachment)': '#4B5563',
+  'Claimable Vendor (Genset Maker)': '#3F3F46',
+  'Goodwill': '#B87A28',
+  'Unclaimable': '#B5302E',
+  'Progress Checking Unit': '#71717A',
+  'Waiting Created WO Checking': '#A1A1AA',
 };
 
 export function PrincipalClaimableTab({ initialData }: PrincipalClaimableTabProps) {
@@ -109,14 +109,14 @@ export function PrincipalClaimableTab({ initialData }: PrincipalClaimableTabProp
     boxShadow: '0 4px 6px -1px rgb(0 0 0 / 0.1)',
   };
 
-  // Helper for heatmap cell color intensity
+  // Single disciplined terracotta ramp for heatmap density
   const getHeatmapColor = (count: number, max: number) => {
-    if (!count || count === 0) return 'bg-base/40 text-ink-muted/40';
+    if (!count || count === 0) return 'bg-base/30 text-ink-muted/30 border border-transparent';
     const ratio = max > 0 ? count / max : 0;
-    if (ratio < 0.25) return 'bg-amber-100 dark:bg-amber-950/40 text-amber-900 dark:text-amber-200 font-medium';
-    if (ratio < 0.55) return 'bg-amber-300 dark:bg-amber-700/60 text-amber-950 dark:text-amber-100 font-semibold';
-    if (ratio < 0.8) return 'bg-orange-400 dark:bg-orange-700 text-white font-bold';
-    return 'bg-red-600 dark:bg-red-700 text-white font-bold shadow-xs';
+    if (ratio < 0.25) return 'bg-[#A3462F]/10 dark:bg-[#D96B4F]/10 text-ink-primary font-medium';
+    if (ratio < 0.55) return 'bg-[#A3462F]/30 dark:bg-[#D96B4F]/30 text-ink-primary font-semibold';
+    if (ratio < 0.80) return 'bg-[#A3462F]/65 dark:bg-[#D96B4F]/65 text-white font-bold';
+    return 'bg-[#A3462F] dark:bg-[#D96B4F] text-white font-bold shadow-xs ring-1 ring-[#A3462F]/40';
   };
 
   return (
@@ -281,18 +281,19 @@ export function PrincipalClaimableTab({ initialData }: PrincipalClaimableTabProp
               3. Total Case vs Product Code by Branch (Heatmap Matrix)
             </h4>
             <p className="text-xs text-ink-muted">
-              Territorial matrix showing case density per Product Code × Branch intersection (Warm Yellow → Amber → Deep Red)
+              Territorial matrix showing case density per Product Code × Branch intersection (Single Terracotta Density Ramp)
             </p>
           </div>
 
-          {/* Heatmap Legend */}
-          <div className="hidden md:flex items-center gap-1.5 text-[10px] text-ink-muted">
-            <span>Low</span>
-            <span className="w-3 h-3 rounded bg-amber-100 border border-amber-300" />
-            <span className="w-3 h-3 rounded bg-amber-300 border border-amber-400" />
-            <span className="w-3 h-3 rounded bg-orange-400" />
-            <span className="w-3 h-3 rounded bg-red-600" />
-            <span>High</span>
+          {/* Heatmap Legend - Single Ramp */}
+          <div className="hidden md:flex items-center gap-1.5 text-[10px] text-ink-muted font-mono">
+            <span>0</span>
+            <span className="w-3 h-3 rounded bg-base/50 border border-border" />
+            <span className="w-3 h-3 rounded bg-[#A3462F]/15 dark:bg-[#D96B4F]/15" />
+            <span className="w-3 h-3 rounded bg-[#A3462F]/35 dark:bg-[#D96B4F]/35" />
+            <span className="w-3 h-3 rounded bg-[#A3462F]/70 dark:bg-[#D96B4F]/70" />
+            <span className="w-3 h-3 rounded bg-[#A3462F] dark:bg-[#D96B4F]" />
+            <span>Peak</span>
           </div>
         </div>
 

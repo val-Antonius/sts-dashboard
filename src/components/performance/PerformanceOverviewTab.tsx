@@ -117,20 +117,20 @@ export function PerformanceOverviewTab({
                     }}
                   />
                   <Legend wrapperStyle={{ fontSize: '11px', paddingTop: '10px' }} />
-                  <Bar dataKey="achieved" fill="#3B7A57" name="Achieved" radius={[4, 4, 0, 0]}>
+                  <Bar dataKey="achieved" fill="#2E7D52" name="Achieved" radius={[4, 4, 0, 0]}>
                     <LabelList
                       dataKey="achievedAvgDays"
                       position="top"
                       formatter={(val: any) => (val ? `avg ${val}d` : '')}
-                      style={{ fontSize: '10px', fontWeight: 600, fill: '#3B7A57' }}
+                      style={{ fontSize: '10px', fontWeight: 600, fill: '#2E7D52' }}
                     />
                   </Bar>
-                  <Bar dataKey="notAchieved" fill="#A54B3F" name="Not Achieved" radius={[4, 4, 0, 0]}>
+                  <Bar dataKey="notAchieved" fill="#B5302E" name="Not Achieved" radius={[4, 4, 0, 0]}>
                     <LabelList
                       dataKey="notAchievedAvgDays"
                       position="top"
                       formatter={(val: any) => (val ? `avg ${val}d` : '')}
-                      style={{ fontSize: '10px', fontWeight: 600, fill: '#A54B3F' }}
+                      style={{ fontSize: '10px', fontWeight: 600, fill: '#B5302E' }}
                     />
                   </Bar>
                 </BarChart>
@@ -172,12 +172,12 @@ export function PerformanceOverviewTab({
                       'Volume',
                     ]}
                   />
-                  <Bar dataKey="jumlah_kasus" fill="#A6763C" radius={[0, 4, 4, 0]} name="Cases">
+                  <Bar dataKey="jumlah_kasus" fill="#A3462F" radius={[0, 4, 4, 0]} name="Cases">
                     <LabelList
                       dataKey="avg_days"
                       position="right"
                       formatter={(val: any) => (val ? `avg ${val}d` : '')}
-                      style={{ fontSize: '10px', fontWeight: 600, fill: '#A6763C' }}
+                      style={{ fontSize: '10px', fontWeight: 600, fill: '#A3462F' }}
                     />
                   </Bar>
                 </BarChart>
@@ -225,7 +225,7 @@ export function PerformanceOverviewTab({
               />
               <Bar
                 dataKey="avg_durasi"
-                fill="#B8863B"
+                fill="#A3462F"
                 radius={[0, 4, 4, 0]}
                 name="Avg Duration (days)"
               >
@@ -233,7 +233,7 @@ export function PerformanceOverviewTab({
                   dataKey="avg_durasi"
                   position="right"
                   formatter={(val: any) => (val ? `${val}d` : '')}
-                  style={{ fontSize: '10px', fontWeight: 600, fill: '#B8863B' }}
+                  style={{ fontSize: '10px', fontWeight: 600, fill: '#A3462F' }}
                 />
               </Bar>
             </BarChart>
