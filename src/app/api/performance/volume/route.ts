@@ -6,9 +6,10 @@ export async function GET(request: NextRequest) {
   const range = searchParams.get('range') || 'last_1_year';
   const customStart = searchParams.get('start') || undefined;
   const customEnd = searchParams.get('end') || undefined;
+  const segment = searchParams.get('segment') || 'all';
 
   try {
-    const data = await getPerformanceVolumeData(range, customStart, customEnd);
+    const data = await getPerformanceVolumeData(range, customStart, customEnd, segment);
     return NextResponse.json(data);
   } catch (error: any) {
     console.error('Error fetching performance volume data:', error);
