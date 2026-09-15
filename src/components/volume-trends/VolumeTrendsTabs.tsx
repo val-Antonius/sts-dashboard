@@ -132,25 +132,42 @@ export function VolumeTrendsTabs({
 
   // Pie chart dataset
   const donutData = [
-    { name: 'Claimable (Warranty)', value: claimableHealth.claimable_count, color: '#2E7D52' },
-    { name: 'Unclaimable (Man-Hour Leakage)', value: claimableHealth.unclaimable_count, color: '#A3462F' },
+    { name: 'Claimable', value: claimableHealth.claimable_count, color: '#2E7D52' },
+    { name: 'Unclaimable', value: claimableHealth.unclaimable_count, color: '#A3462F' },
     { name: 'In-Progress / Other', value: claimableHealth.other_count, color: '#71717A' },
   ].filter((d) => d.value > 0);
 
-  // Scatter plot data for Branch Risk Matrix
-  const scatterData = branchRiskData.map((b) => ({
-    x: b.total_cases,
-    y: b.unclaimable_pct,
-    z: Math.max(b.total_cases, 10),
-    branch_code: b.branch_code,
-    branch_city: b.branch_city,
-    total_cases: b.total_cases,
-    unclaimable_cases: b.unclaimable_cases,
-    unclaimable_pct: b.unclaimable_pct,
-    overdue_cases: b.overdue_cases,
-    overdue_pct: b.overdue_pct,
-    avg_solution_days: b.avg_solution_days,
-  }));
+  // Scatter plot data for Branch Risk Matrix (Grouped by exact x, y coordinate to prevent SVG text clashing)
+  const scatterData = useMemo(() => {
+    const coordMap: { [key: string]: typeof branchRiskData } = {};
+    branchRiskData.forEach((b) => {
+      const key = `${b.total_cases}_${b.unclaimable_pct}`;
+      if (!coordMap[key]) coordMap[key] = [];
+      coordMap[key].push(b);
+    });
+
+    return Object.values(coordMap).map((branches) => {
+      const first = branches[0];
+      const isMulti = branches.length > 1;
+      const displayCode = branches.map((b) => b.branch_code).join('/');
+      return {
+        x: first.total_cases,
+        y: first.unclaimable_pct,
+        z: Math.max(first.total_cases, 10),
+        displayCode,
+        is_multi: isMulti,
+        branches,
+        branch_code: displayCode,
+        branch_city: first.branch_city,
+        total_cases: first.total_cases,
+        unclaimable_cases: first.unclaimable_cases,
+        unclaimable_pct: first.unclaimable_pct,
+        overdue_cases: first.overdue_cases,
+        overdue_pct: first.overdue_pct,
+        avg_solution_days: first.avg_solution_days,
+      };
+    });
+  }, [branchRiskData]);
 
   // Compute readable X-axis domain and ticks (multiples of 5 or 10)
   const maxVolumeVal = useMemo(() => {
@@ -173,19 +190,21 @@ export function VolumeTrendsTabs({
     return Math.max(...scatterData.map((d) => d.total_cases), 1);
   }, [scatterData]);
 
-  // Custom Bubble renderer with translucent alpha-blend, dynamic radius, and clean centered label
+  // Custom Bubble renderer with translucent alpha-blend, dynamic radius, and collision-free stacked labels
   const renderCustomBubble = (props: any) => {
     const { cx, cy, payload } = props;
     if (cx === undefined || cy === undefined || !payload) return null;
 
     // Sizing: Distinct radius spread from 12px (low volume) to 30px (high volume)
-    const minRadius = 12;
+    const minRadius = 13;
     const maxRadius = 30;
     const r = minRadius + (payload.total_cases / maxTotalCases) * (maxRadius - minRadius);
 
     const isHighRisk = payload.unclaimable_pct >= 25;
     const fillColor = isHighRisk ? '#A3462F' : '#71717A';
     const strokeColor = isHighRisk ? '#8B3B26' : '#3F3F46';
+
+    const isMulti = payload.is_multi && payload.branches && payload.branches.length > 1;
 
     return (
       <g className="cursor-pointer group">
@@ -197,33 +216,55 @@ export function VolumeTrendsTabs({
           fill={fillColor}
           fillOpacity={0.45}
           stroke={strokeColor}
-          strokeWidth={1.5}
+          strokeWidth={isMulti ? 2 : 1.5}
+          strokeDasharray={isMulti ? '3 2' : undefined}
         />
-        {/* Precise center coordinate marker */}
+        {/* Center coordinate marker */}
         <circle
           cx={cx}
           cy={cy}
-          r={2}
+          r={1.5}
           fill={strokeColor}
         />
-        {/* Clean centered branch identifier with outline shadow for readability */}
-        <text
-          x={cx}
-          y={cy + 0.5}
-          textAnchor="middle"
-          dominantBaseline="central"
-          className="font-mono font-bold select-none pointer-events-none"
-          style={{
-            fontSize: r >= 20 ? '11px' : '9px',
-            fill: 'var(--ink-primary)',
-            paintOrder: 'stroke',
-            stroke: 'var(--surface)',
-            strokeWidth: '2.5px',
-            strokeLinejoin: 'round',
-          }}
-        >
-          {payload.branch_code}
-        </text>
+        {/* Branch label: Stacked tspan if multiple branches share coordinate, otherwise single centered text */}
+        {isMulti ? (
+          <text
+            x={cx}
+            y={cy}
+            textAnchor="middle"
+            dominantBaseline="central"
+            className="font-mono font-bold select-none pointer-events-none"
+            style={{
+              fontSize: r >= 20 ? '9.5px' : '8px',
+              fill: 'var(--ink-primary)',
+              paintOrder: 'stroke',
+              stroke: 'var(--surface)',
+              strokeWidth: '2.5px',
+              strokeLinejoin: 'round',
+            }}
+          >
+            <tspan x={cx} dy="-0.5em">{payload.branches[0].branch_code}</tspan>
+            <tspan x={cx} dy="1.15em">{payload.branches[1].branch_code}</tspan>
+          </text>
+        ) : (
+          <text
+            x={cx}
+            y={cy + 0.5}
+            textAnchor="middle"
+            dominantBaseline="central"
+            className="font-mono font-bold select-none pointer-events-none"
+            style={{
+              fontSize: r >= 20 ? '11px' : '9px',
+              fill: 'var(--ink-primary)',
+              paintOrder: 'stroke',
+              stroke: 'var(--surface)',
+              strokeWidth: '2.5px',
+              strokeLinejoin: 'round',
+            }}
+          >
+            {payload.displayCode}
+          </text>
+        )}
       </g>
     );
   };
@@ -249,11 +290,10 @@ export function VolumeTrendsTabs({
         <button
           type="button"
           onClick={() => setActiveTab('overview')}
-          className={`flex items-center gap-2 px-4 py-2.5 text-xs font-medium border-b-2 transition-colors -mb-px ${
-            activeTab === 'overview'
-              ? 'border-accent text-accent font-semibold'
-              : 'border-transparent text-ink-muted hover:text-ink-primary hover:border-border'
-          }`}
+          className={`flex items-center gap-2 px-4 py-2.5 text-xs font-medium border-b-2 transition-colors -mb-px ${activeTab === 'overview'
+            ? 'border-accent text-accent font-semibold'
+            : 'border-transparent text-ink-muted hover:text-ink-primary hover:border-border'
+            }`}
         >
           <BarChart3 className="w-4 h-4" />
           <span>Overview</span>
@@ -262,11 +302,10 @@ export function VolumeTrendsTabs({
         <button
           type="button"
           onClick={() => setActiveTab('principal')}
-          className={`flex items-center gap-2 px-4 py-2.5 text-xs font-medium border-b-2 transition-colors -mb-px ${
-            activeTab === 'principal'
-              ? 'border-accent text-accent font-semibold'
-              : 'border-transparent text-ink-muted hover:text-ink-primary hover:border-border'
-          }`}
+          className={`flex items-center gap-2 px-4 py-2.5 text-xs font-medium border-b-2 transition-colors -mb-px ${activeTab === 'principal'
+            ? 'border-accent text-accent font-semibold'
+            : 'border-transparent text-ink-muted hover:text-ink-primary hover:border-border'
+            }`}
         >
           <Tag className="w-4 h-4" />
           <span>Principal and Claimable Status</span>
@@ -275,11 +314,10 @@ export function VolumeTrendsTabs({
         <button
           type="button"
           onClick={() => setActiveTab('root_cause')}
-          className={`flex items-center gap-2 px-4 py-2.5 text-xs font-medium border-b-2 transition-colors -mb-px ${
-            activeTab === 'root_cause'
-              ? 'border-accent text-accent font-semibold'
-              : 'border-transparent text-ink-muted hover:text-ink-primary hover:border-border'
-          }`}
+          className={`flex items-center gap-2 px-4 py-2.5 text-xs font-medium border-b-2 transition-colors -mb-px ${activeTab === 'root_cause'
+            ? 'border-accent text-accent font-semibold'
+            : 'border-transparent text-ink-muted hover:text-ink-primary hover:border-border'
+            }`}
         >
           <Layers className="w-4 h-4" />
           <span>Root Cause Analysis (Pareto)</span>
@@ -296,11 +334,10 @@ export function VolumeTrendsTabs({
               <button
                 type="button"
                 onClick={() => handleSegmentChange('all')}
-                className={`flex items-center gap-1.5 px-3 py-1.5 rounded-md text-xs font-medium transition-all ${
-                  selectedSegment === 'all'
-                    ? 'bg-surface text-accent shadow-xs font-semibold'
-                    : 'text-ink-muted hover:text-ink-primary'
-                }`}
+                className={`flex items-center gap-1.5 px-3 py-1.5 rounded-md text-xs font-medium transition-all ${selectedSegment === 'all'
+                  ? 'bg-surface text-accent shadow-xs font-semibold'
+                  : 'text-ink-muted hover:text-ink-primary'
+                  }`}
               >
                 <Users className="w-3.5 h-3.5" />
                 <span>All Segments</span>
@@ -308,11 +345,10 @@ export function VolumeTrendsTabs({
               <button
                 type="button"
                 onClick={() => handleSegmentChange('All Customer')}
-                className={`flex items-center gap-1.5 px-3 py-1.5 rounded-md text-xs font-medium transition-all ${
-                  selectedSegment === 'All Customer'
-                    ? 'bg-surface text-accent shadow-xs font-semibold'
-                    : 'text-ink-muted hover:text-ink-primary'
-                }`}
+                className={`flex items-center gap-1.5 px-3 py-1.5 rounded-md text-xs font-medium transition-all ${selectedSegment === 'All Customer'
+                  ? 'bg-surface text-accent shadow-xs font-semibold'
+                  : 'text-ink-muted hover:text-ink-primary'
+                  }`}
               >
                 <Users className="w-3.5 h-3.5" />
                 <span>All Customer (General)</span>
@@ -320,11 +356,10 @@ export function VolumeTrendsTabs({
               <button
                 type="button"
                 onClick={() => handleSegmentChange('KA Nasional')}
-                className={`flex items-center gap-1.5 px-3 py-1.5 rounded-md text-xs font-medium transition-all ${
-                  selectedSegment === 'KA Nasional'
-                    ? 'bg-surface text-accent shadow-xs font-semibold'
-                    : 'text-ink-muted hover:text-ink-primary'
-                }`}
+                className={`flex items-center gap-1.5 px-3 py-1.5 rounded-md text-xs font-medium transition-all ${selectedSegment === 'KA Nasional'
+                  ? 'bg-surface text-accent shadow-xs font-semibold'
+                  : 'text-ink-muted hover:text-ink-primary'
+                  }`}
               >
                 <ShieldCheck className="w-3.5 h-3.5" />
                 <span>KA Nasional (Priority)</span>
@@ -411,12 +446,12 @@ export function VolumeTrendsTabs({
               </div>
             </div>
 
-            {/* Stat 3: Man-Hour Leakage (% Unclaimable) */}
+            {/* Stat 3: Unclaimable Rate */}
             <div className="p-4 bg-surface border border-border rounded-lg shadow-xs flex flex-col justify-between card-interactive">
               <div className="flex items-start justify-between">
                 <div>
                   <div className="text-xs font-semibold uppercase tracking-wider text-ink-muted mb-1">
-                    Man-Hour Leakage Rate
+                    Unclaimable Rate
                   </div>
                   <div className="text-3xl font-mono font-bold text-accent tabular-nums tracking-tight">
                     {kpiStats.unclaimable_pct}%
@@ -432,7 +467,7 @@ export function VolumeTrendsTabs({
             </div>
           </div>
 
-          {/* ROW 1: 2-COLUMN GRID (Branch Risk Matrix vs Claimable Health Split) */}
+          {/* ROW 1: 2-COLUMN GRID (Branch Risk Matrix vs Claimable Ratio Split) */}
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
             {/* 1. Branch Risk Matrix (Scatter/Quadrant Plot) */}
             <div className="p-5 bg-surface border border-border rounded-lg shadow-xs flex flex-col justify-between">
@@ -444,7 +479,7 @@ export function VolumeTrendsTabs({
                       <span>Branch Risk Matrix (Volume × % Unclaimable)</span>
                     </h3>
                     <p className="text-[11px] text-ink-muted mt-0.5">
-                      Memetakan asimetri beban kritis: Cabang di kuadran kanan-atas memiliki volume tinggi dan rasio unclaimable tinggi.
+                      Cabang di kuadran kanan-atas memiliki volume tinggi dan rasio unclaimable tinggi.
                     </p>
                   </div>
                 </div>
@@ -480,17 +515,35 @@ export function VolumeTrendsTabs({
                           content={({ active, payload }) => {
                             if (active && payload && payload.length) {
                               const data = payload[0].payload;
+                              const branches = data.branches || [data];
+                              const isMulti = branches.length > 1;
                               return (
-                                <div className="p-2.5 bg-surface border border-border rounded-lg shadow-lg text-xs space-y-1 font-mono">
-                                  <div className="font-bold text-ink-primary text-sm font-sans flex items-center gap-1.5">
-                                    <span>{data.branch_code}</span>
-                                    <span className="text-[11px] text-ink-muted font-normal">({data.branch_city})</span>
+                                <div className="p-3 bg-surface border border-border rounded-lg shadow-xl text-xs space-y-2.5 font-mono min-w-[270px]">
+                                  <div className="border-b border-border/60 pb-2">
+                                    <div className="flex items-center justify-between gap-3">
+                                      <span className="font-sans font-bold text-sm text-ink-primary tracking-tight truncate">
+                                        {branches.map((b: any) => b.branch_code).join(', ')}
+                                      </span>
+                                      <span className="text-[10px] font-mono px-2 py-0.5 rounded bg-base border border-border text-ink-muted shrink-0 whitespace-nowrap">
+                                        {data.x} Kasus · {data.y}%
+                                      </span>
+                                    </div>
                                   </div>
-                                  <div className="text-ink-muted pt-1 border-t border-border/60 space-y-0.5">
-                                    <div>Total Volume: <strong className="text-ink-primary">{data.total_cases} kasus</strong></div>
-                                    <div>Unclaimable: <strong className="text-accent">{data.unclaimable_cases} ({data.unclaimable_pct}%)</strong></div>
-                                    <div>Overdue SLA: <strong className="text-[#B5302E]">{data.overdue_cases} ({data.overdue_pct}%)</strong></div>
-                                    <div>Avg Lead Time: <strong className="text-ink-primary">{data.avg_solution_days} hari</strong></div>
+                                  <div className="space-y-2">
+                                    {branches.map((b: any, idx: number) => (
+                                      <div key={idx} className={idx > 0 ? "pt-1.5 border-t border-border/40" : ""}>
+                                        <div className="font-bold text-ink-primary font-sans flex items-center gap-1.5">
+                                          <span>{b.branch_code}</span>
+                                          <span className="text-[11px] text-ink-muted font-normal">({b.branch_city})</span>
+                                        </div>
+                                        <div className="text-ink-muted pt-0.5 space-y-0.5 text-[11px]">
+                                          <div>Total Volume: <strong className="text-ink-primary">{b.total_cases} kasus</strong></div>
+                                          <div>Unclaimable: <strong className="text-accent">{b.unclaimable_cases} ({b.unclaimable_pct}%)</strong></div>
+                                          <div>Overdue SLA: <strong className="text-[#B5302E]">{b.overdue_cases} ({b.overdue_pct}%)</strong></div>
+                                          <div>Avg Lead Time: <strong className="text-ink-primary">{b.avg_solution_days} hari</strong></div>
+                                        </div>
+                                      </div>
+                                    ))}
                                   </div>
                                 </div>
                               );
@@ -512,26 +565,31 @@ export function VolumeTrendsTabs({
 
               {/* Legend Summary */}
               <div className="pt-2 border-t border-border flex items-center justify-between text-[10px] font-mono text-ink-muted">
-                <span className="flex items-center gap-1.5">
-                  <span className="w-2.5 h-2.5 rounded-full bg-[#A3462F]" /> High Leakage (≥25% Unclaimable)
-                </span>
-                <span className="flex items-center gap-1.5">
-                  <span className="w-2.5 h-2.5 rounded-full bg-[#71717A]" /> Normal / Low Leakage (&lt;25%)
+                <div className="flex items-center gap-3">
+                  <span className="flex items-center gap-1.5">
+                    <span className="w-2.5 h-2.5 rounded-full bg-[#A3462F]" /> Unclaimable ≥25%
+                  </span>
+                  <span className="flex items-center gap-1.5">
+                    <span className="w-2.5 h-2.5 rounded-full bg-[#71717A]" /> Unclaimable &lt;25%
+                  </span>
+                </div>
+                <span className="text-ink-muted">
+                  {branchRiskData.length} Cabang Terdata
                 </span>
               </div>
             </div>
 
-            {/* 2. Claimable Health Donut + Audit Tail Table */}
+            {/* 2. Claimable vs Unclaimable Breakdown + Audit Tail Table */}
             <div className="p-5 bg-surface border border-border rounded-lg shadow-xs flex flex-col justify-between">
               <div>
                 <div className="flex items-center justify-between border-b border-border pb-3 mb-3">
                   <div>
                     <h3 className="text-xs font-bold uppercase tracking-wider text-ink-primary flex items-center gap-2">
                       <ShieldCheck className="w-3.5 h-3.5 text-[#2E7D52]" />
-                      <span>Claimable Health Ratio & Tail Breakdown</span>
+                      <span>Claimable vs Unclaimable Breakdown</span>
                     </h3>
                     <p className="text-[11px] text-ink-muted mt-0.5">
-                      Rasio utama status klaim dan tabel rincian status minor untuk audit lengkap.
+                      Distribusi status klaim dan tabel rincian status untuk audit lengkap.
                     </p>
                   </div>
                 </div>
