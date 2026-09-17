@@ -48,8 +48,8 @@ const OFFICIAL_PHASES: PhaseDefinition[] = [
     shortName: '2. Warranty Checking',
     startCheckpoint: 'WO_CHECKING_CREATED',
     endCheckpoint: 'WO_CHECKING_CLOSED',
-    color: 'bg-[#71717A]',
-    accentColor: '#71717A',
+    color: 'bg-[#52525B]',
+    accentColor: '#52525B',
   },
   {
     id: 3,
@@ -57,8 +57,8 @@ const OFFICIAL_PHASES: PhaseDefinition[] = [
     shortName: '3. PS Approval',
     startCheckpoint: 'WO_CHECKING_CLOSED',
     endCheckpoint: 'PS_APPROVAL',
-    color: 'bg-[#2E7D52]',
-    accentColor: '#2E7D52',
+    color: 'bg-[#1E6B3F]',
+    accentColor: '#1E6B3F',
   },
   {
     id: 4,
@@ -66,8 +66,8 @@ const OFFICIAL_PHASES: PhaseDefinition[] = [
     shortName: '4. WO Repair Preparation',
     startCheckpoint: 'PS_APPROVAL',
     endCheckpoint: 'WO_REPAIR_RELEASED',
-    color: 'bg-[#B87A28]',
-    accentColor: '#B87A28',
+    color: 'bg-[#965B16]',
+    accentColor: '#965B16',
   },
   {
     id: 5,
@@ -75,8 +75,8 @@ const OFFICIAL_PHASES: PhaseDefinition[] = [
     shortName: '5. Part Supply',
     startCheckpoint: 'WO_REPAIR_RELEASED',
     endCheckpoint: 'PART_GI',
-    color: 'bg-[#52525B]',
-    accentColor: '#52525B',
+    color: 'bg-[#3F3F46]',
+    accentColor: '#3F3F46',
   },
   {
     id: 6,
@@ -84,8 +84,8 @@ const OFFICIAL_PHASES: PhaseDefinition[] = [
     shortName: '6. Warranty Repair',
     startCheckpoint: 'PART_GI',
     endCheckpoint: 'UNIT_RFU',
-    color: 'bg-[#41A86F]',
-    accentColor: '#41A86F',
+    color: 'bg-[#15803D]',
+    accentColor: '#15803D',
   },
   {
     id: 7,
@@ -285,11 +285,11 @@ export function CheckpointProgressBar({
                 }}
                 className={`relative h-full rounded-sm cursor-pointer transition-all duration-150 flex items-center justify-center text-[10px] font-bold px-1.5 select-none ${
                   p.isNegative
-                    ? 'bg-red-600/90 text-white border border-red-400 animate-pulse'
+                    ? 'bg-red-600 text-white border border-red-400 animate-pulse'
                     : p.isCompleted
-                    ? `${p.color} text-white opacity-90 hover:opacity-100`
+                    ? `${p.color} text-white font-bold opacity-95 hover:opacity-100 shadow-xs`
                     : p.hasStart
-                    ? 'bg-amber-500/30 border border-dashed border-amber-500/60 text-amber-900 dark:text-amber-200'
+                    ? 'bg-amber-500/20 dark:bg-amber-500/30 border border-dashed border-amber-600/60 dark:border-amber-400/60 text-amber-900 dark:text-amber-200'
                     : 'bg-base/80 border border-dashed border-border/70 text-ink-muted'
                 } ${
                   isSelected
@@ -313,48 +313,50 @@ export function CheckpointProgressBar({
 
                 {/* Floating Tooltip */}
                 {isHovered && (
-                  <div className="absolute bottom-full mb-2 left-1/2 -translate-x-1/2 bg-ink-primary text-base text-xs rounded-lg p-3 shadow-2xl z-30 whitespace-nowrap pointer-events-none min-w-[220px] max-w-sm border border-border">
-                    <div className="flex items-center justify-between gap-3 border-b border-white/10 pb-1.5 mb-1.5">
-                      <span className="font-bold text-white text-xs">
+                  <div className="absolute bottom-full mb-2 left-1/2 -translate-x-1/2 bg-surface text-ink-primary text-xs rounded-lg p-3 shadow-xl z-30 whitespace-nowrap pointer-events-none min-w-[220px] max-w-sm border border-border">
+                    <div className="flex items-center justify-between gap-3 border-b border-border/70 pb-1.5 mb-1.5">
+                      <span className="font-bold text-ink-primary text-xs">
                         Phase {p.id}: {p.name}
                       </span>
                       <span
                         className={`text-[10px] font-bold px-1.5 py-0.2 rounded font-mono ${
                           p.isNegative
-                            ? 'bg-red-500/30 text-red-300 border border-red-400/40'
+                            ? 'bg-red-500/20 text-red-600 dark:text-red-400 border border-red-500/30'
                             : p.isCompleted
-                            ? 'bg-emerald-500/20 text-emerald-300 border border-emerald-400/30'
-                            : 'bg-amber-500/20 text-amber-300 border border-amber-400/30'
+                            ? 'bg-[#2E7D52]/15 text-[#2E7D52] dark:bg-[#41A86F]/20 dark:text-[#41A86F] border border-[#2E7D52]/30'
+                            : p.hasStart
+                            ? 'bg-[#B87A28]/15 text-[#B87A28] dark:bg-[#D4953C]/20 dark:text-[#D4953C] border border-[#B87A28]/30'
+                            : 'bg-base text-ink-muted border border-border'
                         }`}
                       >
                         {p.isCompleted ? `${p.days} Days` : p.hasStart ? 'In Progress' : 'Pending'}
                       </span>
                     </div>
 
-                    <div className="text-[11px] text-gray-300 space-y-1">
+                    <div className="text-[11px] text-ink-muted space-y-1">
                       <div className="flex items-center gap-1.5 text-[10px]">
-                        <span className="text-gray-400">{p.startCheckpoint}</span>
+                        <span className="text-ink-muted font-medium">{p.startCheckpoint}</span>
                         <ArrowRight className="w-3 h-3 text-accent shrink-0" />
-                        <span className="text-gray-400">{p.endCheckpoint}</span>
+                        <span className="text-ink-muted font-medium">{p.endCheckpoint}</span>
                       </div>
 
-                      <div className="flex items-center justify-between text-[11px] pt-1">
-                        <span className="text-gray-400">Rentang Tanggal:</span>
-                        <span className="font-mono text-white text-[10px]">
+                      <div className="flex items-center justify-between text-[11px] pt-1 border-t border-border/40">
+                        <span className="text-ink-muted">Rentang Tanggal:</span>
+                        <span className="font-mono text-ink-primary font-bold text-[10px]">
                           {formatDisplayDate(p.startDate)} ➔ {formatDisplayDate(p.endDate)}
                         </span>
                       </div>
 
                       {p.isNegative && (
-                        <div className="p-1.5 rounded bg-red-500/20 border border-red-500/40 text-[10px] text-red-200 mt-1 leading-tight flex items-start gap-1">
-                          <AlertTriangle className="w-3.5 h-3.5 text-red-400 shrink-0 mt-0.5" />
+                        <div className="p-1.5 rounded bg-red-500/10 border border-red-500/30 text-[10px] text-red-600 dark:text-red-400 mt-1 leading-tight flex items-start gap-1">
+                          <AlertTriangle className="w-3.5 h-3.5 text-red-500 shrink-0 mt-0.5" />
                           <span>
                             <strong>Data Quality Anomaly:</strong> Tanggal akhir ({formatDisplayDate(p.endDate)}) tercatat lebih awal dari tanggal awal ({formatDisplayDate(p.startDate)}) pada arsip historis.
                           </span>
                         </div>
                       )}
                     </div>
-                    <div className="absolute top-full left-1/2 -translate-x-1/2 border-4 border-transparent border-t-ink-primary" />
+                    <div className="absolute top-full left-1/2 -translate-x-1/2 border-4 border-transparent border-t-surface" />
                   </div>
                 )}
               </div>

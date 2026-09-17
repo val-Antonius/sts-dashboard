@@ -797,6 +797,14 @@ export function VolumeTrendsTabs({
                   }}
                 />
                 <Legend wrapperStyle={{ fontSize: '11px', paddingTop: '10px' }} />
+                <ReferenceLine
+                  yAxisId="right"
+                  y={80}
+                  stroke="var(--ink-muted)"
+                  strokeDasharray="3 3"
+                  strokeOpacity={0.5}
+                  label={{ value: '80% Pareto Line', fill: 'var(--ink-muted)', fontSize: 9, position: 'insideTopRight' }}
+                />
                 <Bar
                   yAxisId="left"
                   dataKey="jumlah_kasus"
@@ -816,17 +824,18 @@ export function VolumeTrendsTabs({
                   yAxisId="right"
                   type="monotone"
                   dataKey="cumulative_pct"
-                  stroke="#121316"
+                  stroke="#D4953C"
                   strokeWidth={2.5}
                   name="Cumulative %"
-                  dot={{ r: 3.5, fill: '#121316' }}
+                  dot={{ r: 3.5, fill: '#D4953C', stroke: 'var(--surface)', strokeWidth: 1.5 }}
+                  activeDot={{ r: 5, fill: '#D4953C' }}
                 >
                   <LabelList
                     dataKey="cumulative_pct"
                     position="top"
                     offset={6}
                     formatter={(val: any) => (val !== undefined ? `${val}%` : '')}
-                    style={{ fontSize: '9px', fontWeight: 700, fill: 'var(--ink-primary)' }}
+                    style={{ fontSize: '9px', fontWeight: 700, fill: '#D4953C' }}
                   />
                 </Line>
               </ComposedChart>
