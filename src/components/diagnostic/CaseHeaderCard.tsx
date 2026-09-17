@@ -3,6 +3,7 @@
 import React from 'react';
 import { SingleCaseDetail } from '@/types/database';
 import { StatusBadge } from '@/components/common/StatusBadge';
+import { formatDisplayDate } from '@/lib/dateUtils';
 import {
   Calendar,
   Clock,
@@ -94,7 +95,7 @@ export function CaseHeaderCard({ caseDetail }: CaseHeaderCardProps) {
             Complaint Date
           </span>
           <div className="font-mono font-medium text-ink-primary mt-0.5">
-            {caseDetail.complaint_date}
+            {formatDisplayDate(caseDetail.complaint_date)}
           </div>
         </div>
 

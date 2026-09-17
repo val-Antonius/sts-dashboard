@@ -33,6 +33,7 @@ import {
   RefUnitCondition,
   RefPartReadiness,
 } from '@/types/database';
+import { formatDisplayDate } from '@/lib/dateUtils';
 
 interface IssueEditorModalProps {
   isOpen: boolean;
@@ -264,7 +265,7 @@ export function IssueEditorModal({
   const deliveryDateError = useMemo(() => {
     if (selectedAsset?.delivery_date && formData.complaint_date) {
       if (formData.complaint_date < selectedAsset.delivery_date) {
-        return `Complaint Date (${formData.complaint_date}) tidak boleh lebih awal dari Delivery Date unit (${selectedAsset.delivery_date}).`;
+        return `Complaint Date (${formatDisplayDate(formData.complaint_date)}) tidak boleh lebih awal dari Delivery Date unit (${formatDisplayDate(selectedAsset.delivery_date)}).`;
       }
     }
     return null;
@@ -274,7 +275,7 @@ export function IssueEditorModal({
   const closingDateWoError = useMemo(() => {
     if (formData.closing_date_wo && formData.complaint_date) {
       if (formData.closing_date_wo < formData.complaint_date) {
-        return `Closing Date WO (${formData.closing_date_wo}) tidak boleh lebih awal dari Complaint Date (${formData.complaint_date}).`;
+        return `Closing Date WO (${formatDisplayDate(formData.closing_date_wo)}) tidak boleh lebih awal dari Complaint Date (${formatDisplayDate(formData.complaint_date)}).`;
       }
     }
     return null;
@@ -284,7 +285,7 @@ export function IssueEditorModal({
   const closingByRfuError = useMemo(() => {
     if (formData.closing_by_rfu_date && formData.complaint_date) {
       if (formData.closing_by_rfu_date < formData.complaint_date) {
-        return `Closing by RFU Date (${formData.closing_by_rfu_date}) tidak boleh lebih awal dari Complaint Date (${formData.complaint_date}).`;
+        return `Closing by RFU Date (${formatDisplayDate(formData.closing_by_rfu_date)}) tidak boleh lebih awal dari Complaint Date (${formatDisplayDate(formData.complaint_date)}).`;
       }
     }
     return null;
@@ -294,7 +295,7 @@ export function IssueEditorModal({
   const srdDateError = useMemo(() => {
     if (formData.goodwill_statement_date && formData.srd_publication_date) {
       if (formData.srd_publication_date < formData.goodwill_statement_date) {
-        return `SRD Publication Date (${formData.srd_publication_date}) tidak boleh lebih awal dari Goodwill Statement Date (${formData.goodwill_statement_date}).`;
+        return `SRD Publication Date (${formatDisplayDate(formData.srd_publication_date)}) tidak boleh lebih awal dari Goodwill Statement Date (${formatDisplayDate(formData.goodwill_statement_date)}).`;
       }
     }
     return null;
@@ -334,26 +335,26 @@ export function IssueEditorModal({
     const errors: string[] = [];
 
     if (formData.complaint_date && formData.complaint_date > today) {
-      errors.push(`Complaint Date (${formData.complaint_date}) tidak boleh tanggal masa depan (maksimal hari ini: ${today}).`);
+      errors.push(`Complaint Date (${formatDisplayDate(formData.complaint_date)}) tidak boleh tanggal masa depan (maksimal hari ini: ${formatDisplayDate(today)}).`);
     }
     if (formData.closing_date_wo && formData.closing_date_wo > today) {
-      errors.push(`Closing Date WO (${formData.closing_date_wo}) tidak boleh tanggal masa depan.`);
+      errors.push(`Closing Date WO (${formatDisplayDate(formData.closing_date_wo)}) tidak boleh tanggal masa depan.`);
     }
     if (formData.closing_by_rfu_date && formData.closing_by_rfu_date > today) {
-      errors.push(`Closing by RFU Date (${formData.closing_by_rfu_date}) tidak boleh tanggal masa depan.`);
+      errors.push(`Closing by RFU Date (${formatDisplayDate(formData.closing_by_rfu_date)}) tidak boleh tanggal masa depan.`);
     }
     if (formData.goodwill_statement_date && formData.goodwill_statement_date > today) {
-      errors.push(`Goodwill Statement Date (${formData.goodwill_statement_date}) tidak boleh tanggal masa depan.`);
+      errors.push(`Goodwill Statement Date (${formatDisplayDate(formData.goodwill_statement_date)}) tidak boleh tanggal masa depan.`);
     }
     if (formData.srd_publication_date && formData.srd_publication_date > today) {
-      errors.push(`SRD Publication Date (${formData.srd_publication_date}) tidak boleh tanggal masa depan.`);
+      errors.push(`SRD Publication Date (${formatDisplayDate(formData.srd_publication_date)}) tidak boleh tanggal masa depan.`);
     }
 
     // Checkpoint dates
     for (const step of CHECKPOINT_STEPS) {
       const dt = step.code === 'COMPLAINT_DATE' ? formData.complaint_date : formData.checkpoints[step.code];
       if (dt && dt > today) {
-        errors.push(`Checkpoint '${step.label}' (${dt}) tidak boleh tanggal masa depan.`);
+        errors.push(`Checkpoint '${step.label}' (${formatDisplayDate(dt)}) tidak boleh tanggal masa depan.`);
       }
     }
 
@@ -760,7 +761,7 @@ export function IssueEditorModal({
                         {lookups.assets.map((a) => (
                           <option key={a.unit_asset_id} value={a.unit_asset_id}>
                             [{a.product_code}] {a.unit_model_name} - S/N: {a.serial_number || 'No Serial'}
-                            {a.delivery_date ? ` (Delivered: ${a.delivery_date})` : ''}
+                            {a.delivery_date ? ` (Delivered: ${formatDisplayDate(a.delivery_date)})` : ''}
                           </option>
                         ))}
                       </select>
@@ -776,7 +777,7 @@ export function IssueEditorModal({
                           </div>
                           {selectedAsset.delivery_date && (
                             <p className="text-[10px] text-ink-muted font-mono">
-                              Delivery Date Unit: {selectedAsset.delivery_date}
+                              Delivery Date Unit: {formatDisplayDate(selectedAsset.delivery_date)}
                             </p>
                           )}
                         </div>

@@ -16,6 +16,7 @@ import {
 } from '@/types/database';
 import { IssueEditorModal } from './IssueEditorModal';
 import { Pagination } from '@/components/common/Pagination';
+import { formatDisplayDate } from '@/lib/dateUtils';
 import {
   Search,
   Plus,
@@ -339,7 +340,7 @@ export function IssueManagementView({
                     <tr key={row.issue_case_id} className="hover:bg-surface-hover/60 transition-colors">
                       {/* 1. Date */}
                       <td className="py-3 px-4 whitespace-nowrap font-mono tabular-nums">
-                        <div className="font-semibold text-ink-primary">{row.complaint_date}</div>
+                        <div className="font-semibold text-ink-primary">{formatDisplayDate(row.complaint_date)}</div>
                         <div className="text-[10px] text-ink-muted">
                           {row.old_or_new_issue}
                         </div>

@@ -2,6 +2,7 @@
 
 import React, { useState, useEffect, useMemo } from 'react';
 import { CaseProgressLog, SingleCaseDetail } from '@/types/database';
+import { formatDisplayDate } from '@/lib/dateUtils';
 import {
   MessageSquare,
   Plus,
@@ -311,7 +312,7 @@ export function CaseProgressLogFeed({
           </span>
         </div>
         <div className="flex items-center gap-2 text-[10px]">
-          <span>Rentang Valid: <strong className="font-mono text-ink-primary">{complaintDate || '—'}</strong> s/d <strong className="font-mono text-ink-primary">{maxAllowedDate || 'Hari ini'}</strong></span>
+          <span>Rentang Valid: <strong className="font-mono text-ink-primary">{formatDisplayDate(complaintDate)}</strong> s/d <strong className="font-mono text-ink-primary">{isClosed && caseDetail.closing_date_wo ? formatDisplayDate(caseDetail.closing_date_wo) : 'Hari ini'}</strong></span>
         </div>
       </div>
 
@@ -410,7 +411,7 @@ export function CaseProgressLogFeed({
                             : 'bg-base border-border text-ink-primary'
                         }`}
                       >
-                        {log.log_date}
+                        {formatDisplayDate(log.log_date)}
                       </span>
                       {log.pic_name && (
                         <span className="text-[10px] text-ink-muted hidden md:inline-block max-w-[120px] truncate font-medium">
@@ -452,7 +453,7 @@ export function CaseProgressLogFeed({
                 {isDeletingThis && (
                   <div className="mt-2 p-2 rounded-lg bg-red-500/10 border border-red-500/30 text-xs flex items-center justify-between gap-2 animate-in fade-in">
                     <span className="text-red-700 dark:text-red-300 text-[11px] font-medium">
-                      Hapus log tanggal <strong>{log.log_date}</strong>?
+                      Hapus log tanggal <strong>{formatDisplayDate(log.log_date)}</strong>?
                     </span>
                     <div className="flex items-center gap-1.5 shrink-0">
                       <button

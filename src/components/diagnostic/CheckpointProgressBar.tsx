@@ -2,6 +2,7 @@
 
 import React, { useState, useMemo } from 'react';
 import { CheckpointDuration } from '@/types/database';
+import { formatDisplayDate } from '@/lib/dateUtils';
 import { CheckCircle2, Clock, AlertTriangle, Layers, ArrowRight, Edit3 } from 'lucide-react';
 
 export interface PhaseClickInfo {
@@ -340,7 +341,7 @@ export function CheckpointProgressBar({
                       <div className="flex items-center justify-between text-[11px] pt-1">
                         <span className="text-gray-400">Rentang Tanggal:</span>
                         <span className="font-mono text-white text-[10px]">
-                          {p.startDate || '—'} ➔ {p.endDate || '—'}
+                          {formatDisplayDate(p.startDate)} ➔ {formatDisplayDate(p.endDate)}
                         </span>
                       </div>
 
@@ -348,7 +349,7 @@ export function CheckpointProgressBar({
                         <div className="p-1.5 rounded bg-red-500/20 border border-red-500/40 text-[10px] text-red-200 mt-1 leading-tight flex items-start gap-1">
                           <AlertTriangle className="w-3.5 h-3.5 text-red-400 shrink-0 mt-0.5" />
                           <span>
-                            <strong>Data Quality Anomaly:</strong> Tanggal akhir ({p.endDate}) tercatat lebih awal dari tanggal awal ({p.startDate}) pada arsip historis.
+                            <strong>Data Quality Anomaly:</strong> Tanggal akhir ({formatDisplayDate(p.endDate)}) tercatat lebih awal dari tanggal awal ({formatDisplayDate(p.startDate)}) pada arsip historis.
                           </span>
                         </div>
                       )}
@@ -437,7 +438,7 @@ export function CheckpointProgressBar({
                       isRecorded ? 'text-ink-primary' : 'text-ink-muted/50'
                     }`}
                   >
-                    {dateStr || '—'}
+                    {formatDisplayDate(dateStr)}
                   </span>
                 </div>
               </div>

@@ -2,6 +2,7 @@
 
 import React from 'react';
 import { SingleCaseDetail, CasePartRequirement } from '@/types/database';
+import { formatDisplayDate } from '@/lib/dateUtils';
 import {
   Package,
   Wrench,
@@ -66,7 +67,7 @@ export function CaseProductSpecsTab({
                       </span>
                     </td>
                     <td className="py-2.5 px-3 font-mono text-ink-muted text-[11px]">
-                      {p.eta_part_date || '—'}
+                      {formatDisplayDate(p.eta_part_date)}
                     </td>
                     <td className="py-2.5 px-3 text-center">
                       {p.is_full_supplied ? (

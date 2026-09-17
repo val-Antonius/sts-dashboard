@@ -5,6 +5,7 @@ import {
   CaseProgressLog,
 } from '@/types/database';
 import { StatusBadge } from '@/components/common/StatusBadge';
+import { formatDisplayDate } from '@/lib/dateUtils';
 import { Package, MessageSquare, AlertCircle, CheckCircle2, Clock } from 'lucide-react';
 
 interface DiagnosticDetailsProps {
@@ -79,7 +80,7 @@ export function DiagnosticDetails({
         <div className="grid grid-cols-2 sm:grid-cols-4 gap-4 text-xs">
           <div>
             <span className="text-ink-muted block text-[11px]">Complaint Date</span>
-            <span className="font-mono font-medium text-ink-primary">{caseDetail.complaint_date}</span>
+            <span className="font-mono font-medium text-ink-primary">{formatDisplayDate(caseDetail.complaint_date)}</span>
           </div>
           <div>
             <span className="text-ink-muted block text-[11px]">Claimable Status</span>
@@ -138,7 +139,7 @@ export function DiagnosticDetails({
                           </span>
                         </td>
                         <td className="py-2.5 px-2.5 font-mono text-ink-muted text-[11px]">
-                          {p.eta_part_date || '—'}
+                          {formatDisplayDate(p.eta_part_date)}
                         </td>
                         <td className="py-2.5 px-2.5 text-center">
                           {p.is_full_supplied ? (
@@ -182,7 +183,7 @@ export function DiagnosticDetails({
                     className="p-3 bg-base/50 border border-border/70 rounded-md text-xs space-y-1"
                   >
                     <div className="flex items-center justify-between text-[11px] text-ink-muted">
-                      <span className="font-mono font-medium text-ink-primary">{l.log_date}</span>
+                      <span className="font-mono font-medium text-ink-primary">{formatDisplayDate(l.log_date)}</span>
                       <span>By: <strong className="text-ink-primary">{l.pic_name || 'System / PIC'}</strong></span>
                     </div>
                     <p className="text-ink-primary leading-relaxed whitespace-pre-wrap text-xs">

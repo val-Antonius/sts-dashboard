@@ -14,6 +14,7 @@ import {
   RefBottleneckReason,
 } from '@/types/database';
 import { MasterDataTable, Column } from './MasterDataTable';
+import { formatDisplayDate } from '@/lib/dateUtils';
 import { Building2, Package, Users, Bookmark, X, Loader2, AlertTriangle, Check } from 'lucide-react';
 
 interface MasterDataTabsProps {
@@ -355,7 +356,7 @@ export function MasterDataTabs({ initialData }: MasterDataTabsProps) {
     },
     { header: 'Unit Model Name', accessor: 'unit_model_name', render: (r) => <span className="font-medium text-ink-primary">{r.unit_model_name}</span> },
     { header: 'Serial Number', accessor: 'serial_number', render: (r) => <code className="font-mono text-ink-muted">{r.serial_number || '—'}</code> },
-    { header: 'Delivery Date', accessor: 'delivery_date', className: 'tabular-nums' },
+    { header: 'Delivery Date', accessor: 'delivery_date', className: 'tabular-nums font-mono', render: (r) => <span>{formatDisplayDate(r.delivery_date)}</span> },
     { header: 'Total Issues', accessor: 'total_issue_cases', className: 'tabular-nums font-semibold text-ink-primary' },
   ];
 
