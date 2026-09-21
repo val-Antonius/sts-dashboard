@@ -175,14 +175,90 @@ export interface BranchClaimableItem {
   [status: string]: number | string;
 }
 
+export interface ProductClaimableDotPlotItem {
+  product_code: string;
+  total_cases: number;
+  claimable_cases: number;
+  unclaimable_cases: number;
+  goodwill_cases: number;
+  claimable_pct: number;
+  unclaimable_pct: number;
+  goodwill_pct: number;
+  volume_share_pct: number;
+  dot_radius: number;
+}
+
+export type FaultGroupType = 'Product-side' | 'Customer-side' | 'Process-side' | 'External' | 'Unrecorded';
+
+export interface ProductFaultRootCauseItem {
+  root_cause_name: string;
+  attribution_group: FaultGroupType;
+  count: number;
+  pct_of_product: number;
+  covered_count: number;
+  goodwill_count: number;
+  unclaimable_count: number;
+}
+
+export interface ProductFaultAttributionPanel {
+  product_code: string;
+  total_cases: number;
+  dominant_group: FaultGroupType;
+  dominant_group_pct: number;
+  group_breakdown: Record<FaultGroupType, { count: number; pct: number }>;
+  items: ProductFaultRootCauseItem[];
+}
+
+export interface FaultAttributionItem {
+  root_cause_name: string;
+  total: number;
+  covered_count: number;
+  goodwill_count: number;
+  unclaimable_count: number;
+}
+
+export interface FaultAttributionGroup {
+  group_name: FaultGroupType;
+  group_total: number;
+  group_share_pct: number;
+  items: FaultAttributionItem[];
+}
+
+export interface BranchOutcomeProfileItem {
+  branch_code: string;
+  total: number;
+  covered_count: number;
+  covered_pct: number;
+  goodwill_count: number;
+  goodwill_pct: number;
+  unclaimable_count: number;
+  unclaimable_pct: number;
+  product_breakdown?: Record<string, {
+    total: number;
+    covered: number;
+    goodwill: number;
+    unclaimable: number;
+  }>;
+}
+
 export interface PrincipalClaimableData {
-  productRootCauses: {
+  dotPlotData: ProductClaimableDotPlotItem[];
+  productFaultPanels: ProductFaultAttributionPanel[];
+  faultAttributionGroups?: FaultAttributionGroup[];
+  productBranchHeatmap: ProductBranchHeatmapData;
+  branchOutcomeProfile: BranchOutcomeProfileItem[];
+  rawCaseAttributes?: Array<{
+    product_code: string;
+    branch_code: string;
+    root_cause_name: string;
+    claim_outcome: 'Covered' | 'Goodwill' | 'Unclaimable';
+  }>;
+  productRootCauses?: {
     data: ProductRootCauseItem[];
     rootCauseKeys: string[];
   };
-  productClaimable: ProductClaimableItem[];
-  productBranchHeatmap: ProductBranchHeatmapData;
-  branchClaimable: {
+  productClaimable?: ProductClaimableItem[];
+  branchClaimable?: {
     data: BranchClaimableItem[];
     statusKeys: string[];
   };

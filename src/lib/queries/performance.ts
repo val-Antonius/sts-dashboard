@@ -11,6 +11,13 @@ import {
   ProductClaimableItem,
   ProductBranchHeatmapData,
   BranchClaimableItem,
+  ProductClaimableDotPlotItem,
+  FaultGroupType,
+  ProductFaultAttributionPanel,
+  ProductFaultRootCauseItem,
+  FaultAttributionGroup,
+  FaultAttributionItem,
+  BranchOutcomeProfileItem,
 } from '@/types/database';
 
 export async function getSlaPerformanceByGolongan(): Promise<SlaPerformanceByGolongan[]> {
@@ -340,90 +347,292 @@ export async function getPrincipalClaimableData(
     queryParams = [customStart, customEnd];
   }
 
-  // 1. Total Case vs Product Code by Root Cause
-  const rootCauseRows = await query<{ product_code: string; root_cause_name: string; count: string }>(`
-    SELECT
-      product_code,
-      COALESCE(root_cause_name, 'Not Recorded') AS root_cause_name,
-      COUNT(*)::int AS count
-    FROM product_issue.v_issue_case_full
-    WHERE ${dateClause}
-    GROUP BY product_code, COALESCE(root_cause_name, 'Not Recorded')
-    ORDER BY product_code, count DESC;
-  `, queryParams);
-
-  // 2. Total Case vs Product Code by Claimable Status (Claimable vs Non-Claimable)
-  const claimableRows = await query<{
+  // --- Phase 7 Comprehensive Query ---
+  const caseRows = await query<{
     product_code: string;
-    claimable_count: string;
-    non_claimable_count: string;
-    total: string;
-  }>(`
-    SELECT
-      product_code,
-      COUNT(CASE WHEN claimable_status_name LIKE 'Claimable%' THEN 1 END)::int AS claimable_count,
-      COUNT(CASE WHEN claimable_status_name NOT LIKE 'Claimable%' THEN 1 END)::int AS non_claimable_count,
-      COUNT(*)::int AS total
-    FROM product_issue.v_issue_case_full
-    WHERE ${dateClause}
-    GROUP BY product_code
-    ORDER BY total DESC;
-  `, queryParams);
-
-  // 3. Total Case vs Product Code by Branch (Heatmap)
-  const heatmapRows = await query<{ product_code: string; branch_code: string; count: string }>(`
-    SELECT
-      product_code,
-      branch_code,
-      COUNT(*)::int AS count
-    FROM product_issue.v_issue_case_full
-    WHERE ${dateClause}
-    GROUP BY product_code, branch_code;
-  `, queryParams);
-
-  // 4. Total Case vs Claimable Status by Branch (Grouped Column Chart)
-  const branchClaimableRows = await query<{
     branch_code: string;
+    root_cause_name: string;
     claimable_status_name: string;
-    count: string;
+    is_warranty_scope: boolean;
+    claim_outcome: 'Covered' | 'Goodwill' | 'Unclaimable';
   }>(`
     SELECT
+      product_code,
       branch_code,
-      claimable_status_name,
-      COUNT(*)::int AS count
+      COALESCE(root_cause_name, 'Not Recorded') AS root_cause_name,
+      COALESCE(claimable_status_name, 'Unrecorded') AS claimable_status_name,
+      COALESCE(is_warranty_scope, false) AS is_warranty_scope,
+      CASE
+        WHEN claimable_status_name = 'Goodwill' THEN 'Goodwill'
+        WHEN is_warranty_scope = true THEN 'Covered'
+        ELSE 'Unclaimable'
+      END AS claim_outcome
     FROM product_issue.v_issue_case_full
     WHERE ${dateClause}
-    GROUP BY branch_code, claimable_status_name
-    ORDER BY branch_code, count DESC;
+    ORDER BY product_code, branch_code;
   `, queryParams);
 
-  // --- Transform 1: Product Code by Root Cause (Stacked Horizontal Bar) ---
-  const productTotals: Record<string, number> = {};
-  const productRootCauseMap: Record<string, Record<string, number>> = {};
-  const rootCauseSet = new Set<string>();
+  const rawCases = caseRows.rows;
+  const totalFilteredCases = rawCases.length || 1;
 
-  rootCauseRows.rows.forEach((r) => {
+  // --- 1. Product Claimable Dot Plot (Pareto Order) ---
+  const productStats: Record<string, {
+    total: number;
+    claimable: number;
+    unclaimable: number;
+    goodwill: number;
+  }> = {};
+
+  rawCases.forEach((r) => {
     const p = r.product_code;
-    const rc = r.root_cause_name;
-    const c = Number(r.count);
-
-    productTotals[p] = (productTotals[p] || 0) + c;
-    if (!productRootCauseMap[p]) productRootCauseMap[p] = {};
-    productRootCauseMap[p][rc] = c;
-    rootCauseSet.add(rc);
+    if (!productStats[p]) {
+      productStats[p] = { total: 0, claimable: 0, unclaimable: 0, goodwill: 0 };
+    }
+    productStats[p].total += 1;
+    if (r.is_warranty_scope) {
+      productStats[p].claimable += 1;
+    } else {
+      productStats[p].unclaimable += 1;
+    }
+    if (r.claim_outcome === 'Goodwill') {
+      productStats[p].goodwill += 1;
+    }
   });
 
-  const rootCauseKeys = Array.from(rootCauseSet).sort();
-
-  // Order products descending by total cases
-  const sortedProducts = Object.keys(productTotals).sort(
-    (a, b) => productTotals[b] - productTotals[a]
+  const sortedProductCodes = Object.keys(productStats).sort(
+    (a, b) => productStats[b].total - productStats[a].total
   );
 
-  const productRootCauseData: ProductRootCauseItem[] = sortedProducts.map((p) => {
+  const dotPlotData: ProductClaimableDotPlotItem[] = sortedProductCodes.map((p) => {
+    const stat = productStats[p];
+    const total = stat.total;
+    const claimablePct = total > 0 ? Math.round((stat.claimable / total) * 1000) / 10 : 0;
+    const unclaimablePct = total > 0 ? Math.round((stat.unclaimable / total) * 1000) / 10 : 0;
+    const goodwillPct = total > 0 ? Math.round((stat.goodwill / total) * 1000) / 10 : 0;
+    const volumeSharePct = Math.round((total / totalFilteredCases) * 1000) / 10;
+    // Scale dot radius between 5px and 18px based on sqrt(total)
+    const dotRadius = Math.max(5, Math.min(18, Math.round(Math.sqrt(total) * 2.2 + 2)));
+
+    return {
+      product_code: p,
+      total_cases: total,
+      claimable_cases: stat.claimable,
+      unclaimable_cases: stat.unclaimable,
+      goodwill_cases: stat.goodwill,
+      claimable_pct: claimablePct,
+      unclaimable_pct: unclaimablePct,
+      goodwill_pct: goodwillPct,
+      volume_share_pct: volumeSharePct,
+      dot_radius: dotRadius,
+    };
+  });
+
+  // --- 2. Product Fault Attribution Small Multiples (Panels per Product Code) ---
+  const ATTRIBUTION_MAPPING: Record<string, FaultGroupType> = {
+    'Material Defect': 'Product-side',
+    'Workmanship/Factory Defect': 'Product-side',
+    'Attachment/Modification/Local Component': 'Product-side',
+    'Miss Maintenance': 'Customer-side',
+    'Miss Operation': 'Customer-side',
+    'Miss Application': 'Customer-side',
+    'Inventory Process/Storage': 'Process-side',
+    'Accident': 'External',
+    'Natural Disaster': 'External',
+  };
+
+  const productFaultPanels: ProductFaultAttributionPanel[] = sortedProductCodes.map((prodCode) => {
+    const prodCases = rawCases.filter((r) => r.product_code === prodCode);
+    const prodTotal = prodCases.length;
+
+    const rcMap: Record<string, {
+      count: number;
+      group: FaultGroupType;
+      covered: number;
+      goodwill: number;
+      unclaimable: number;
+    }> = {};
+
+    const grpCount: Record<FaultGroupType, number> = {
+      'Product-side': 0,
+      'Customer-side': 0,
+      'Process-side': 0,
+      'External': 0,
+      'Unrecorded': 0,
+    };
+
+    prodCases.forEach((r) => {
+      const rc = r.root_cause_name;
+      const grp = ATTRIBUTION_MAPPING[rc] || 'Unrecorded';
+      grpCount[grp] = (grpCount[grp] || 0) + 1;
+
+      if (!rcMap[rc]) {
+        rcMap[rc] = {
+          count: 0,
+          group: grp,
+          covered: 0,
+          goodwill: 0,
+          unclaimable: 0,
+        };
+      }
+      rcMap[rc].count += 1;
+      if (r.claim_outcome === 'Covered') rcMap[rc].covered += 1;
+      else if (r.claim_outcome === 'Goodwill') rcMap[rc].goodwill += 1;
+      else rcMap[rc].unclaimable += 1;
+    });
+
+    let dominantGroup: FaultGroupType = 'Product-side';
+    let maxGrpCount = -1;
+    const groupBreakdown: Record<FaultGroupType, { count: number; pct: number }> = {
+      'Product-side': { count: 0, pct: 0 },
+      'Customer-side': { count: 0, pct: 0 },
+      'Process-side': { count: 0, pct: 0 },
+      'External': { count: 0, pct: 0 },
+      'Unrecorded': { count: 0, pct: 0 },
+    };
+
+    (Object.keys(grpCount) as FaultGroupType[]).forEach((g) => {
+      const cnt = grpCount[g] || 0;
+      const pct = prodTotal > 0 ? Math.round((cnt / prodTotal) * 1000) / 10 : 0;
+      groupBreakdown[g] = { count: cnt, pct };
+      if (cnt > maxGrpCount) {
+        maxGrpCount = cnt;
+        dominantGroup = g;
+      }
+    });
+
+    const dominantGroupPct = prodTotal > 0 ? Math.round((maxGrpCount / prodTotal) * 1000) / 10 : 0;
+
+    const items: ProductFaultRootCauseItem[] = Object.keys(rcMap)
+      .map((rc) => ({
+        root_cause_name: rc,
+        attribution_group: rcMap[rc].group,
+        count: rcMap[rc].count,
+        pct_of_product: prodTotal > 0 ? Math.round((rcMap[rc].count / prodTotal) * 1000) / 10 : 0,
+        covered_count: rcMap[rc].covered,
+        goodwill_count: rcMap[rc].goodwill,
+        unclaimable_count: rcMap[rc].unclaimable,
+      }))
+      .sort((a, b) => b.count - a.count);
+
+    return {
+      product_code: prodCode,
+      total_cases: prodTotal,
+      dominant_group: dominantGroup,
+      dominant_group_pct: dominantGroupPct,
+      group_breakdown: groupBreakdown,
+      items,
+    };
+  });
+
+  // --- 3. Heatmap Matrix (Product x Branch) ---
+  const branchSet = new Set<string>();
+  const heatmapMatrix: Record<string, Record<string, number>> = {};
+  let maxHeatmapCount = 0;
+
+  sortedProductCodes.forEach((p) => {
+    heatmapMatrix[p] = {};
+  });
+
+  rawCases.forEach((r) => {
+    const p = r.product_code;
+    const b = r.branch_code;
+    branchSet.add(b);
+    if (!heatmapMatrix[p]) heatmapMatrix[p] = {};
+    heatmapMatrix[p][b] = (heatmapMatrix[p][b] || 0) + 1;
+    if (heatmapMatrix[p][b] > maxHeatmapCount) {
+      maxHeatmapCount = heatmapMatrix[p][b];
+    }
+  });
+
+  const sortedBranches = Array.from(branchSet).sort();
+
+  const productBranchHeatmap: ProductBranchHeatmapData = {
+    products: sortedProductCodes,
+    branches: sortedBranches,
+    matrix: heatmapMatrix,
+    maxCount: maxHeatmapCount,
+  };
+
+  // --- 4. Branch Claim Outcome Profile (100% Stacked Bar) ---
+  const branchStatsMap: Record<string, {
+    total: number;
+    covered: number;
+    goodwill: number;
+    unclaimable: number;
+    product_breakdown: Record<string, {
+      total: number;
+      covered: number;
+      goodwill: number;
+      unclaimable: number;
+    }>;
+  }> = {};
+
+  rawCases.forEach((r) => {
+    const b = r.branch_code;
+    const p = r.product_code;
+    if (!branchStatsMap[b]) {
+      branchStatsMap[b] = {
+        total: 0,
+        covered: 0,
+        goodwill: 0,
+        unclaimable: 0,
+        product_breakdown: {},
+      };
+    }
+    branchStatsMap[b].total += 1;
+
+    if (!branchStatsMap[b].product_breakdown[p]) {
+      branchStatsMap[b].product_breakdown[p] = { total: 0, covered: 0, goodwill: 0, unclaimable: 0 };
+    }
+    branchStatsMap[b].product_breakdown[p].total += 1;
+
+    if (r.claim_outcome === 'Covered') {
+      branchStatsMap[b].covered += 1;
+      branchStatsMap[b].product_breakdown[p].covered += 1;
+    } else if (r.claim_outcome === 'Goodwill') {
+      branchStatsMap[b].goodwill += 1;
+      branchStatsMap[b].product_breakdown[p].goodwill += 1;
+    } else {
+      branchStatsMap[b].unclaimable += 1;
+      branchStatsMap[b].product_breakdown[p].unclaimable += 1;
+    }
+  });
+
+  const sortedBranchList = Object.keys(branchStatsMap).sort(
+    (a, b) => branchStatsMap[b].total - branchStatsMap[a].total
+  );
+
+  const branchOutcomeProfile: BranchOutcomeProfileItem[] = sortedBranchList.map((b) => {
+    const s = branchStatsMap[b];
+    const total = s.total;
+    return {
+      branch_code: b,
+      total,
+      covered_count: s.covered,
+      covered_pct: total > 0 ? Math.round((s.covered / total) * 1000) / 10 : 0,
+      goodwill_count: s.goodwill,
+      goodwill_pct: total > 0 ? Math.round((s.goodwill / total) * 1000) / 10 : 0,
+      unclaimable_count: s.unclaimable,
+      unclaimable_pct: total > 0 ? Math.round((s.unclaimable / total) * 1000) / 10 : 0,
+      product_breakdown: s.product_breakdown,
+    };
+  });
+
+  // --- Legacy Compatibility Data Structures ---
+  const rootCauseSet = new Set<string>();
+  const productRootCauseMap: Record<string, Record<string, number>> = {};
+  rawCases.forEach((r) => {
+    const p = r.product_code;
+    const rc = r.root_cause_name;
+    rootCauseSet.add(rc);
+    if (!productRootCauseMap[p]) productRootCauseMap[p] = {};
+    productRootCauseMap[p][rc] = (productRootCauseMap[p][rc] || 0) + 1;
+  });
+  const rootCauseKeys = Array.from(rootCauseSet).sort();
+  const legacyProductRootCauseData: ProductRootCauseItem[] = sortedProductCodes.map((p) => {
     const item: ProductRootCauseItem = {
       product_code: p,
-      total: productTotals[p],
+      total: productStats[p]?.total || 0,
     };
     rootCauseKeys.forEach((k) => {
       item[k] = productRootCauseMap[p]?.[k] || 0;
@@ -431,78 +640,29 @@ export async function getPrincipalClaimableData(
     return item;
   });
 
-  // --- Transform 2: Product Code by Claimable Status (100% Stacked Bar) ---
-  const productClaimableData: ProductClaimableItem[] = claimableRows.rows.map((r) => {
-    const total = Number(r.total);
-    const claimable = Number(r.claimable_count);
-    const nonClaimable = Number(r.non_claimable_count);
-    const claimablePct = total > 0 ? Math.round((claimable / total) * 100) : 0;
-    const nonClaimablePct = total > 0 ? 100 - claimablePct : 0;
+  const legacyProductClaimableData: ProductClaimableItem[] = dotPlotData.map((d) => ({
+    product_code: d.product_code,
+    total: d.total_cases,
+    claimable_count: d.claimable_cases,
+    non_claimable_count: d.unclaimable_cases,
+    claimable_pct: Math.round(d.claimable_pct),
+    non_claimable_pct: Math.round(d.unclaimable_pct),
+  }));
 
-    return {
-      product_code: r.product_code,
-      total,
-      claimable_count: claimable,
-      non_claimable_count: nonClaimable,
-      claimable_pct: claimablePct,
-      non_claimable_pct: nonClaimablePct,
-    };
-  });
-
-  // --- Transform 3: Product Code by Branch (Heatmap) ---
-  const branchSet = new Set<string>();
-  const heatmapMatrix: Record<string, Record<string, number>> = {};
-  let maxHeatmapCount = 0;
-
-  sortedProducts.forEach((p) => {
-    heatmapMatrix[p] = {};
-  });
-
-  heatmapRows.rows.forEach((r) => {
-    const p = r.product_code;
-    const b = r.branch_code;
-    const c = Number(r.count);
-
-    branchSet.add(b);
-    if (!heatmapMatrix[p]) heatmapMatrix[p] = {};
-    heatmapMatrix[p][b] = c;
-    if (c > maxHeatmapCount) maxHeatmapCount = c;
-  });
-
-  const sortedBranches = Array.from(branchSet).sort();
-
-  const productBranchHeatmap: ProductBranchHeatmapData = {
-    products: sortedProducts,
-    branches: sortedBranches,
-    matrix: heatmapMatrix,
-    maxCount: maxHeatmapCount,
-  };
-
-  // --- Transform 4: Branch by Claimable Status (Grouped Column Chart) ---
-  const branchTotals: Record<string, number> = {};
-  const branchStatusMap: Record<string, Record<string, number>> = {};
   const statusSet = new Set<string>();
-
-  branchClaimableRows.rows.forEach((r) => {
+  const branchStatusMap: Record<string, Record<string, number>> = {};
+  rawCases.forEach((r) => {
     const b = r.branch_code;
     const s = r.claimable_status_name;
-    const c = Number(r.count);
-
-    branchTotals[b] = (branchTotals[b] || 0) + c;
-    if (!branchStatusMap[b]) branchStatusMap[b] = {};
-    branchStatusMap[b][s] = c;
     statusSet.add(s);
+    if (!branchStatusMap[b]) branchStatusMap[b] = {};
+    branchStatusMap[b][s] = (branchStatusMap[b][s] || 0) + 1;
   });
-
   const statusKeys = Array.from(statusSet).sort();
-  const sortedBranchList = Object.keys(branchTotals).sort(
-    (a, b) => branchTotals[b] - branchTotals[a]
-  );
-
-  const branchClaimableData: BranchClaimableItem[] = sortedBranchList.map((b) => {
+  const legacyBranchClaimableData: BranchClaimableItem[] = sortedBranchList.map((b) => {
     const item: BranchClaimableItem = {
       branch_code: b,
-      total: branchTotals[b],
+      total: branchStatsMap[b]?.total || 0,
     };
     statusKeys.forEach((s) => {
       item[s] = branchStatusMap[b]?.[s] || 0;
@@ -511,14 +671,23 @@ export async function getPrincipalClaimableData(
   });
 
   return {
+    dotPlotData,
+    productFaultPanels,
+    productBranchHeatmap,
+    branchOutcomeProfile,
+    rawCaseAttributes: rawCases.map((r) => ({
+      product_code: r.product_code,
+      branch_code: r.branch_code,
+      root_cause_name: r.root_cause_name,
+      claim_outcome: r.claim_outcome,
+    })),
     productRootCauses: {
-      data: productRootCauseData,
+      data: legacyProductRootCauseData,
       rootCauseKeys,
     },
-    productClaimable: productClaimableData,
-    productBranchHeatmap,
+    productClaimable: legacyProductClaimableData,
     branchClaimable: {
-      data: branchClaimableData,
+      data: legacyBranchClaimableData,
       statusKeys,
     },
   };
