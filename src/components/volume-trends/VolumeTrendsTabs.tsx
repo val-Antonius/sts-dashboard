@@ -449,26 +449,6 @@ export function VolumeTrendsTabs({
             </div>
           </div>
 
-          {/* CONTEXT REMINDER ALERT BANNER */}
-          <div className="p-3 bg-accent/5 border border-accent/20 rounded-lg text-xs text-ink-muted flex items-start gap-2">
-            <Info className="w-4 h-4 text-accent shrink-0 mt-0.5" />
-            <div className="leading-relaxed">
-              {selectedSegment === 'KA Nasional' ? (
-                <span>
-                  Ambang batas SLA diperketat: <strong className="text-ink-primary font-semibold font-mono">15 Hari Kalender</strong> khusus segmen <em>Key Account Nasional</em> (Target Achievement 85.0%).
-                </span>
-              ) : selectedSegment === 'All Customer' ? (
-                <span>
-                  Ambang batas SLA standar: <strong className="text-ink-primary font-semibold font-mono">20 Hari Kalender</strong> untuk segmen <em>All Customer / General</em> (Target Achievement 85.0%).
-                </span>
-              ) : (
-                <span>
-                  Menampilkan seluruh populasi kasus. Ambang batas acuan SLA: <strong className="text-ink-primary font-semibold font-mono">15 Hari</strong> (KA Nasional) vs <strong className="text-ink-primary font-semibold font-mono">20 Hari</strong> (All Customer).
-                </span>
-              )}
-            </div>
-          </div>
-
           {/* 3 TOP KPI STAT CARDS */}
           <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
             {/* Stat 1: Total Case Volume */}
