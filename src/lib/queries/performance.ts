@@ -65,9 +65,12 @@ export interface BranchRiskItem {
   total_cases: number;
   unclaimable_cases: number;
   unclaimable_pct: number;
+  warranty_scope_cases: number;
+  non_warranty_cases: number;
   overdue_cases: number;
   overdue_pct: number;
   avg_solution_days: number;
+  status_counts?: Record<string, number>;
 }
 
 export interface ClaimableHealthData {
@@ -87,16 +90,42 @@ export interface MonthlyBacklogFlowItem {
   net_backlog: number; // opened - closed
 }
 
+export interface ProductPortfolioItem {
+  product_code: string;
+  product_name: string;
+  count: number;
+  pct: number;
+  color: string;
+}
+
+export interface TopUnitModelItem {
+  unit_model_name: string;
+  product_code: string;
+  count: number;
+  pct: number;
+}
+
+export interface ProductPortfolioData {
+  productBreakdown: ProductPortfolioItem[];
+  topModels: TopUnitModelItem[];
+  dominant_product: ProductPortfolioItem | null;
+}
+
 export interface PerformanceVolumeData {
   segment: string;
   kpiStats: {
     total_cases: number;
+    warranty_cases: number;
+    warranty_pct: number;
+    non_warranty_cases: number;
+    non_warranty_pct: number;
     sla_target_days: number;
     unclaimable_pct: number;
     overdue_count: number;
   };
   branchRiskMatrix: BranchRiskItem[];
   claimableHealth: ClaimableHealthData;
+  productPortfolio: ProductPortfolioData;
   monthlyBacklogFlow: MonthlyBacklogFlowItem[];
   // Retain legacy fields for backward compatibility
   topBranches: { branch_code: string; count: number }[];
@@ -143,44 +172,109 @@ export async function getPerformanceVolumeData(
     segmentFilter = "AND m.golongan_customer = 'All Customer'";
   }
 
-  // 1. Branch Risk Matrix (Volume x Unclaimable x Overdue)
+  // 1. Branch Risk Matrix (Volume x Unclaimable x Overdue + Per-Status Breakdown)
   const branchRiskRes = await query<{
     branch_code: string;
     branch_city: string;
     total_cases: string;
     unclaimable_cases: string;
+    warranty_scope_cases: string;
+    non_warranty_cases: string;
     overdue_cases: string;
     avg_solution_days: string;
+    status_counts: any;
   }>(`
+    WITH branch_cases AS (
+      SELECT
+        b.branch_code,
+        COALESCE(bl.city_name, b.branch_code) AS branch_city,
+        m.is_warranty_scope,
+        COALESCE(m.claimable_status_name, 'Unrecorded') AS status_name,
+        CASE
+          WHEN m.achievement = 'Not Achieved' OR m.solution_time_days > m.achievement_threshold_days THEN 1
+          ELSE 0
+        END AS is_overdue,
+        CASE
+          WHEN m.is_warranty_scope = FALSE OR m.claimable_status_name = 'Unclaimable' THEN 1
+          ELSE 0
+        END AS is_unclaimable,
+        m.solution_time_days
+      FROM product_issue.fact_issue_case ic
+      JOIN product_issue.dim_branch b ON b.branch_id = ic.branch_id
+      LEFT JOIN product_issue.dim_branch_location bl ON bl.branch_location_id = b.branch_location_id
+      JOIN product_issue.v_claim_metrics m ON m.issue_case_id = ic.issue_case_id
+      WHERE ${dateClause} ${segmentFilter}
+    ),
+    branch_status_agg AS (
+      SELECT
+        branch_code,
+        status_name,
+        COUNT(*)::int AS cnt
+      FROM branch_cases
+      GROUP BY branch_code, status_name
+    ),
+    branch_totals AS (
+      SELECT
+        branch_code,
+        branch_city,
+        COUNT(*)::int AS total_cases,
+        COUNT(*) FILTER (WHERE is_unclaimable = 1)::int AS unclaimable_cases,
+        COUNT(*) FILTER (WHERE is_warranty_scope = true)::int AS warranty_scope_cases,
+        COUNT(*) FILTER (WHERE is_warranty_scope = false)::int AS non_warranty_cases,
+        COUNT(*) FILTER (WHERE is_overdue = 1)::int AS overdue_cases,
+        ROUND(AVG(solution_time_days), 1)::float AS avg_solution_days
+      FROM branch_cases
+      GROUP BY branch_code, branch_city
+    )
     SELECT
-      b.branch_code,
-      COALESCE(bl.city_name, b.branch_code) AS branch_city,
-      COUNT(*)::int AS total_cases,
-      COUNT(*) FILTER (WHERE m.is_warranty_scope = false OR m.claimable_status_name = 'Unclaimable')::int AS unclaimable_cases,
-      COUNT(*) FILTER (WHERE m.achievement = 'Not Achieved' OR m.solution_time_days > m.achievement_threshold_days)::int AS overdue_cases,
-      ROUND(AVG(m.solution_time_days), 1)::float AS avg_solution_days
-    FROM product_issue.fact_issue_case ic
-    JOIN product_issue.dim_branch b ON b.branch_id = ic.branch_id
-    LEFT JOIN product_issue.dim_branch_location bl ON bl.branch_location_id = b.branch_location_id
-    JOIN product_issue.v_claim_metrics m ON m.issue_case_id = ic.issue_case_id
-    WHERE ${dateClause} ${segmentFilter}
-    GROUP BY b.branch_code, COALESCE(bl.city_name, b.branch_code)
-    ORDER BY total_cases DESC;
+      bt.branch_code,
+      bt.branch_city,
+      bt.total_cases,
+      bt.unclaimable_cases,
+      bt.warranty_scope_cases,
+      bt.non_warranty_cases,
+      bt.overdue_cases,
+      bt.avg_solution_days,
+      COALESCE(
+        json_object_agg(bs.status_name, bs.cnt) FILTER (WHERE bs.status_name IS NOT NULL),
+        '{}'::json
+      ) AS status_counts
+    FROM branch_totals bt
+    LEFT JOIN branch_status_agg bs ON bs.branch_code = bt.branch_code
+    GROUP BY
+      bt.branch_code,
+      bt.branch_city,
+      bt.total_cases,
+      bt.unclaimable_cases,
+      bt.warranty_scope_cases,
+      bt.non_warranty_cases,
+      bt.overdue_cases,
+      bt.avg_solution_days
+    ORDER BY bt.total_cases DESC;
   `, queryParams);
 
   const branchRiskMatrix: BranchRiskItem[] = branchRiskRes.rows.map((r) => {
     const total = Number(r.total_cases) || 0;
     const unclaim = Number(r.unclaimable_cases) || 0;
+    const warranty = Number(r.warranty_scope_cases) || 0;
+    const nonWarranty = Number(r.non_warranty_cases) || 0;
     const overdue = Number(r.overdue_cases) || 0;
+    const statusCounts = typeof r.status_counts === 'string'
+      ? JSON.parse(r.status_counts)
+      : (r.status_counts || {});
+
     return {
       branch_code: r.branch_code,
       branch_city: r.branch_city,
       total_cases: total,
       unclaimable_cases: unclaim,
       unclaimable_pct: total > 0 ? Math.round((unclaim / total) * 1000) / 10 : 0,
+      warranty_scope_cases: warranty,
+      non_warranty_cases: nonWarranty,
       overdue_cases: overdue,
       overdue_pct: total > 0 ? Math.round((overdue / total) * 1000) / 10 : 0,
       avg_solution_days: Number(r.avg_solution_days) || 0,
+      status_counts: statusCounts,
     };
   });
 
@@ -296,21 +390,104 @@ export async function getPerformanceVolumeData(
     };
   });
 
+  // 4. Product Portfolio & Equipment Category Breakdown
+  const productRes = await query<{
+    product_code: string;
+    product_type_name: string;
+    count: string;
+  }>(`
+    SELECT
+      pm.product_code,
+      COALESCE(pm.product_type_name, pm.product_code) AS product_type_name,
+      COUNT(*)::int AS count
+    FROM product_issue.fact_issue_case ic
+    JOIN product_issue.dim_unit_asset ua ON ua.unit_asset_id = ic.unit_asset_id
+    JOIN product_issue.dim_product_model pm ON pm.product_model_id = ua.product_model_id
+    JOIN product_issue.v_claim_metrics m ON m.issue_case_id = ic.issue_case_id
+    WHERE ${dateClause} ${segmentFilter}
+    GROUP BY pm.product_code, pm.product_type_name
+    ORDER BY count DESC;
+  `, queryParams);
+
+  const topModelsRes = await query<{
+    unit_model_name: string;
+    product_code: string;
+    count: string;
+  }>(`
+    SELECT
+      ua.unit_model_name,
+      pm.product_code,
+      COUNT(*)::int AS count
+    FROM product_issue.fact_issue_case ic
+    JOIN product_issue.dim_unit_asset ua ON ua.unit_asset_id = ic.unit_asset_id
+    JOIN product_issue.dim_product_model pm ON pm.product_model_id = ua.product_model_id
+    JOIN product_issue.v_claim_metrics m ON m.issue_case_id = ic.issue_case_id
+    WHERE ${dateClause} ${segmentFilter}
+    GROUP BY ua.unit_model_name, pm.product_code
+    ORDER BY count DESC
+    LIMIT 6;
+  `, queryParams);
+
+  const PRODUCT_PALETTE = [
+    '#6366F1', // Indigo (MFT)
+    '#0284C7', // Sky Blue (PER)
+    '#2E7D52', // Emerald (CNC)
+    '#D97706', // Amber (KBT)
+    '#A3462F', // Terracotta (HSC)
+    '#8B5CF6', // Purple (FGW)
+    '#EC4899', // Pink (JLG)
+    '#71717A', // Neutral Slate
+  ];
+
   // Calculate high-level summary KPIs
   const totalCases = branchRiskMatrix.reduce((sum, b) => sum + b.total_cases, 0);
   const totalOverdue = branchRiskMatrix.reduce((sum, b) => sum + b.overdue_cases, 0);
+  const totalWarrantyCases = branchRiskMatrix.reduce((sum, b) => sum + b.warranty_scope_cases, 0);
+  const totalNonWarrantyCases = branchRiskMatrix.reduce((sum, b) => sum + b.non_warranty_cases, 0);
   const slaTarget = segment === 'KA Nasional' ? 15 : 20;
+
+  const productBreakdown: ProductPortfolioItem[] = productRes.rows.map((r, idx) => {
+    const count = Number(r.count) || 0;
+    return {
+      product_code: r.product_code,
+      product_name: r.product_type_name,
+      count,
+      pct: totalCases > 0 ? Math.round((count / totalCases) * 1000) / 10 : 0,
+      color: PRODUCT_PALETTE[idx % PRODUCT_PALETTE.length],
+    };
+  });
+
+  const topModels: TopUnitModelItem[] = topModelsRes.rows.map((r) => {
+    const count = Number(r.count) || 0;
+    return {
+      unit_model_name: r.unit_model_name,
+      product_code: r.product_code,
+      count,
+      pct: totalCases > 0 ? Math.round((count / totalCases) * 1000) / 10 : 0,
+    };
+  });
+
+  const productPortfolio: ProductPortfolioData = {
+    productBreakdown,
+    topModels,
+    dominant_product: productBreakdown.length > 0 ? productBreakdown[0] : null,
+  };
 
   return {
     segment,
     kpiStats: {
       total_cases: totalCases,
+      warranty_cases: totalWarrantyCases,
+      warranty_pct: totalCases > 0 ? Math.round((totalWarrantyCases / totalCases) * 1000) / 10 : 0,
+      non_warranty_cases: totalNonWarrantyCases,
+      non_warranty_pct: totalCases > 0 ? Math.round((totalNonWarrantyCases / totalCases) * 1000) / 10 : 0,
       sla_target_days: slaTarget,
       unclaimable_pct: claimableHealth.unclaimable_pct,
       overdue_count: totalOverdue,
     },
     branchRiskMatrix,
     claimableHealth,
+    productPortfolio,
     monthlyBacklogFlow,
     // Legacy properties for backward compatibility
     topBranches: branchRiskMatrix.slice(0, 10).map((b) => ({ branch_code: b.branch_code, count: b.total_cases })),

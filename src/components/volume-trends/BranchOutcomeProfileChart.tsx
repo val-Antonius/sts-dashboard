@@ -68,8 +68,8 @@ export function BranchOutcomeProfileChart({
     );
   }
 
-  // Tinggi tetap stabil berdasarkan jumlah cabang tetap (~23px per baris)
-  const chartHeight = Math.max(260, chartData.length * 23 + 40);
+  // Tinggi tetap stabil berdasarkan jumlah cabang tetap (~25px per baris)
+  const chartHeight = Math.max(280, chartData.length * 25 + 40);
 
   const customTooltipStyle = {
     backgroundColor: 'var(--surface)',
@@ -123,9 +123,10 @@ export function BranchOutcomeProfileChart({
             <YAxis
               type="category"
               dataKey="branch_code"
+              interval={0}
               tickLine={false}
               axisLine={{ stroke: 'var(--border)' }}
-              width={45}
+              width={50}
               tick={({ x, y, payload }) => {
                 const branchCode = payload.value;
                 const item = chartData.find((b) => b.branch_code === branchCode);
@@ -137,11 +138,12 @@ export function BranchOutcomeProfileChart({
                       x={-6}
                       y={4}
                       textAnchor="end"
-                      className={`font-mono text-[11px] transition-colors ${
-                        isHighlight
-                          ? 'fill-ink-primary font-bold'
-                          : 'fill-ink-muted/30 font-normal'
-                      }`}
+                      fontSize={11}
+                      fontFamily="var(--font-mono)"
+                      fontWeight={isHighlight ? 600 : 400}
+                      fill={isHighlight ? 'var(--ink-primary)' : 'var(--ink-muted)'}
+                      opacity={isHighlight ? 1 : 0.3}
+                      className="transition-opacity transition-colors"
                     >
                       {branchCode}
                     </text>

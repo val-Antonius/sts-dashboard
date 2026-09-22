@@ -37,9 +37,14 @@ import {
   AlertTriangle,
   Clock,
   ShieldCheck,
+  ShieldAlert,
   Building2,
   Users,
   Info,
+  SlidersHorizontal,
+  Package,
+  Repeat,
+  ArrowUpDown,
 } from 'lucide-react';
 import { PrincipalClaimableTab } from './PrincipalClaimableTab';
 
@@ -57,10 +62,13 @@ export function VolumeTrendsTabs({
   const [activeTab, setActiveTab] = useState<'overview' | 'principal' | 'root_cause'>('overview');
   const [range, setRange] = useState<TimeRangeOption>('last_1_year');
   const [selectedSegment, setSelectedSegment] = useState<'all' | 'All Customer' | 'KA Nasional'>('all');
+  const [selectedExpStatus, setSelectedExpStatus] = useState<string>('Unclaimable');
   const [customStart, setCustomStart] = useState('');
   const [customEnd, setCustomEnd] = useState('');
   const [volumeData, setVolumeData] = useState<PerformanceVolumeData>(initialVolumeData);
   const [loading, setLoading] = useState(false);
+  const [warrantyViewMode, setWarrantyViewMode] = useState<'volume' | 'rate'>('volume');
+  const [nonWarrantyViewMode, setNonWarrantyViewMode] = useState<'volume' | 'rate'>('volume');
 
   const fetchVolumeData = async (
     selectedRange: TimeRangeOption,
@@ -124,26 +132,99 @@ export function VolumeTrendsTabs({
   };
   const backlogFlowData = volumeData?.monthlyBacklogFlow || [];
   const kpiStats = volumeData?.kpiStats || {
-    total_cases: branchRiskData.reduce((s, b) => s + b.total_cases, 0),
+    total_cases: branchRiskData.reduce((s, b) => s + (b.total_cases || 0), 0),
+    warranty_cases: branchRiskData.reduce((s, b) => s + (b.warranty_scope_cases || 0), 0),
+    warranty_pct: 0,
+    non_warranty_cases: branchRiskData.reduce((s, b) => s + (b.non_warranty_cases || 0), 0),
+    non_warranty_pct: 0,
     sla_target_days: selectedSegment === 'KA Nasional' ? 15 : 20,
     unclaimable_pct: claimableHealth.unclaimable_pct,
-    overdue_count: branchRiskData.reduce((s, b) => s + b.overdue_cases, 0),
+    overdue_count: branchRiskData.reduce((s, b) => s + (b.overdue_cases || 0), 0),
   };
 
-  // Pie chart dataset
+  const productPortfolio = volumeData?.productPortfolio || {
+    productBreakdown: [],
+    topModels: [],
+    dominant_product: null,
+  };
+
+  // Pie chart dataset for Claimable Health
   const donutData = [
     { name: 'Claimable', value: claimableHealth.claimable_count, color: '#2E7D52' },
     { name: 'Unclaimable', value: claimableHealth.unclaimable_count, color: '#A3462F' },
     { name: 'In-Progress / Other', value: claimableHealth.other_count, color: '#71717A' },
   ].filter((d) => d.value > 0);
 
-  // Scatter plot data for Branch Risk Matrix (Grouped by exact x, y coordinate to prevent SVG text clashing)
-  const scatterData = useMemo(() => {
-    const coordMap: { [key: string]: typeof branchRiskData } = {};
+  // Pie chart dataset for Product Portfolio
+  const productDonutData = useMemo(() => {
+    return (productPortfolio.productBreakdown || []).map((p) => ({
+      name: p.product_code,
+      fullName: p.product_name,
+      value: p.count,
+      pct: p.pct,
+      color: p.color,
+    }));
+  }, [productPortfolio.productBreakdown]);
+
+  const maxTotalCases = useMemo(() => {
+    return Math.max(...branchRiskData.map((d) => d.total_cases), 1);
+  }, [branchRiskData]);
+
+  // --- EXPERIMENTAL: 8 Official Claimable Statuses (ref_claimable_status) ---
+  const OFFICIAL_CLAIM_STATUSES = useMemo(() => [
+    { key: 'Claimable Principal', label: 'Claimable Principal', color: '#2E7D52', isPrimary: true },
+    { key: 'Unclaimable', label: 'Unclaimable', color: '#A3462F', isPrimary: true },
+    { key: 'Goodwill', label: 'Goodwill', color: '#B87A28', isPrimary: true },
+    { key: 'Claimable GOEM', label: 'Claimable GOEM', color: '#6366F1', isPrimary: true },
+    { key: 'Claimable Vendor (Attachment)', label: 'Claimable Vendor (Attachment)', color: '#0284C7', isPrimary: false },
+    { key: 'Claimable Vendor (Genset Maker)', label: 'Claimable Vendor (Genset Maker)', color: '#0D9488', isPrimary: false },
+    { key: 'Progress Checking Unit', label: 'Progress Checking Unit', color: '#8B5CF6', isPrimary: false },
+    { key: 'Waiting Created WO Checking', label: 'Waiting Created WO Checking', color: '#71717A', isPrimary: false },
+  ], []);
+
+  const activeExpMetricObj = useMemo(() => {
+    return OFFICIAL_CLAIM_STATUSES.find((o) => o.key === selectedExpStatus) || OFFICIAL_CLAIM_STATUSES[0];
+  }, [OFFICIAL_CLAIM_STATUSES, selectedExpStatus]);
+
+  const maxExpMetricCount = useMemo(() => {
+    let max = 0;
     branchRiskData.forEach((b) => {
-      const key = `${b.total_cases}_${b.unclaimable_pct}`;
+      const count = b.status_counts?.[selectedExpStatus] ?? 0;
+      if (count > max) max = count;
+    });
+    return Math.max(max, 1);
+  }, [branchRiskData, selectedExpStatus]);
+
+  const expXDomainMax = useMemo(() => {
+    if (maxExpMetricCount <= 5) return 5;
+    if (maxExpMetricCount <= 10) return 10;
+    if (maxExpMetricCount <= 20) return 20;
+    if (maxExpMetricCount <= 30) return 30;
+    return Math.ceil(maxExpMetricCount / 5) * 5;
+  }, [maxExpMetricCount]);
+
+  const expXTicks = useMemo(() => {
+    const step = expXDomainMax <= 5 ? 1 : expXDomainMax <= 10 ? 2 : expXDomainMax <= 20 ? 5 : 5;
+    return Array.from({ length: Math.floor(expXDomainMax / step) + 1 }, (_, i) => i * step);
+  }, [expXDomainMax]);
+
+  const expScatterData = useMemo(() => {
+    const coordMap: { [key: string]: Array<any> } = {};
+    branchRiskData.forEach((b) => {
+      const count = b.status_counts?.[selectedExpStatus] ?? 0;
+      const pct = b.total_cases > 0 ? Math.round((count / b.total_cases) * 1000) / 10 : 0;
+      const key = `${count}_${pct}`;
       if (!coordMap[key]) coordMap[key] = [];
-      coordMap[key].push(b);
+      coordMap[key].push({
+        branch_code: b.branch_code,
+        branch_city: b.branch_city,
+        total_cases: b.total_cases,
+        metric_count: count,
+        metric_pct: pct,
+        overdue_cases: b.overdue_cases,
+        overdue_pct: b.overdue_pct,
+        avg_solution_days: b.avg_solution_days,
+      });
     });
 
     return Object.values(coordMap).map((branches) => {
@@ -151,119 +232,109 @@ export function VolumeTrendsTabs({
       const isMulti = branches.length > 1;
       const displayCode = branches.map((b) => b.branch_code).join('/');
       return {
-        x: first.total_cases,
-        y: first.unclaimable_pct,
-        z: Math.max(first.total_cases, 10),
+        x: first.metric_count,
+        y: first.metric_pct,
+        z: Math.max(first.metric_count, 5),
         displayCode,
         is_multi: isMulti,
         branches,
         branch_code: displayCode,
         branch_city: first.branch_city,
         total_cases: first.total_cases,
-        unclaimable_cases: first.unclaimable_cases,
-        unclaimable_pct: first.unclaimable_pct,
-        overdue_cases: first.overdue_cases,
-        overdue_pct: first.overdue_pct,
+        metric_count: first.metric_count,
+        metric_pct: first.metric_pct,
         avg_solution_days: first.avg_solution_days,
       };
     });
-  }, [branchRiskData]);
+  }, [branchRiskData, selectedExpStatus]);
 
-  // Compute readable X-axis domain and ticks (multiples of 5 or 10)
-  const maxVolumeVal = useMemo(() => {
-    return Math.max(...scatterData.map((d) => d.total_cases), 5);
-  }, [scatterData]);
+  const totalSelectedStatusCases = useMemo(() => {
+    return branchRiskData.reduce((sum, b) => sum + (b.status_counts?.[selectedExpStatus] || 0), 0);
+  }, [branchRiskData, selectedExpStatus]);
 
-  const xDomainMax = useMemo(() => {
-    if (maxVolumeVal <= 5) return 5;
-    if (maxVolumeVal <= 25) return Math.ceil(maxVolumeVal / 5) * 5;
-    if (maxVolumeVal <= 50) return Math.ceil(maxVolumeVal / 10) * 10;
-    return Math.ceil(maxVolumeVal / 25) * 25;
-  }, [maxVolumeVal]);
+  const nationalStatusPct = useMemo(() => {
+    const totalAll = kpiStats.total_cases || 1;
+    return Math.round((totalSelectedStatusCases / totalAll) * 1000) / 10;
+  }, [kpiStats.total_cases, totalSelectedStatusCases]);
 
-  const xTicks = useMemo(() => {
-    const step = xDomainMax <= 5 ? 1 : xDomainMax <= 25 ? 5 : xDomainMax <= 50 ? 10 : 25;
-    return Array.from({ length: Math.floor(xDomainMax / step) + 1 }, (_, i) => i * step);
-  }, [xDomainMax]);
-
-  const maxTotalCases = useMemo(() => {
-    return Math.max(...scatterData.map((d) => d.total_cases), 1);
-  }, [scatterData]);
-
-  // Custom Bubble renderer with translucent alpha-blend, dynamic radius, and collision-free stacked labels
-  const renderCustomBubble = (props: any) => {
+  const renderExpBubble = (props: any) => {
     const { cx, cy, payload } = props;
     if (cx === undefined || cy === undefined || !payload) return null;
 
-    // Sizing: Distinct radius spread from 12px (low volume) to 30px (high volume)
-    const minRadius = 13;
-    const maxRadius = 30;
-    const r = minRadius + (payload.total_cases / maxTotalCases) * (maxRadius - minRadius);
+    const count = payload.metric_count ?? 0;
+    const isZero = count === 0;
 
-    const isHighRisk = payload.unclaimable_pct >= 25;
-    const fillColor = isHighRisk ? '#A3462F' : '#71717A';
-    const strokeColor = isHighRisk ? '#8B3B26' : '#3F3F46';
+    // Sizing: Radius directly scales with real status case volume (Area Proportional)
+    // 0 cases -> 5px clean dot marker; >0 cases -> 11px to 32px
+    const minRadius = 11;
+    const maxRadius = 32;
+    const r = isZero
+      ? 5
+      : minRadius + Math.sqrt(count / maxExpMetricCount) * (maxRadius - minRadius);
+
+    const activeColor = activeExpMetricObj?.color || '#A3462F';
+    const fillColor = isZero ? '#71717A' : activeColor;
+    const strokeColor = isZero ? '#3F3F46' : activeColor;
 
     const isMulti = payload.is_multi && payload.branches && payload.branches.length > 1;
 
     return (
       <g className="cursor-pointer group">
-        {/* Outer translucent bubble for alpha-blend overlap */}
         <circle
           cx={cx}
           cy={cy}
           r={r}
           fill={fillColor}
-          fillOpacity={0.45}
+          fillOpacity={isZero ? 0.6 : 0.45}
           stroke={strokeColor}
           strokeWidth={isMulti ? 2 : 1.5}
           strokeDasharray={isMulti ? '3 2' : undefined}
         />
-        {/* Center coordinate marker */}
         <circle
           cx={cx}
           cy={cy}
-          r={1.5}
+          r={isZero ? 1.5 : 2}
           fill={strokeColor}
         />
-        {/* Branch label: Stacked tspan if multiple branches share coordinate, otherwise single centered text */}
-        {isMulti ? (
-          <text
-            x={cx}
-            y={cy}
-            textAnchor="middle"
-            dominantBaseline="central"
-            className="font-mono font-bold select-none pointer-events-none"
-            style={{
-              fontSize: r >= 20 ? '9.5px' : '8px',
-              fill: 'var(--ink-primary)',
-              paintOrder: 'stroke',
-              stroke: 'var(--surface)',
-              strokeWidth: '2.5px',
-              strokeLinejoin: 'round',
-            }}
-          >
-            <tspan x={cx} dy="-0.5em">{payload.branches[0].branch_code}</tspan>
-            <tspan x={cx} dy="1.15em">{payload.branches[1].branch_code}</tspan>
-          </text>
-        ) : (
-          <text
-            x={cx}
-            y={cy + 0.5}
-            textAnchor="middle"
-            dominantBaseline="central"
-            className="font-mono font-bold select-none pointer-events-none"
-            style={{
-              fontSize: r >= 20 ? '11px' : '9px',
-              fill: 'var(--ink-primary)',
-              paintOrder: 'stroke',
-              stroke: 'var(--surface)',
-              strokeWidth: '2.5px',
-              strokeLinejoin: 'round',
-            }}
-          >
-            {payload.displayCode}
-          </text>
+        {!isZero && (
+          isMulti ? (
+            <text
+              x={cx}
+              y={cy}
+              textAnchor="middle"
+              dominantBaseline="central"
+              className="font-mono font-bold select-none pointer-events-none"
+              style={{
+                fontSize: r >= 22 ? '9.5px' : '8px',
+                fill: 'var(--ink-primary)',
+                paintOrder: 'stroke',
+                stroke: 'var(--surface)',
+                strokeWidth: '2.5px',
+                strokeLinejoin: 'round',
+              }}
+            >
+              <tspan x={cx} dy="-0.5em">{payload.branches[0].branch_code}</tspan>
+              <tspan x={cx} dy="1.15em">{payload.branches[1].branch_code}</tspan>
+            </text>
+          ) : (
+            <text
+              x={cx}
+              y={cy + 0.5}
+              textAnchor="middle"
+              dominantBaseline="central"
+              className="font-mono font-bold select-none pointer-events-none"
+              style={{
+                fontSize: r >= 24 ? '11px' : r >= 16 ? '9.5px' : '8px',
+                fill: 'var(--ink-primary)',
+                paintOrder: 'stroke',
+                stroke: 'var(--surface)',
+                strokeWidth: '2.5px',
+                strokeLinejoin: 'round',
+              }}
+            >
+              {payload.displayCode}
+            </text>
+          )
         )}
       </g>
     );
@@ -398,9 +469,9 @@ export function VolumeTrendsTabs({
             </div>
           </div>
 
-          {/* 3 QUICK STAT CARDS */}
+          {/* 3 TOP KPI STAT CARDS */}
           <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-            {/* Stat 1: Total Cases */}
+            {/* Stat 1: Total Case Volume */}
             <div className="p-4 bg-surface border border-border rounded-lg shadow-xs flex flex-col justify-between card-interactive">
               <div className="flex items-start justify-between">
                 <div>
@@ -416,170 +487,132 @@ export function VolumeTrendsTabs({
                 </div>
               </div>
               <div className="text-[11px] text-ink-muted mt-2">
-                Kasus tercatat dalam periode & segmen terpilih
+                Kasus tercatat dalam periode &amp; segmen terpilih
               </div>
             </div>
 
-            {/* Stat 2: Active SLA Target */}
-            <div className="p-4 bg-surface border border-border rounded-lg shadow-xs flex flex-col justify-between card-interactive">
+            {/* Stat 2: Warranty Scope (Interactive Flip Card) */}
+            <div
+              onClick={() => setWarrantyViewMode((prev) => (prev === 'volume' ? 'rate' : 'volume'))}
+              className="p-4 bg-surface border border-border hover:border-[#2E7D52]/40 rounded-lg shadow-xs flex flex-col justify-between cursor-pointer transition-all duration-200 group relative overflow-hidden"
+              title="Klik untuk beralih antara Absolute Volume dan Rate (%)"
+            >
               <div className="flex items-start justify-between">
                 <div>
-                  <div className="text-xs font-semibold uppercase tracking-wider text-ink-muted mb-1">
-                    SLA Lead Time Acuan
-                  </div>
-                  <div className="flex items-baseline gap-1.5">
-                    <span className="text-3xl font-mono font-bold text-ink-primary tabular-nums tracking-tight">
-                      {kpiStats.sla_target_days}
+                  <div className="flex items-center gap-1.5 mb-1">
+                    <span className="text-xs font-semibold uppercase tracking-wider text-ink-muted">
+                      Warranty Scope
                     </span>
-                    <span className="text-xs font-semibold text-ink-muted">Hari Kalender</span>
+                    <span className="inline-flex items-center gap-0.5 text-[9px] font-mono font-semibold px-1.5 py-0.5 rounded bg-[#2E7D52]/10 text-[#2E7D52] border border-[#2E7D52]/20">
+                      <Repeat className="w-2.5 h-2.5" />
+                      {warrantyViewMode === 'volume' ? 'Vol' : 'Rate'}
+                    </span>
                   </div>
+
+                  {warrantyViewMode === 'volume' ? (
+                    <div className="flex items-baseline gap-1.5 animate-in fade-in duration-200">
+                      <span className="text-3xl font-mono font-bold text-[#2E7D52] tabular-nums tracking-tight">
+                        {kpiStats.warranty_cases}
+                      </span>
+                      <span className="text-xs font-semibold text-ink-muted font-mono">Kasus</span>
+                    </div>
+                  ) : (
+                    <div className="flex items-baseline gap-1.5 animate-in fade-in duration-200">
+                      <span className="text-3xl font-mono font-bold text-[#2E7D52] tabular-nums tracking-tight">
+                        {kpiStats.warranty_pct}%
+                      </span>
+                      <span className="text-xs font-semibold text-ink-muted font-mono">Coverage</span>
+                    </div>
+                  )}
                 </div>
-                <div className="p-2 rounded-md bg-base text-ink-muted border border-border">
-                  <Clock className="w-5 h-5" />
+
+                <div className="p-2 rounded-md bg-[#2E7D52]/10 text-[#2E7D52] border border-[#2E7D52]/20 group-hover:scale-105 transition-transform">
+                  <ShieldCheck className="w-5 h-5" />
                 </div>
               </div>
-              <div className="text-[11px] text-ink-muted mt-2 flex items-center justify-between">
-                <span>Target Pencapaian: 85.0%</span>
-                <span className="font-mono text-[10px] text-[#B5302E] font-semibold">
-                  {kpiStats.overdue_count} overdue
-                </span>
+
+              <div className="text-[11px] text-ink-muted mt-2 flex items-center justify-between font-mono">
+                {warrantyViewMode === 'volume' ? (
+                  <>
+                    <span>Share: <strong className="text-[#2E7D52] font-semibold">{kpiStats.warranty_pct}%</strong> dari total</span>
+                    <span className="text-[10px] text-ink-muted/80 flex items-center gap-0.5 group-hover:text-[#2E7D52]">
+                      <ArrowUpDown className="w-2.5 h-2.5" /> Lihat Rate
+                    </span>
+                  </>
+                ) : (
+                  <>
+                    <span>Vol: <strong className="text-[#2E7D52] font-semibold">{kpiStats.warranty_cases}</strong> / {kpiStats.total_cases} kasus</span>
+                    <span className="text-[10px] text-ink-muted/80 flex items-center gap-0.5 group-hover:text-[#2E7D52]">
+                      <ArrowUpDown className="w-2.5 h-2.5" /> Lihat Vol
+                    </span>
+                  </>
+                )}
               </div>
             </div>
 
-            {/* Stat 3: Unclaimable Rate */}
-            <div className="p-4 bg-surface border border-border rounded-lg shadow-xs flex flex-col justify-between card-interactive">
+            {/* Stat 3: Non-Warranty Exposure (Interactive Flip Card) */}
+            <div
+              onClick={() => setNonWarrantyViewMode((prev) => (prev === 'volume' ? 'rate' : 'volume'))}
+              className="p-4 bg-surface border border-border hover:border-[#A3462F]/40 rounded-lg shadow-xs flex flex-col justify-between cursor-pointer transition-all duration-200 group relative overflow-hidden"
+              title="Klik untuk beralih antara Absolute Volume dan Rate (%)"
+            >
               <div className="flex items-start justify-between">
                 <div>
-                  <div className="text-xs font-semibold uppercase tracking-wider text-ink-muted mb-1">
-                    Unclaimable Rate
+                  <div className="flex items-center gap-1.5 mb-1">
+                    <span className="text-xs font-semibold uppercase tracking-wider text-ink-muted">
+                      Non-Warranty Exposure
+                    </span>
+                    <span className="inline-flex items-center gap-0.5 text-[9px] font-mono font-semibold px-1.5 py-0.5 rounded bg-[#A3462F]/10 text-[#A3462F] border border-[#A3462F]/20">
+                      <Repeat className="w-2.5 h-2.5" />
+                      {nonWarrantyViewMode === 'volume' ? 'Vol' : 'Rate'}
+                    </span>
                   </div>
-                  <div className="text-3xl font-mono font-bold text-accent tabular-nums tracking-tight">
-                    {kpiStats.unclaimable_pct}%
-                  </div>
+
+                  {nonWarrantyViewMode === 'volume' ? (
+                    <div className="flex items-baseline gap-1.5 animate-in fade-in duration-200">
+                      <span className="text-3xl font-mono font-bold text-[#A3462F] tabular-nums tracking-tight">
+                        {kpiStats.non_warranty_cases}
+                      </span>
+                      <span className="text-xs font-semibold text-ink-muted font-mono">Kasus</span>
+                    </div>
+                  ) : (
+                    <div className="flex items-baseline gap-1.5 animate-in fade-in duration-200">
+                      <span className="text-3xl font-mono font-bold text-[#A3462F] tabular-nums tracking-tight">
+                        {kpiStats.non_warranty_pct}%
+                      </span>
+                      <span className="text-xs font-semibold text-ink-muted font-mono">Unclaimable</span>
+                    </div>
+                  )}
                 </div>
-                <div className="p-2 rounded-md bg-[#B87A28]/10 text-[#B87A28] border border-[#B87A28]/20">
-                  <AlertTriangle className="w-5 h-5" />
+
+                <div className="p-2 rounded-md bg-[#A3462F]/10 text-[#A3462F] border border-[#A3462F]/20 group-hover:scale-105 transition-transform">
+                  <ShieldAlert className="w-5 h-5" />
                 </div>
               </div>
-              <div className="text-[11px] text-ink-muted mt-2 font-mono">
-                {claimableHealth.unclaimable_count} dari {kpiStats.total_cases} kasus berstatus Unclaimable
+
+              <div className="text-[11px] text-ink-muted mt-2 flex items-center justify-between font-mono">
+                {nonWarrantyViewMode === 'volume' ? (
+                  <>
+                    <span>Share: <strong className="text-[#A3462F] font-semibold">{kpiStats.non_warranty_pct}%</strong> dari total</span>
+                    <span className="text-[10px] text-ink-muted/80 flex items-center gap-0.5 group-hover:text-[#A3462F]">
+                      <ArrowUpDown className="w-2.5 h-2.5" /> Lihat Rate
+                    </span>
+                  </>
+                ) : (
+                  <>
+                    <span>Vol: <strong className="text-[#A3462F] font-semibold">{kpiStats.non_warranty_cases}</strong> / {kpiStats.total_cases} kasus</span>
+                    <span className="text-[10px] text-ink-muted/80 flex items-center gap-0.5 group-hover:text-[#A3462F]">
+                      <ArrowUpDown className="w-2.5 h-2.5" /> Lihat Vol
+                    </span>
+                  </>
+                )}
               </div>
             </div>
           </div>
 
-          {/* ROW 1: 2-COLUMN GRID (Branch Risk Matrix vs Claimable Ratio Split) */}
+          {/* ROW 1: 2-COLUMN GRID (Claimable Breakdown vs Product Portfolio Breakdown) */}
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-            {/* 1. Branch Risk Matrix (Scatter/Quadrant Plot) */}
-            <div className="p-5 bg-surface border border-border rounded-lg shadow-xs flex flex-col justify-between">
-              <div>
-                <div className="flex items-center justify-between border-b border-border pb-3 mb-3">
-                  <div>
-                    <h3 className="text-xs font-bold uppercase tracking-wider text-ink-primary flex items-center gap-2">
-                      <Building2 className="w-3.5 h-3.5 text-accent" />
-                      <span>Branch Risk Matrix (Volume × % Unclaimable)</span>
-                    </h3>
-                    <p className="text-[11px] text-ink-muted mt-0.5">
-                      Cabang di kuadran kanan-atas memiliki volume tinggi dan rasio unclaimable tinggi.
-                    </p>
-                  </div>
-                </div>
-
-                <div className="h-72 w-full">
-                  {scatterData.length === 0 ? (
-                    <EmptyState className="h-72" />
-                  ) : (
-                    <ResponsiveContainer width="100%" height="100%">
-                      <ScatterChart margin={{ top: 15, right: 25, bottom: 20, left: -10 }}>
-                        <CartesianGrid strokeDasharray="3 3" stroke="var(--border)" opacity={0.6} />
-                        <XAxis
-                          type="number"
-                          dataKey="x"
-                          name="Total Cases"
-                          domain={[0, xDomainMax]}
-                          ticks={xTicks}
-                          tick={{ fontSize: 10, fill: 'var(--ink-muted)' }}
-                          label={{ value: 'Total Cases (Volume)', position: 'insideBottom', offset: -10, fontSize: 10, fill: 'var(--ink-muted)' }}
-                        />
-                        <YAxis
-                          type="number"
-                          dataKey="y"
-                          name="Unclaimable %"
-                          unit="%"
-                          domain={[0, 100]}
-                          ticks={[0, 25, 50, 75, 100]}
-                          tick={{ fontSize: 10, fill: 'var(--ink-muted)' }}
-                          label={{ value: '% Unclaimable', angle: -90, position: 'insideLeft', fontSize: 10, fill: 'var(--ink-muted)' }}
-                        />
-                        <Tooltip
-                          contentStyle={customTooltipStyle}
-                          content={({ active, payload }) => {
-                            if (active && payload && payload.length) {
-                              const data = payload[0].payload;
-                              const branches = data.branches || [data];
-                              const isMulti = branches.length > 1;
-                              return (
-                                <div className="p-3 bg-surface border border-border rounded-lg shadow-xl text-xs space-y-2.5 font-mono min-w-[270px]">
-                                  <div className="border-b border-border/60 pb-2">
-                                    <div className="flex items-center justify-between gap-3">
-                                      <span className="font-sans font-bold text-sm text-ink-primary tracking-tight truncate">
-                                        {branches.map((b: any) => b.branch_code).join(', ')}
-                                      </span>
-                                      <span className="text-[10px] font-mono px-2 py-0.5 rounded bg-base border border-border text-ink-muted shrink-0 whitespace-nowrap">
-                                        {data.x} Kasus · {data.y}%
-                                      </span>
-                                    </div>
-                                  </div>
-                                  <div className="space-y-2">
-                                    {branches.map((b: any, idx: number) => (
-                                      <div key={idx} className={idx > 0 ? "pt-1.5 border-t border-border/40" : ""}>
-                                        <div className="font-bold text-ink-primary font-sans flex items-center gap-1.5">
-                                          <span>{b.branch_code}</span>
-                                          <span className="text-[11px] text-ink-muted font-normal">({b.branch_city})</span>
-                                        </div>
-                                        <div className="text-ink-muted pt-0.5 space-y-0.5 text-[11px]">
-                                          <div>Total Volume: <strong className="text-ink-primary">{b.total_cases} kasus</strong></div>
-                                          <div>Unclaimable: <strong className="text-accent">{b.unclaimable_cases} ({b.unclaimable_pct}%)</strong></div>
-                                          <div>Overdue SLA: <strong className="text-[#B5302E]">{b.overdue_cases} ({b.overdue_pct}%)</strong></div>
-                                          <div>Avg Lead Time: <strong className="text-ink-primary">{b.avg_solution_days} hari</strong></div>
-                                        </div>
-                                      </div>
-                                    ))}
-                                  </div>
-                                </div>
-                              );
-                            }
-                            return null;
-                          }}
-                        />
-                        <ReferenceLine y={25} stroke="#B87A28" strokeDasharray="3 3" label={{ value: 'Threshold 25%', fill: '#B87A28', fontSize: 9, position: 'insideTopRight' }} />
-                        <Scatter
-                          name="Branches"
-                          data={scatterData}
-                          shape={renderCustomBubble}
-                        />
-                      </ScatterChart>
-                    </ResponsiveContainer>
-                  )}
-                </div>
-              </div>
-
-              {/* Legend Summary */}
-              <div className="pt-2 border-t border-border flex items-center justify-between text-[10px] font-mono text-ink-muted">
-                <div className="flex items-center gap-3">
-                  <span className="flex items-center gap-1.5">
-                    <span className="w-2.5 h-2.5 rounded-full bg-[#A3462F]" /> Unclaimable ≥25%
-                  </span>
-                  <span className="flex items-center gap-1.5">
-                    <span className="w-2.5 h-2.5 rounded-full bg-[#71717A]" /> Unclaimable &lt;25%
-                  </span>
-                </div>
-                <span className="text-ink-muted">
-                  {branchRiskData.length} Cabang Terdata
-                </span>
-              </div>
-            </div>
-
-            {/* 2. Claimable vs Unclaimable Breakdown + Audit Tail Table */}
+            {/* 1. Claimable vs Unclaimable Breakdown + Audit Tail Table */}
             <div className="p-5 bg-surface border border-border rounded-lg shadow-xs flex flex-col justify-between">
               <div>
                 <div className="flex items-center justify-between border-b border-border pb-3 mb-3">
@@ -663,9 +696,318 @@ export function VolumeTrendsTabs({
                 </span>
               </div>
             </div>
+
+            {/* 2. Product Portfolio & Equipment Category Breakdown */}
+            <div className="p-5 bg-surface border border-border rounded-lg shadow-xs flex flex-col justify-between">
+              <div>
+                <div className="flex items-center justify-between border-b border-border pb-3 mb-3">
+                  <div>
+                    <h3 className="text-xs font-bold uppercase tracking-wider text-ink-primary flex items-center gap-2">
+                      <Package className="w-3.5 h-3.5 text-accent" />
+                      <span>Product Portfolio &amp; Equipment Category</span>
+                    </h3>
+                    <p className="text-[11px] text-ink-muted mt-0.5">
+                      Distribusi kasus per lini produk &amp; model unit alat berat terbanyak.
+                    </p>
+                  </div>
+                </div>
+
+                <div className="grid grid-cols-1 sm:grid-cols-12 gap-4 items-center">
+                  {/* Donut Chart with Center Metric */}
+                  <div className="sm:col-span-5 h-56 relative flex items-center justify-center">
+                    {productDonutData.length === 0 ? (
+                      <EmptyState className="h-56" />
+                    ) : (
+                      <>
+                        <ResponsiveContainer width="100%" height="100%">
+                          <PieChart>
+                            <Pie
+                              data={productDonutData}
+                              innerRadius={50}
+                              outerRadius={75}
+                              paddingAngle={3}
+                              dataKey="value"
+                            >
+                              {productDonutData.map((entry, index) => (
+                                <Cell key={`product-donut-${index}`} fill={entry.color} />
+                              ))}
+                            </Pie>
+                            <Tooltip
+                              contentStyle={customTooltipStyle}
+                              formatter={(val: any, name: any, item: any) => [
+                                `${val} kasus (${item?.payload?.pct}%)`,
+                                item?.payload?.fullName ? `${name} - ${item.payload.fullName}` : name,
+                              ]}
+                            />
+                          </PieChart>
+                        </ResponsiveContainer>
+                        <div className="absolute flex flex-col items-center justify-center pointer-events-none text-center px-1">
+                          <span className="text-lg font-mono font-bold text-accent tabular-nums leading-tight">
+                            {productPortfolio.dominant_product?.product_code || '-'}
+                          </span>
+                          <span className="text-[9px] uppercase font-semibold text-ink-muted tracking-wider">
+                            {productPortfolio.dominant_product?.pct || 0}% Top Share
+                          </span>
+                        </div>
+                      </>
+                    )}
+                  </div>
+
+                  {/* Top Equipment Models Table */}
+                  <div className="sm:col-span-7 overflow-x-auto max-h-56">
+                    <table className="w-full text-xs text-left">
+                      <thead className="bg-base/60 text-ink-muted text-[10px] uppercase font-mono font-semibold border-b border-border">
+                        <tr>
+                          <th className="py-1.5 px-2">Model Unit</th>
+                          <th className="py-1.5 px-2 text-center">Lini</th>
+                          <th className="py-1.5 px-2 text-center">Kasus</th>
+                          <th className="py-1.5 px-2 text-right">Share</th>
+                        </tr>
+                      </thead>
+                      <tbody className="divide-y divide-border/60">
+                        {productPortfolio.topModels.length === 0 ? (
+                          <tr>
+                            <td colSpan={4} className="py-4 text-center text-ink-muted text-xs">
+                              Tidak ada data model unit
+                            </td>
+                          </tr>
+                        ) : (
+                          productPortfolio.topModels.map((item, idx) => (
+                            <tr key={`model-${idx}`} className="hover:bg-surface-hover transition-colors">
+                              <td className="py-1.5 px-2 font-medium text-ink-primary truncate max-w-[120px]" title={item.unit_model_name}>
+                                {item.unit_model_name}
+                              </td>
+                              <td className="py-1.5 px-2 text-center">
+                                <span className="font-mono text-[10px] px-1.5 py-0.5 rounded bg-base border border-border text-ink-muted font-semibold">
+                                  {item.product_code}
+                                </span>
+                              </td>
+                              <td className="py-1.5 px-2 text-center font-mono text-ink-primary font-semibold">
+                                {item.count}
+                              </td>
+                              <td className="py-1.5 px-2 text-right font-mono text-ink-muted">
+                                {item.pct}%
+                              </td>
+                            </tr>
+                          ))
+                        )}
+                      </tbody>
+                    </table>
+                  </div>
+                </div>
+              </div>
+
+              {/* Bottom Health Bar */}
+              <div className="pt-2 border-t border-border flex items-center justify-between text-[11px] font-mono">
+                <span className="text-ink-muted">
+                  Total Lini: <strong className="text-ink-primary">{productPortfolio.productBreakdown.length} Produk</strong>
+                </span>
+                {productPortfolio.dominant_product && (
+                  <span className="text-accent font-semibold truncate max-w-[220px]" title={productPortfolio.dominant_product.product_name}>
+                    Dominan: {productPortfolio.dominant_product.product_code} ({productPortfolio.dominant_product.count} kasus)
+                  </span>
+                )}
+              </div>
+            </div>
           </div>
 
-          {/* ROW 2: FULL-WIDTH BACKLOG FLOW CHART (COMBO DIVERGING INTAKE/CLOSED BARS + NET BACKLOG DELTA LINE) */}
+          {/* ROW 2: FULL-WIDTH MATRIX WITH DYNAMIC MULTI-STATUS RATE */}
+          <div className="p-5 bg-surface border border-border rounded-lg shadow-xs space-y-3 w-full">
+            <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-3 border-b border-border pb-3">
+              <div className="flex items-center gap-2">
+                <h3 className="text-xs font-bold uppercase tracking-wider text-ink-primary flex items-center gap-2">
+                  <Building2 className="w-3.5 h-3.5 text-accent" />
+                  <span>Branch Volume & Claim Distribution Matrix</span>
+                </h3>
+              </div>
+
+              {/* Space-Efficient Filter: 4 Primary Pills + 1 Dropdown with High-Visibility Active States */}
+              <div className="flex items-center gap-1 p-0.5 bg-base/70 border border-border rounded-lg self-start lg:self-auto">
+                {OFFICIAL_CLAIM_STATUSES.filter((s) => s.isPrimary).map((opt) => {
+                  const isActive = selectedExpStatus === opt.key;
+                  return (
+                    <button
+                      key={opt.key}
+                      type="button"
+                      onClick={() => setSelectedExpStatus(opt.key)}
+                      style={
+                        isActive
+                          ? {
+                            backgroundColor: `${opt.color}20`,
+                            borderColor: opt.color,
+                            color: 'var(--ink-primary)',
+                            boxShadow: `0 0 0 1px ${opt.color}40, 0 1px 2px 0 rgba(0, 0, 0, 0.05)`,
+                          }
+                          : undefined
+                      }
+                      className={`px-3 py-1 rounded-md text-[11px] font-semibold transition-all cursor-pointer flex items-center gap-1.5 border ${isActive
+                          ? 'border-solid font-bold'
+                          : 'border-transparent text-ink-muted hover:text-ink-primary hover:bg-surface/60'
+                        }`}
+                    >
+                      <span
+                        className="w-2.5 h-2.5 rounded-full shrink-0 shadow-xs"
+                        style={{ backgroundColor: opt.color }}
+                      />
+                      <span>{opt.label}</span>
+                    </button>
+                  );
+                })}
+
+                {/* Compact Dropdown for Remaining 4 Minor Statuses with Prominent Active State */}
+                <select
+                  value={!OFFICIAL_CLAIM_STATUSES.find((s) => s.key === selectedExpStatus)?.isPrimary ? selectedExpStatus : ''}
+                  onChange={(e) => {
+                    if (e.target.value) setSelectedExpStatus(e.target.value);
+                  }}
+                  style={
+                    !OFFICIAL_CLAIM_STATUSES.find((s) => s.key === selectedExpStatus)?.isPrimary
+                      ? {
+                        backgroundColor: `${activeExpMetricObj.color}20`,
+                        borderColor: activeExpMetricObj.color,
+                        color: 'var(--ink-primary)',
+                        boxShadow: `0 0 0 1px ${activeExpMetricObj.color}40`,
+                      }
+                      : undefined
+                  }
+                  className={`h-7 px-2.5 text-[11px] font-medium rounded-md border transition-all cursor-pointer outline-none ${!OFFICIAL_CLAIM_STATUSES.find((s) => s.key === selectedExpStatus)?.isPrimary
+                      ? 'font-bold border-solid'
+                      : 'bg-transparent text-ink-muted border-transparent hover:text-ink-primary'
+                    }`}
+                >
+                  <option value="" disabled>
+                    {!OFFICIAL_CLAIM_STATUSES.find((s) => s.key === selectedExpStatus)?.isPrimary
+                      ? selectedExpStatus
+                      : 'Status Lainnya (4) ▾'}
+                  </option>
+                  {OFFICIAL_CLAIM_STATUSES.filter((s) => !s.isPrimary).map((opt) => (
+                    <option key={opt.key} value={opt.key}>
+                      {opt.label}
+                    </option>
+                  ))}
+                </select>
+              </div>
+            </div>
+
+            <div className="h-80 w-full">
+              {expScatterData.length === 0 ? (
+                <EmptyState className="h-80" />
+              ) : (
+                <ResponsiveContainer width="100%" height="100%">
+                  <ScatterChart margin={{ top: 15, right: 30, bottom: 20, left: 15 }}>
+                    <CartesianGrid strokeDasharray="3 3" stroke="var(--border)" opacity={0.6} />
+                    <XAxis
+                      type="number"
+                      dataKey="x"
+                      name={`Kasus ${activeExpMetricObj.label}`}
+                      domain={[0, expXDomainMax]}
+                      ticks={expXTicks}
+                      tick={{ fontSize: 10, fill: 'var(--ink-muted)' }}
+                      label={{ value: `Jumlah Kasus ${activeExpMetricObj.label} (Volume Cabang)`, position: 'insideBottom', offset: -10, fontSize: 10, fill: 'var(--ink-muted)' }}
+                    />
+                    <YAxis
+                      type="number"
+                      dataKey="y"
+                      name={`${activeExpMetricObj.label} %`}
+                      unit="%"
+                      domain={[0, 100]}
+                      ticks={[0, 25, 50, 75, 100]}
+                      tick={{ fontSize: 10, fill: 'var(--ink-muted)' }}
+                      label={{
+                        value: `% Kasus ${activeExpMetricObj.label}`,
+                        angle: -90,
+                        position: 'insideLeft',
+                        offset: 0,
+                        style: { textAnchor: 'middle', fontSize: 11, fontWeight: 600, fill: activeExpMetricObj.color },
+                      }}
+                    />
+                    <Tooltip
+                      contentStyle={customTooltipStyle}
+                      content={({ active, payload }) => {
+                        if (active && payload && payload.length) {
+                          const data = payload[0].payload;
+                          const branches = data.branches || [data];
+                          const isSingle = branches.length === 1;
+
+                          if (isSingle) {
+                            const b = branches[0];
+                            return (
+                              <div className="p-2.5 bg-surface border border-border rounded-lg shadow-xl text-xs space-y-2 font-mono min-w-[190px]">
+                                {/* Header: Branch Code & City */}
+                                <div className="flex items-center justify-between border-b border-border/60 pb-1.5 font-sans">
+                                  <span className="font-bold text-sm text-ink-primary">{b.branch_code}</span>
+                                  <span className="text-[11px] text-ink-muted">{b.branch_city}</span>
+                                </div>
+
+                                {/* Status Focus: Count/Total & Rate */}
+                                <div className="flex items-center justify-between text-xs">
+                                  <span className="font-mono font-bold text-sm" style={{ color: activeExpMetricObj.color }}>
+                                    {b.metric_count}/{b.total_cases} kasus
+                                  </span>
+                                  <span className="font-mono font-bold text-xs text-ink-primary px-1.5 py-0.5 rounded bg-base border border-border">
+                                    {b.metric_pct}%
+                                  </span>
+                                </div>
+
+                                {/* Operational Lead Time */}
+                                <div className="flex items-center justify-between text-[11px] text-ink-muted font-mono pt-1 border-t border-border/40">
+                                  <span className="font-sans">Avg Lead Time:</span>
+                                  <span className="text-ink-primary font-medium">{b.avg_solution_days} hari</span>
+                                </div>
+                              </div>
+                            );
+                          }
+
+                          // Multi-branch on same coordinate
+                          return (
+                            <div className="p-2.5 bg-surface border border-border rounded-lg shadow-xl text-xs space-y-2 font-mono min-w-[210px]">
+                              <div className="space-y-2 divide-y divide-border/40">
+                                {branches.map((b: any, idx: number) => (
+                                  <div key={idx} className={idx > 0 ? "pt-2 space-y-1.5" : "space-y-1.5"}>
+                                    <div className="flex items-center justify-between font-sans">
+                                      <span className="font-bold text-sm text-ink-primary">{b.branch_code}</span>
+                                      <span className="text-[11px] text-ink-muted">{b.branch_city}</span>
+                                    </div>
+                                    <div className="flex items-center justify-between text-xs">
+                                      <span className="font-mono font-bold text-sm" style={{ color: activeExpMetricObj.color }}>
+                                        {b.metric_count}/{b.total_cases} kasus
+                                      </span>
+                                      <span className="font-mono font-bold text-xs text-ink-primary px-1.5 py-0.5 rounded bg-base border border-border">
+                                        {b.metric_pct}%
+                                      </span>
+                                    </div>
+                                    <div className="flex items-center justify-between text-[11px] text-ink-muted font-mono pt-1 border-t border-border/30">
+                                      <span className="font-sans">Avg Lead Time:</span>
+                                      <span className="text-ink-primary font-medium">{b.avg_solution_days} hari</span>
+                                    </div>
+                                  </div>
+                                ))}
+                              </div>
+                            </div>
+                          );
+                        }
+                        return null;
+                      }}
+                    />
+                    <Scatter
+                      name="Branches"
+                      data={expScatterData}
+                      shape={renderExpBubble}
+                    />
+                  </ScatterChart>
+                </ResponsiveContainer>
+              )}
+            </div>
+
+            {/* Summary Footer */}
+            <div className="pt-2 border-t border-border flex items-center justify-end text-[10px] font-mono text-ink-muted">
+              <span>
+                {branchRiskData.length} Cabang Terdata · Populasi Nasional: <strong className="text-ink-primary font-mono">{totalSelectedStatusCases} kasus ({nationalStatusPct}%)</strong>
+              </span>
+            </div>
+          </div>
+
+          {/* ROW 3: FULL-WIDTH BACKLOG FLOW CHART (COMBO DIVERGING INTAKE/CLOSED BARS + NET BACKLOG DELTA LINE) */}
           <div className="p-5 bg-surface border border-border rounded-lg shadow-xs space-y-3">
             <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 border-b border-border pb-3">
               <div>
