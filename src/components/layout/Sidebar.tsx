@@ -113,7 +113,7 @@ export function Sidebar() {
                 }`}
               >
                 <Building2 className="w-4 h-4 shrink-0" />
-                <span>By Branch</span>
+                <span>Branch</span>
               </Link>
 
               <Link
@@ -125,7 +125,7 @@ export function Sidebar() {
                 }`}
               >
                 <Package className="w-4 h-4 shrink-0" />
-                <span>By Unit</span>
+                <span>Unit</span>
               </Link>
 
               <Link
@@ -137,7 +137,7 @@ export function Sidebar() {
                 }`}
               >
                 <Wrench className="w-4 h-4 shrink-0" />
-                <span>By Root Cause</span>
+                <span>Root Cause</span>
               </Link>
 
               <Link
@@ -149,7 +149,7 @@ export function Sidebar() {
                 }`}
               >
                 <ShieldCheck className="w-4 h-4 shrink-0" />
-                <span>By Claim Status</span>
+                <span>Claim Status</span>
               </Link>
 
               <Link
@@ -161,7 +161,7 @@ export function Sidebar() {
                 }`}
               >
                 <Clock className="w-4 h-4 shrink-0" />
-                <span>By Solution Time</span>
+                <span>Solution Time</span>
               </Link>
 
               <Link
@@ -173,7 +173,7 @@ export function Sidebar() {
                 }`}
               >
                 <TrendingUp className="w-4 h-4 shrink-0" />
-                <span>By Volume Trends</span>
+                <span>Volume Trends</span>
               </Link>
             </div>
           </div>

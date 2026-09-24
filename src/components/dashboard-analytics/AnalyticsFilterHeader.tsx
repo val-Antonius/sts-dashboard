@@ -6,7 +6,7 @@ import { TimeRangeFilter, TimeRangeOption } from '@/components/common/TimeRangeF
 
 interface AnalyticsFilterHeaderProps {
   title: string;
-  subtitle: string;
+  subtitle?: string; // Optional for backward compatibility, will not be rendered
   range: TimeRangeOption;
   selectedSegment: 'all' | 'All Customer' | 'KA Nasional';
   customStart?: string;
@@ -18,7 +18,6 @@ interface AnalyticsFilterHeaderProps {
 
 export function AnalyticsFilterHeader({
   title,
-  subtitle,
   range,
   selectedSegment,
   customStart,
@@ -28,17 +27,21 @@ export function AnalyticsFilterHeader({
   onSegmentChange,
 }: AnalyticsFilterHeaderProps) {
   return (
-    <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 border-b border-border pb-4">
+    <div className="space-y-3 pb-1">
+      {/* Title */}
       <div>
-        <h2 className="text-lg font-bold text-ink-primary tracking-tight flex items-center gap-2.5 font-sans">
-          <span>{title}</span>
+        <h2 className="text-xl font-bold text-ink-primary tracking-tight font-sans">
+          {title}
         </h2>
-        <p className="text-xs text-ink-muted mt-0.5">{subtitle}</p>
       </div>
 
-      <div className="flex flex-wrap items-center gap-3">
-        {/* Customer Segment Toggle */}
-        <div className="flex items-center gap-1 p-0.5 bg-base/80 border border-border rounded-lg shadow-xs">
+      {/* Divider */}
+      <div className="border-b border-border" />
+
+      {/* Filter Row: Segment on the left, Time on the right */}
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pt-1">
+        {/* Left: Customer Segment Filter */}
+        <div className="flex items-center gap-1 p-0.5 bg-base/80 border border-border rounded-lg shadow-xs self-start">
           <button
             type="button"
             onClick={() => onSegmentChange('all')}
@@ -77,8 +80,8 @@ export function AnalyticsFilterHeader({
           </button>
         </div>
 
-        {/* Time Filter & Spinner */}
-        <div className="flex items-center gap-2">
+        {/* Right: Time Range Filter & Loading Spinner */}
+        <div className="flex items-center gap-2 self-start sm:self-auto">
           {loading && <Loader2 className="w-3.5 h-3.5 animate-spin text-accent-brass" />}
           <TimeRangeFilter
             selectedRange={range}
