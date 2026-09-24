@@ -37,6 +37,24 @@ export function Header() {
   } else if (pathname.includes('/diagnostic')) {
     pageTitle = 'Case Diagnostic';
     parentTitle = 'Operations';
+  } else if (pathname.includes('/dashboard-analytics/branch')) {
+    pageTitle = 'Branch Performance & Outcomes';
+    parentTitle = 'Dashboard Analytics';
+  } else if (pathname.includes('/dashboard-analytics/unit')) {
+    pageTitle = 'Unit Portfolio & Risk Profile';
+    parentTitle = 'Dashboard Analytics';
+  } else if (pathname.includes('/dashboard-analytics/root-cause')) {
+    pageTitle = 'Root Cause & Failure Attribution';
+    parentTitle = 'Dashboard Analytics';
+  } else if (pathname.includes('/dashboard-analytics/claim-status')) {
+    pageTitle = 'Claim Status & Warranty Scope';
+    parentTitle = 'Dashboard Analytics';
+  } else if (pathname.includes('/dashboard-analytics/solution-time')) {
+    pageTitle = 'Solution Time & SLA Bottlenecks';
+    parentTitle = 'Dashboard Analytics';
+  } else if (pathname.includes('/dashboard-analytics/volume-trends')) {
+    pageTitle = 'Volume Trends & Backlog Dynamics';
+    parentTitle = 'Dashboard Analytics';
   } else if (pathname.includes('/solution-time') || pathname.includes('/performance')) {
     pageTitle = 'Solution Time Performance';
     parentTitle = 'Case Solution Process';

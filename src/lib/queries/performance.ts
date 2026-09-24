@@ -503,28 +503,106 @@ export async function getPerformanceVolumeData(
   };
 }
 
+export interface BranchAnalyticsItem {
+  branch_code: string;
+  branch_city: string;
+  total_cases: number;
+  achieved_cases: number;
+  achievement_pct: number;
+  avg_solution_days: number;
+  overdue_cases: number;
+  covered_cases: number;
+  covered_pct: number;
+  goodwill_cases: number;
+  goodwill_pct: number;
+  unclaimable_cases: number;
+  unclaimable_pct: number;
+}
+
+export interface BranchAnalyticsData {
+  summary: {
+    total_cases: number;
+    overall_achievement_pct: number;
+    overall_avg_solution_days: number;
+    total_branches: number;
+    fastest_branch: { branch_code: string; days: number } | null;
+    slowest_branch: { branch_code: string; days: number } | null;
+    highest_volume_branch: { branch_code: string; total_cases: number; achievement_pct: number } | null;
+  };
+  branchList: BranchAnalyticsItem[];
+  branchOutcomeProfile: BranchOutcomeProfileItem[];
+}
+
+export interface RootCauseParetoItem {
+  root_cause_name: string;
+  jumlah_kasus: number;
+  pct: number;
+  cumulative_pct: number;
+  avg_solution_time_days: number;
+}
+
+export interface RootCauseAnalyticsData {
+  summary: {
+    total_cases: number;
+    total_causes_count: number;
+    dominant_cause: { name: string; count: number; pct: number } | null;
+    top3_share_pct: number;
+  };
+  paretoData: RootCauseParetoItem[];
+  faultPanels: ProductFaultAttributionPanel[];
+}
+
+export interface SolutionTimeAnalyticsData {
+  summary: {
+    overall_achievement_pct: number;
+    total_cases_evaluated: number;
+    overall_avg_solution_days: number;
+    overdue_count: number;
+    sla_target_days: number;
+  };
+  branchRanking: {
+    branch_code: string;
+    branch_city: string;
+    total_cases: number;
+    achieved_cases: number;
+    achievement_pct: number;
+    avg_solution_days: number;
+    overdue_cases: number;
+  }[];
+  checkpointRanking: CheckpointDurationRanking[];
+  segmentPerformance: SlaPerformanceByGolongan[];
+}
+
 export async function getPrincipalClaimableData(
   range: string = 'last_1_year',
   customStart?: string,
-  customEnd?: string
+  customEnd?: string,
+  segment: string = 'all'
 ): Promise<PrincipalClaimableData> {
-  let dateClause = "complaint_date >= (CURRENT_DATE - INTERVAL '1 year')::date";
+  let dateClause = "ic.complaint_date >= (CURRENT_DATE - INTERVAL '1 year')::date";
   let queryParams: any[] = [];
 
   if (range === 'this_month') {
-    dateClause = "complaint_date >= date_trunc('month', CURRENT_DATE)::date";
+    dateClause = "ic.complaint_date >= date_trunc('month', CURRENT_DATE)::date";
   } else if (range === 'last_3_months') {
-    dateClause = "complaint_date >= (CURRENT_DATE - INTERVAL '3 months')::date";
+    dateClause = "ic.complaint_date >= (CURRENT_DATE - INTERVAL '3 months')::date";
   } else if (range === 'last_6_months') {
-    dateClause = "complaint_date >= (CURRENT_DATE - INTERVAL '6 months')::date";
+    dateClause = "ic.complaint_date >= (CURRENT_DATE - INTERVAL '6 months')::date";
   } else if (range === 'last_1_year') {
-    dateClause = "complaint_date >= (CURRENT_DATE - INTERVAL '1 year')::date";
+    dateClause = "ic.complaint_date >= (CURRENT_DATE - INTERVAL '1 year')::date";
   } else if (range === 'custom' && customStart && customEnd) {
-    dateClause = "complaint_date BETWEEN $1::date AND $2::date";
+    dateClause = "ic.complaint_date BETWEEN $1::date AND $2::date";
     queryParams = [customStart, customEnd];
   }
 
-  // --- Phase 7 Comprehensive Query ---
+  let segmentFilter = "";
+  if (segment === 'KA Nasional') {
+    segmentFilter = "AND m.golongan_customer = 'KA Nasional'";
+  } else if (segment === 'All Customer') {
+    segmentFilter = "AND m.golongan_customer = 'All Customer'";
+  }
+
+  // --- Phase 7 & 8 Comprehensive Query ---
   const caseRows = await query<{
     product_code: string;
     branch_code: string;
@@ -534,19 +612,26 @@ export async function getPrincipalClaimableData(
     claim_outcome: 'Covered' | 'Goodwill' | 'Unclaimable';
   }>(`
     SELECT
-      product_code,
-      branch_code,
-      COALESCE(root_cause_name, 'Not Recorded') AS root_cause_name,
-      COALESCE(claimable_status_name, 'Unrecorded') AS claimable_status_name,
-      COALESCE(is_warranty_scope, false) AS is_warranty_scope,
+      p.product_code,
+      b.branch_code,
+      COALESCE(rc.root_cause_name, 'Not Recorded') AS root_cause_name,
+      COALESCE(cs.status_name, 'Unrecorded') AS claimable_status_name,
+      COALESCE(cs.is_warranty_scope, false) AS is_warranty_scope,
       CASE
-        WHEN claimable_status_name = 'Goodwill' THEN 'Goodwill'
-        WHEN is_warranty_scope = true THEN 'Covered'
+        WHEN cs.status_name = 'Goodwill' THEN 'Goodwill'
+        WHEN cs.is_warranty_scope = true THEN 'Covered'
         ELSE 'Unclaimable'
       END AS claim_outcome
-    FROM product_issue.v_issue_case_full
-    WHERE ${dateClause}
-    ORDER BY product_code, branch_code;
+    FROM product_issue.fact_issue_case ic
+    JOIN product_issue.dim_branch b ON b.branch_id = ic.branch_id
+    JOIN product_issue.dim_unit_asset ua ON ua.unit_asset_id = ic.unit_asset_id
+    JOIN product_issue.dim_product_model p ON p.product_model_id = ua.product_model_id
+    LEFT JOIN product_issue.ref_root_cause rc ON rc.root_cause_id = ic.root_cause_id
+    JOIN product_issue.claim c ON c.issue_case_id = ic.issue_case_id
+    JOIN product_issue.ref_claimable_status cs ON cs.claimable_status_id = c.claimable_status_id
+    JOIN product_issue.v_claim_metrics m ON m.issue_case_id = ic.issue_case_id
+    WHERE ${dateClause} ${segmentFilter}
+    ORDER BY p.product_code, b.branch_code;
   `, queryParams);
 
   const rawCases = caseRows.rows;
@@ -897,5 +982,331 @@ export async function getAnomalyData(): Promise<{
   return {
     checkpointAnomalies: checkpointRes.rows,
     bottleneckStats: bottleneckRes.rows,
+  };
+}
+
+export async function getBranchAnalyticsData(
+  range: string = 'last_1_year',
+  customStart?: string,
+  customEnd?: string,
+  segment: string = 'all'
+): Promise<BranchAnalyticsData> {
+  let dateClause = "ic.complaint_date >= (CURRENT_DATE - INTERVAL '1 year')::date";
+  let queryParams: any[] = [];
+
+  if (range === 'this_month') {
+    dateClause = "ic.complaint_date >= date_trunc('month', CURRENT_DATE)::date";
+  } else if (range === 'last_3_months') {
+    dateClause = "ic.complaint_date >= (CURRENT_DATE - INTERVAL '3 months')::date";
+  } else if (range === 'last_6_months') {
+    dateClause = "ic.complaint_date >= (CURRENT_DATE - INTERVAL '6 months')::date";
+  } else if (range === 'last_1_year') {
+    dateClause = "ic.complaint_date >= (CURRENT_DATE - INTERVAL '1 year')::date";
+  } else if (range === 'custom' && customStart && customEnd) {
+    dateClause = "ic.complaint_date BETWEEN $1::date AND $2::date";
+    queryParams = [customStart, customEnd];
+  }
+
+  let segmentFilter = "";
+  if (segment === 'KA Nasional') {
+    segmentFilter = "AND m.golongan_customer = 'KA Nasional'";
+  } else if (segment === 'All Customer') {
+    segmentFilter = "AND m.golongan_customer = 'All Customer'";
+  }
+
+  const res = await query<{
+    branch_code: string;
+    branch_city: string;
+    total_cases: number;
+    achieved_cases: number;
+    achievement_pct: number;
+    avg_solution_days: number;
+    overdue_cases: number;
+    covered_cases: number;
+    covered_pct: number;
+    goodwill_cases: number;
+    goodwill_pct: number;
+    unclaimable_cases: number;
+    unclaimable_pct: number;
+  }>(`
+    WITH branch_raw AS (
+      SELECT
+        b.branch_code,
+        COALESCE(bl.city_name, b.branch_code) AS branch_city,
+        m.solution_time_days,
+        m.achievement,
+        m.achievement_threshold_days,
+        cs.status_name,
+        COALESCE(cs.is_warranty_scope, false) AS is_warranty_scope,
+        CASE
+          WHEN cs.status_name = 'Goodwill' THEN 'Goodwill'
+          WHEN cs.is_warranty_scope = true THEN 'Covered'
+          ELSE 'Unclaimable'
+        END AS claim_outcome
+      FROM product_issue.fact_issue_case ic
+      JOIN product_issue.dim_branch b ON b.branch_id = ic.branch_id
+      LEFT JOIN product_issue.dim_branch_location bl ON bl.branch_location_id = b.branch_location_id
+      JOIN product_issue.claim c ON c.issue_case_id = ic.issue_case_id
+      JOIN product_issue.ref_claimable_status cs ON cs.claimable_status_id = c.claimable_status_id
+      JOIN product_issue.v_claim_metrics m ON m.issue_case_id = ic.issue_case_id
+      WHERE ${dateClause} ${segmentFilter}
+    )
+    SELECT
+      branch_code,
+      branch_city,
+      COUNT(*)::int AS total_cases,
+      COUNT(*) FILTER (WHERE achievement = 'Achieved')::int AS achieved_cases,
+      ROUND(100.0 * COUNT(*) FILTER (WHERE achievement = 'Achieved') / NULLIF(COUNT(*), 0), 1)::float AS achievement_pct,
+      ROUND(AVG(solution_time_days), 1)::float AS avg_solution_days,
+      COUNT(*) FILTER (WHERE achievement = 'Not Achieved' OR solution_time_days > achievement_threshold_days)::int AS overdue_cases,
+      COUNT(*) FILTER (WHERE claim_outcome = 'Covered')::int AS covered_cases,
+      ROUND(100.0 * COUNT(*) FILTER (WHERE claim_outcome = 'Covered') / NULLIF(COUNT(*), 0), 1)::float AS covered_pct,
+      COUNT(*) FILTER (WHERE claim_outcome = 'Goodwill')::int AS goodwill_cases,
+      ROUND(100.0 * COUNT(*) FILTER (WHERE claim_outcome = 'Goodwill') / NULLIF(COUNT(*), 0), 1)::float AS goodwill_pct,
+      COUNT(*) FILTER (WHERE claim_outcome = 'Unclaimable')::int AS unclaimable_cases,
+      ROUND(100.0 * COUNT(*) FILTER (WHERE claim_outcome = 'Unclaimable') / NULLIF(COUNT(*), 0), 1)::float AS unclaimable_pct
+    FROM branch_raw
+    GROUP BY branch_code, branch_city
+    ORDER BY total_cases DESC, achievement_pct DESC;
+  `, queryParams);
+
+  const branches = res.rows;
+  const totalCases = branches.reduce((sum, b) => sum + b.total_cases, 0);
+  const totalAchieved = branches.reduce((sum, b) => sum + b.achieved_cases, 0);
+  const overallAchievementPct = totalCases > 0 ? Math.round((totalAchieved / totalCases) * 1000) / 10 : 0;
+  
+  // Calculate weighted overall average solution days
+  const totalWeightedDays = branches.reduce((sum, b) => sum + (b.avg_solution_days * b.total_cases), 0);
+  const overallAvgDays = totalCases > 0 ? Math.round((totalWeightedDays / totalCases) * 10) / 10 : 0;
+
+  let fastestBranch: { branch_code: string; days: number } | null = null;
+  let slowestBranch: { branch_code: string; days: number } | null = null;
+  let highestVolumeBranch: { branch_code: string; total_cases: number; achievement_pct: number } | null = null;
+
+  if (branches.length > 0) {
+    const sortedBySpeed = [...branches].filter(b => b.total_cases > 0).sort((a, b) => a.avg_solution_days - b.avg_solution_days);
+    if (sortedBySpeed.length > 0) {
+      fastestBranch = { branch_code: sortedBySpeed[0].branch_code, days: sortedBySpeed[0].avg_solution_days };
+      slowestBranch = { branch_code: sortedBySpeed[sortedBySpeed.length - 1].branch_code, days: sortedBySpeed[sortedBySpeed.length - 1].avg_solution_days };
+    }
+    highestVolumeBranch = {
+      branch_code: branches[0].branch_code,
+      total_cases: branches[0].total_cases,
+      achievement_pct: branches[0].achievement_pct,
+    };
+  }
+
+  // Branch outcome profile for stacked bar
+  const branchOutcomeProfile: BranchOutcomeProfileItem[] = branches.map((b) => ({
+    branch_code: b.branch_code,
+    total: b.total_cases,
+    covered_count: b.covered_cases,
+    covered_pct: b.covered_pct,
+    goodwill_count: b.goodwill_cases,
+    goodwill_pct: b.goodwill_pct,
+    unclaimable_count: b.unclaimable_cases,
+    unclaimable_pct: b.unclaimable_pct,
+  }));
+
+  return {
+    summary: {
+      total_cases: totalCases,
+      overall_achievement_pct: overallAchievementPct,
+      overall_avg_solution_days: overallAvgDays,
+      total_branches: branches.length,
+      fastest_branch: fastestBranch,
+      slowest_branch: slowestBranch,
+      highest_volume_branch: highestVolumeBranch,
+    },
+    branchList: branches,
+    branchOutcomeProfile,
+  };
+}
+
+export async function getRootCauseData(
+  range: string = 'last_1_year',
+  customStart?: string,
+  customEnd?: string,
+  segment: string = 'all'
+): Promise<RootCauseAnalyticsData> {
+  let dateClause = "ic.complaint_date >= (CURRENT_DATE - INTERVAL '1 year')::date";
+  let queryParams: any[] = [];
+
+  if (range === 'this_month') {
+    dateClause = "ic.complaint_date >= date_trunc('month', CURRENT_DATE)::date";
+  } else if (range === 'last_3_months') {
+    dateClause = "ic.complaint_date >= (CURRENT_DATE - INTERVAL '3 months')::date";
+  } else if (range === 'last_6_months') {
+    dateClause = "ic.complaint_date >= (CURRENT_DATE - INTERVAL '6 months')::date";
+  } else if (range === 'last_1_year') {
+    dateClause = "ic.complaint_date >= (CURRENT_DATE - INTERVAL '1 year')::date";
+  } else if (range === 'custom' && customStart && customEnd) {
+    dateClause = "ic.complaint_date BETWEEN $1::date AND $2::date";
+    queryParams = [customStart, customEnd];
+  }
+
+  let segmentFilter = "";
+  if (segment === 'KA Nasional') {
+    segmentFilter = "AND m.golongan_customer = 'KA Nasional'";
+  } else if (segment === 'All Customer') {
+    segmentFilter = "AND m.golongan_customer = 'All Customer'";
+  }
+
+  const res = await query<{
+    root_cause_name: string;
+    jumlah_kasus: number;
+    avg_solution_time_days: number;
+  }>(`
+    SELECT
+      COALESCE(rc.root_cause_name, 'Not Recorded') AS root_cause_name,
+      COUNT(*)::int AS jumlah_kasus,
+      ROUND(AVG(m.solution_time_days), 1)::float AS avg_solution_time_days
+    FROM product_issue.fact_issue_case ic
+    LEFT JOIN product_issue.ref_root_cause rc ON rc.root_cause_id = ic.root_cause_id
+    JOIN product_issue.v_claim_metrics m ON m.issue_case_id = ic.issue_case_id
+    WHERE ${dateClause} ${segmentFilter}
+    GROUP BY COALESCE(rc.root_cause_name, 'Not Recorded')
+    ORDER BY jumlah_kasus DESC;
+  `, queryParams);
+
+  const rawCauses = res.rows;
+  const totalCases = rawCauses.reduce((sum, r) => sum + r.jumlah_kasus, 0);
+
+  let running = 0;
+  const paretoData: RootCauseParetoItem[] = rawCauses.map((r) => {
+    running += r.jumlah_kasus;
+    return {
+      root_cause_name: r.root_cause_name,
+      jumlah_kasus: r.jumlah_kasus,
+      pct: totalCases > 0 ? Math.round((r.jumlah_kasus / totalCases) * 1000) / 10 : 0,
+      cumulative_pct: totalCases > 0 ? Math.round((running / totalCases) * 1000) / 10 : 0,
+      avg_solution_time_days: r.avg_solution_time_days,
+    };
+  });
+
+  const top3Sum = rawCauses.slice(0, 3).reduce((sum, r) => sum + r.jumlah_kasus, 0);
+  const top3SharePct = totalCases > 0 ? Math.round((top3Sum / totalCases) * 1000) / 10 : 0;
+
+  const dominantCause = rawCauses.length > 0 ? {
+    name: rawCauses[0].root_cause_name,
+    count: rawCauses[0].jumlah_kasus,
+    pct: totalCases > 0 ? Math.round((rawCauses[0].jumlah_kasus / totalCases) * 1000) / 10 : 0,
+  } : null;
+
+  // Also fetch product fault attribution panels using the same filter
+  const principalData = await getPrincipalClaimableData(range, customStart, customEnd, segment);
+
+  return {
+    summary: {
+      total_cases: totalCases,
+      total_causes_count: rawCauses.length,
+      dominant_cause: dominantCause,
+      top3_share_pct: top3SharePct,
+    },
+    paretoData,
+    faultPanels: principalData.productFaultPanels,
+  };
+}
+
+export async function getSolutionTimeData(
+  range: string = 'last_1_year',
+  customStart?: string,
+  customEnd?: string,
+  segment: string = 'all'
+): Promise<SolutionTimeAnalyticsData> {
+  let dateClause = "ic.complaint_date >= (CURRENT_DATE - INTERVAL '1 year')::date";
+  let queryParams: any[] = [];
+
+  if (range === 'this_month') {
+    dateClause = "ic.complaint_date >= date_trunc('month', CURRENT_DATE)::date";
+  } else if (range === 'last_3_months') {
+    dateClause = "ic.complaint_date >= (CURRENT_DATE - INTERVAL '3 months')::date";
+  } else if (range === 'last_6_months') {
+    dateClause = "ic.complaint_date >= (CURRENT_DATE - INTERVAL '6 months')::date";
+  } else if (range === 'last_1_year') {
+    dateClause = "ic.complaint_date >= (CURRENT_DATE - INTERVAL '1 year')::date";
+  } else if (range === 'custom' && customStart && customEnd) {
+    dateClause = "ic.complaint_date BETWEEN $1::date AND $2::date";
+    queryParams = [customStart, customEnd];
+  }
+
+  let segmentFilter = "";
+  if (segment === 'KA Nasional') {
+    segmentFilter = "AND m.golongan_customer = 'KA Nasional'";
+  } else if (segment === 'All Customer') {
+    segmentFilter = "AND m.golongan_customer = 'All Customer'";
+  }
+
+  const branchRes = await query<{
+    branch_code: string;
+    branch_city: string;
+    total_cases: number;
+    achieved_cases: number;
+    achievement_pct: number;
+    avg_solution_days: number;
+    overdue_cases: number;
+  }>(`
+    SELECT
+      b.branch_code,
+      COALESCE(bl.city_name, b.branch_code) AS branch_city,
+      COUNT(*)::int AS total_cases,
+      COUNT(*) FILTER (WHERE m.achievement = 'Achieved')::int AS achieved_cases,
+      ROUND(100.0 * COUNT(*) FILTER (WHERE m.achievement = 'Achieved') / NULLIF(COUNT(*), 0), 1)::float AS achievement_pct,
+      ROUND(AVG(m.solution_time_days), 1)::float AS avg_solution_days,
+      COUNT(*) FILTER (WHERE m.achievement = 'Not Achieved' OR m.solution_time_days > m.achievement_threshold_days)::int AS overdue_cases
+    FROM product_issue.fact_issue_case ic
+    JOIN product_issue.dim_branch b ON b.branch_id = ic.branch_id
+    LEFT JOIN product_issue.dim_branch_location bl ON bl.branch_location_id = b.branch_location_id
+    JOIN product_issue.v_claim_metrics m ON m.issue_case_id = ic.issue_case_id
+    WHERE ${dateClause} ${segmentFilter}
+    GROUP BY b.branch_code, COALESCE(bl.city_name, b.branch_code)
+    ORDER BY achievement_pct DESC, total_cases DESC;
+  `, queryParams);
+
+  const checkpointRes = await query<CheckpointDurationRanking>(`
+    SELECT
+      checkpoint_code,
+      n_kejadian::int,
+      avg_durasi::float,
+      median_durasi::float,
+      rank_by_avg_duration::int
+    FROM product_issue.v_checkpoint_duration_ranking
+    ORDER BY rank_by_avg_duration ASC;
+  `);
+
+  const segmentRes = await query<SlaPerformanceByGolongan>(`
+    SELECT
+      m.golongan_customer,
+      m.achievement,
+      COUNT(*)::int AS jumlah_kasus,
+      ROUND(AVG(m.solution_time_days), 1)::float AS avg_solution_time_days
+    FROM product_issue.fact_issue_case ic
+    JOIN product_issue.v_claim_metrics m ON m.issue_case_id = ic.issue_case_id
+    WHERE ${dateClause}
+    GROUP BY m.golongan_customer, m.achievement
+    ORDER BY m.golongan_customer, m.achievement;
+  `, queryParams);
+
+  const branches = branchRes.rows;
+  const totalCases = branches.reduce((sum, b) => sum + b.total_cases, 0);
+  const totalAchieved = branches.reduce((sum, b) => sum + b.achieved_cases, 0);
+  const overallAchievementPct = totalCases > 0 ? Math.round((totalAchieved / totalCases) * 1000) / 10 : 0;
+  const totalOverdue = branches.reduce((sum, b) => sum + b.overdue_cases, 0);
+
+  const totalWeightedDays = branches.reduce((sum, b) => sum + (b.avg_solution_days * b.total_cases), 0);
+  const overallAvgDays = totalCases > 0 ? Math.round((totalWeightedDays / totalCases) * 10) / 10 : 0;
+  const slaTarget = segment === 'KA Nasional' ? 15 : 20;
+
+  return {
+    summary: {
+      overall_achievement_pct: overallAchievementPct,
+      total_cases_evaluated: totalCases,
+      overall_avg_solution_days: overallAvgDays,
+      overdue_count: totalOverdue,
+      sla_target_days: slaTarget,
+    },
+    branchRanking: branches,
+    checkpointRanking: checkpointRes.rows,
+    segmentPerformance: segmentRes.rows,
   };
 }

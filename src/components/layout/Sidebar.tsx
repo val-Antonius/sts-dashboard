@@ -11,6 +11,11 @@ import {
   Clock,
   BarChart3,
   AlertCircle,
+  Building2,
+  Package,
+  Wrench,
+  ShieldCheck,
+  TrendingUp,
 } from 'lucide-react';
 
 export function Sidebar() {
@@ -20,9 +25,9 @@ export function Sidebar() {
 
   return (
     <aside className="w-64 shrink-0 border-r border-border bg-surface flex flex-col justify-between h-screen sticky top-0">
-      <div>
+      <div className="flex flex-col flex-1 min-h-0">
         {/* Brand Header */}
-        <div className="p-5 border-b border-border">
+        <div className="p-5 border-b border-border shrink-0">
           <div className="flex items-center gap-2.5">
             <div className="w-8 h-8 rounded bg-accent-brass/15 border border-accent-brass/30 flex items-center justify-center text-accent-brass font-bold text-sm">
               STS
@@ -35,16 +40,16 @@ export function Sidebar() {
         </div>
 
         {/* Navigation Structure */}
-        <nav className="p-3 space-y-6">
+        <nav className="p-3 space-y-5 overflow-y-auto flex-1">
           {/* Top-level Group 1: Operations */}
           <div>
             <div className="px-3 mb-1.5 text-[10px] font-semibold tracking-wider text-ink-muted uppercase">
               Operations
             </div>
-            <div className="space-y-1">
+            <div className="space-y-0.5">
               <Link
                 href="/operations/active-case"
-                className={`flex items-center gap-2.5 px-3 py-2 rounded-md text-xs font-medium transition-colors ${
+                className={`flex items-center gap-2.5 px-3 py-1.5 rounded-md text-xs font-medium transition-colors ${
                   pathname === '/operations/active-case' || pathname === '/case-overview' || pathname === '/'
                     ? 'bg-accent-brass/10 text-accent-brass font-semibold border-l-2 border-accent-brass'
                     : 'text-ink-muted hover:text-ink-primary hover:bg-surface-hover'
@@ -56,7 +61,7 @@ export function Sidebar() {
 
               <Link
                 href="/operations/issues"
-                className={`flex items-center gap-2.5 px-3 py-2 rounded-md text-xs font-medium transition-colors ${
+                className={`flex items-center gap-2.5 px-3 py-1.5 rounded-md text-xs font-medium transition-colors ${
                   isActive('/operations/issues')
                     ? 'bg-accent-brass/10 text-accent-brass font-semibold border-l-2 border-accent-brass'
                     : 'text-ink-muted hover:text-ink-primary hover:bg-surface-hover'
@@ -68,7 +73,7 @@ export function Sidebar() {
 
               <Link
                 href="/operations/diagnostic"
-                className={`flex items-center gap-2.5 px-3 py-2 rounded-md text-xs font-medium transition-colors ${
+                className={`flex items-center gap-2.5 px-3 py-1.5 rounded-md text-xs font-medium transition-colors ${
                   isActive('/operations/diagnostic') || isActive('/case-solution-process/diagnostic')
                     ? 'bg-accent-brass/10 text-accent-brass font-semibold border-l-2 border-accent-brass'
                     : 'text-ink-muted hover:text-ink-primary hover:bg-surface-hover'
@@ -80,7 +85,7 @@ export function Sidebar() {
 
               <Link
                 href="/operations/master-data"
-                className={`flex items-center gap-2.5 px-3 py-2 rounded-md text-xs font-medium transition-colors ${
+                className={`flex items-center gap-2.5 px-3 py-1.5 rounded-md text-xs font-medium transition-colors ${
                   isActive('/operations/master-data')
                     ? 'bg-accent-brass/10 text-accent-brass font-semibold border-l-2 border-accent-brass'
                     : 'text-ink-muted hover:text-ink-primary hover:bg-surface-hover'
@@ -92,15 +97,96 @@ export function Sidebar() {
             </div>
           </div>
 
-          {/* Top-level Group 2: Case Solution Process (3 Focused Pages) */}
+          {/* Top-level Group 2: Dashboard Analytics (NEW Phase 8) */}
+          <div>
+            <div className="px-3 mb-1.5 text-[10px] font-semibold tracking-wider text-accent-brass uppercase flex items-center justify-between">
+              <span>Dashboard Analytics</span>
+              <span className="text-[9px] font-mono px-1 py-0.2 rounded bg-accent-brass/10 text-accent-brass font-bold">NEW</span>
+            </div>
+            <div className="space-y-0.5">
+              <Link
+                href="/dashboard-analytics/branch"
+                className={`flex items-center gap-2.5 px-3 py-1.5 rounded-md text-xs font-medium transition-colors ${
+                  isActive('/dashboard-analytics/branch')
+                    ? 'bg-accent-brass/10 text-accent-brass font-semibold border-l-2 border-accent-brass'
+                    : 'text-ink-muted hover:text-ink-primary hover:bg-surface-hover'
+                }`}
+              >
+                <Building2 className="w-4 h-4 shrink-0" />
+                <span>By Branch</span>
+              </Link>
+
+              <Link
+                href="/dashboard-analytics/unit"
+                className={`flex items-center gap-2.5 px-3 py-1.5 rounded-md text-xs font-medium transition-colors ${
+                  isActive('/dashboard-analytics/unit')
+                    ? 'bg-accent-brass/10 text-accent-brass font-semibold border-l-2 border-accent-brass'
+                    : 'text-ink-muted hover:text-ink-primary hover:bg-surface-hover'
+                }`}
+              >
+                <Package className="w-4 h-4 shrink-0" />
+                <span>By Unit</span>
+              </Link>
+
+              <Link
+                href="/dashboard-analytics/root-cause"
+                className={`flex items-center gap-2.5 px-3 py-1.5 rounded-md text-xs font-medium transition-colors ${
+                  isActive('/dashboard-analytics/root-cause')
+                    ? 'bg-accent-brass/10 text-accent-brass font-semibold border-l-2 border-accent-brass'
+                    : 'text-ink-muted hover:text-ink-primary hover:bg-surface-hover'
+                }`}
+              >
+                <Wrench className="w-4 h-4 shrink-0" />
+                <span>By Root Cause</span>
+              </Link>
+
+              <Link
+                href="/dashboard-analytics/claim-status"
+                className={`flex items-center gap-2.5 px-3 py-1.5 rounded-md text-xs font-medium transition-colors ${
+                  isActive('/dashboard-analytics/claim-status')
+                    ? 'bg-accent-brass/10 text-accent-brass font-semibold border-l-2 border-accent-brass'
+                    : 'text-ink-muted hover:text-ink-primary hover:bg-surface-hover'
+                }`}
+              >
+                <ShieldCheck className="w-4 h-4 shrink-0" />
+                <span>By Claim Status</span>
+              </Link>
+
+              <Link
+                href="/dashboard-analytics/solution-time"
+                className={`flex items-center gap-2.5 px-3 py-1.5 rounded-md text-xs font-medium transition-colors ${
+                  isActive('/dashboard-analytics/solution-time')
+                    ? 'bg-accent-brass/10 text-accent-brass font-semibold border-l-2 border-accent-brass'
+                    : 'text-ink-muted hover:text-ink-primary hover:bg-surface-hover'
+                }`}
+              >
+                <Clock className="w-4 h-4 shrink-0" />
+                <span>By Solution Time</span>
+              </Link>
+
+              <Link
+                href="/dashboard-analytics/volume-trends"
+                className={`flex items-center gap-2.5 px-3 py-1.5 rounded-md text-xs font-medium transition-colors ${
+                  isActive('/dashboard-analytics/volume-trends')
+                    ? 'bg-accent-brass/10 text-accent-brass font-semibold border-l-2 border-accent-brass'
+                    : 'text-ink-muted hover:text-ink-primary hover:bg-surface-hover'
+                }`}
+              >
+                <TrendingUp className="w-4 h-4 shrink-0" />
+                <span>By Volume Trends</span>
+              </Link>
+            </div>
+          </div>
+
+          {/* Top-level Group 3: Case Solution Process (Deep Analytics) */}
           <div>
             <div className="px-3 mb-1.5 text-[10px] font-semibold tracking-wider text-ink-muted uppercase">
               Case Solution Process
             </div>
-            <div className="space-y-1">
+            <div className="space-y-0.5">
               <Link
                 href="/case-solution-process/solution-time"
-                className={`flex items-center gap-2.5 px-3 py-2 rounded-md text-xs font-medium transition-colors ${
+                className={`flex items-center gap-2.5 px-3 py-1.5 rounded-md text-xs font-medium transition-colors ${
                   isActive('/case-solution-process/solution-time') || pathname === '/case-solution-process/performance'
                     ? 'bg-accent-brass/10 text-accent-brass font-semibold border-l-2 border-accent-brass'
                     : 'text-ink-muted hover:text-ink-primary hover:bg-surface-hover'
@@ -112,7 +198,7 @@ export function Sidebar() {
 
               <Link
                 href="/case-solution-process/volume-trends"
-                className={`flex items-center gap-2.5 px-3 py-2 rounded-md text-xs font-medium transition-colors ${
+                className={`flex items-center gap-2.5 px-3 py-1.5 rounded-md text-xs font-medium transition-colors ${
                   isActive('/case-solution-process/volume-trends')
                     ? 'bg-accent-brass/10 text-accent-brass font-semibold border-l-2 border-accent-brass'
                     : 'text-ink-muted hover:text-ink-primary hover:bg-surface-hover'
@@ -124,7 +210,7 @@ export function Sidebar() {
 
               <Link
                 href="/case-solution-process/data-quality"
-                className={`flex items-center gap-2.5 px-3 py-2 rounded-md text-xs font-medium transition-colors ${
+                className={`flex items-center gap-2.5 px-3 py-1.5 rounded-md text-xs font-medium transition-colors ${
                   isActive('/case-solution-process/data-quality')
                     ? 'bg-accent-brass/10 text-accent-brass font-semibold border-l-2 border-accent-brass'
                     : 'text-ink-muted hover:text-ink-primary hover:bg-surface-hover'

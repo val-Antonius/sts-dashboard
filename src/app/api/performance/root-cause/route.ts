@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { getPrincipalClaimableData } from '@/lib/queries/performance';
+import { getRootCauseData } from '@/lib/queries/performance';
 
 export async function GET(req: NextRequest) {
   try {
@@ -9,12 +9,12 @@ export async function GET(req: NextRequest) {
     const end = searchParams.get('end') || undefined;
     const segment = searchParams.get('segment') || 'all';
 
-    const data = await getPrincipalClaimableData(range, start, end, segment);
+    const data = await getRootCauseData(range, start, end, segment);
     return NextResponse.json(data);
-  } catch (error) {
-    console.error('Error fetching principal and claimable data:', error);
+  } catch (error: any) {
+    console.error('Error fetching root cause analytics data:', error);
     return NextResponse.json(
-      { error: 'Failed to fetch principal and claimable data' },
+      { error: 'Failed to fetch root cause analytics data', details: error.message },
       { status: 500 }
     );
   }
