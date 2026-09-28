@@ -189,7 +189,7 @@ export function IssueManagementView({
 
         <button
           onClick={openCreateModal}
-          className="flex items-center gap-1.5 px-4 py-2 bg-accent-brass text-white text-xs font-bold rounded-lg hover:bg-accent-brass/90 transition-colors shadow-sm shrink-0"
+          className="flex items-center gap-1.5 px-4 py-2 bg-surface-inverted text-ink-inverted text-xs font-bold rounded-lg hover:opacity-90 transition-opacity shadow-sm shrink-0"
         >
           <Plus className="w-4 h-4" />
           <span>Create New Issue</span>
@@ -210,27 +210,27 @@ export function IssueManagementView({
         <div className="p-4 bg-surface border border-border rounded-lg shadow-xs">
           <div className="flex items-center justify-between text-xs text-ink-muted mb-1">
             <span className="font-semibold uppercase tracking-wider text-[10px]">Active In-Progress</span>
-            <Clock className="w-3.5 h-3.5 text-accent-brass" />
+            <Clock className="w-3.5 h-3.5 text-ink-muted" />
           </div>
-          <div className="text-2xl font-bold text-accent-brass font-mono">{kpiMetrics.open_count}</div>
+          <div className="text-2xl font-bold text-ink-primary font-mono">{kpiMetrics.open_count}</div>
           <span className="text-[11px] text-ink-muted">Work order status: Belum Closed</span>
         </div>
 
         <div className="p-4 bg-surface border border-border rounded-lg shadow-xs">
           <div className="flex items-center justify-between text-xs text-ink-muted mb-1">
             <span className="font-semibold uppercase tracking-wider text-[10px]">Closed Cases</span>
-            <CheckCircle2 className="w-3.5 h-3.5 text-[#3B7A57]" />
+            <CheckCircle2 className="w-3.5 h-3.5 text-status-ok" />
           </div>
-          <div className="text-2xl font-bold text-[#3B7A57] font-mono">{kpiMetrics.closed_count}</div>
+          <div className="text-2xl font-bold text-ink-primary font-mono">{kpiMetrics.closed_count}</div>
           <span className="text-[11px] text-ink-muted">Resolved & RFU complete</span>
         </div>
 
         <div className="p-4 bg-surface border border-border rounded-lg shadow-xs">
           <div className="flex items-center justify-between text-xs text-ink-muted mb-1">
             <span className="font-semibold uppercase tracking-wider text-[10px]">Overdue Active Cases</span>
-            <AlertTriangle className="w-3.5 h-3.5 text-[#A54B3F]" />
+            <AlertTriangle className="w-3.5 h-3.5 text-status-danger" />
           </div>
-          <div className="text-2xl font-bold text-[#A54B3F] font-mono">{kpiMetrics.overdue_count}</div>
+          <div className="text-2xl font-bold text-ink-primary font-mono">{kpiMetrics.overdue_count}</div>
           <span className="text-[11px] text-ink-muted">Exceeding SLA benchmark</span>
         </div>
       </div>
@@ -246,7 +246,7 @@ export function IssueManagementView({
               placeholder="Search Customer, Serial, Model, PIC, WO..."
               value={search}
               onChange={(e) => setSearch(e.target.value)}
-              className="w-full pl-9 pr-3 py-2 text-xs bg-base/50 border border-border rounded-md focus:outline-none focus:border-accent-brass transition-colors"
+              className="w-full pl-9 pr-3 py-2 text-xs bg-base/50 border border-border rounded-md focus:outline-none focus:border-border-strong transition-colors"
             />
           </div>
 
@@ -255,7 +255,7 @@ export function IssueManagementView({
             <select
               value={statusWo}
               onChange={(e) => setStatusWo(e.target.value)}
-              className="w-full px-3 py-2 text-xs bg-base/50 border border-border rounded-md focus:outline-none focus:border-accent-brass transition-colors"
+              className="w-full px-3 py-2 text-xs bg-base/50 border border-border rounded-md focus:outline-none focus:border-border-strong transition-colors"
             >
               <option value="ALL">All WO Status</option>
               <option value="Belum Closed">Belum Closed (Active)</option>
@@ -268,7 +268,7 @@ export function IssueManagementView({
             <select
               value={branchId}
               onChange={(e) => setBranchId(e.target.value)}
-              className="w-full px-3 py-2 text-xs bg-base/50 border border-border rounded-md focus:outline-none focus:border-accent-brass transition-colors"
+              className="w-full px-3 py-2 text-xs bg-base/50 border border-border rounded-md focus:outline-none focus:border-border-strong transition-colors"
             >
               <option value="ALL">All Branches</option>
               {lookups.branches.map((b) => (
@@ -284,7 +284,7 @@ export function IssueManagementView({
             <button
               type="submit"
               disabled={isLoading}
-              className="flex-1 flex items-center justify-center gap-1.5 px-3 py-2 bg-accent-brass text-white text-xs font-semibold rounded-md hover:bg-accent-brass/90 transition-colors disabled:opacity-50"
+              className="flex-1 flex items-center justify-center gap-1.5 px-3 py-2 bg-surface-inverted text-ink-inverted text-xs font-semibold rounded-md hover:opacity-90 transition-opacity disabled:opacity-50"
             >
               {isLoading ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Filter className="w-3.5 h-3.5" />}
               <span>Filter</span>
@@ -321,7 +321,7 @@ export function IssueManagementView({
               {isLoading ? (
                 <tr>
                   <td colSpan={8} className="py-12 text-center text-ink-muted">
-                    <Loader2 className="w-6 h-6 animate-spin mx-auto text-accent-brass mb-2" />
+                    <Loader2 className="w-6 h-6 animate-spin mx-auto text-ink-muted mb-2" />
                     <span>Loading issues...</span>
                   </td>
                 </tr>
@@ -353,7 +353,7 @@ export function IssueManagementView({
                           <span
                             className={`px-1.5 py-0.2 rounded text-[9px] font-semibold ${
                               row.golongan_customer === 'KA Nasional'
-                                ? 'bg-accent-brass/15 text-accent-brass border border-accent-brass/30'
+                                ? 'bg-surface text-ink-primary border border-border font-bold'
                                 : 'bg-base text-ink-muted border border-border'
                             }`}
                           >
@@ -398,7 +398,7 @@ export function IssueManagementView({
                       <td className="py-3 px-4 whitespace-nowrap font-mono">
                         <div
                           className={`font-bold ${
-                            isOverdue ? 'text-[#A54B3F]' : 'text-[#3B7A57]'
+                            isOverdue ? 'text-status-danger' : 'text-status-ok'
                           }`}
                         >
                           {row.solution_time_days} days
@@ -413,13 +413,13 @@ export function IssueManagementView({
                         <span
                           className={`px-2 py-0.5 rounded text-[10px] font-semibold flex items-center gap-1 w-fit ${
                             isOpen
-                              ? 'bg-accent-brass/15 text-accent-brass border border-accent-brass/30'
-                              : 'bg-[#3B7A57]/15 text-[#3B7A57] border border-[#3B7A57]/30'
+                              ? 'bg-status-warn/15 text-status-warn border border-status-warn/30'
+                              : 'bg-status-ok/15 text-status-ok border border-status-ok/30'
                           }`}
                         >
                           <span
                             className={`w-1.5 h-1.5 rounded-full ${
-                              isOpen ? 'bg-accent-brass' : 'bg-[#3B7A57]'
+                              isOpen ? 'bg-status-warn' : 'bg-status-ok'
                             }`}
                           />
                           <span>{row.status_wo}</span>
@@ -432,7 +432,7 @@ export function IssueManagementView({
                           <button
                             onClick={() => openEditModal(row.issue_case_id)}
                             title="Edit & Process Checkpoints"
-                            className="p-1.5 rounded hover:bg-base text-ink-muted hover:text-accent-brass transition-colors border border-border"
+                            className="p-1.5 rounded hover:bg-surface-hover text-ink-muted hover:text-ink-primary transition-colors border border-border"
                           >
                             <Edit2 className="w-3.5 h-3.5" />
                           </button>

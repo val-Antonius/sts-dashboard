@@ -66,10 +66,10 @@ export function ActiveCasesTable({ cases, pageSize = 15 }: ActiveCasesTableProps
                 <div className="flex items-center gap-1.5">
                   <span>Solution Time / SLA</span>
                   {sortOrder === 'desc' && (
-                    <ArrowDown className="w-3.5 h-3.5 text-accent-brass font-bold" />
+                    <ArrowDown className="w-3.5 h-3.5 text-ink-primary font-bold" />
                   )}
                   {sortOrder === 'asc' && (
-                    <ArrowUp className="w-3.5 h-3.5 text-accent-brass font-bold" />
+                    <ArrowUp className="w-3.5 h-3.5 text-ink-primary font-bold" />
                   )}
                   {sortOrder === 'none' && (
                     <ArrowUpDown className="w-3.5 h-3.5 text-ink-muted/50 group-hover:text-ink-muted" />
@@ -86,8 +86,8 @@ export function ActiveCasesTable({ cases, pageSize = 15 }: ActiveCasesTableProps
             {paginatedCases.map((c) => {
               const isOverdue = c.solution_time_days > c.achievement_threshold_days;
               const slaColor = isOverdue
-                ? 'text-[#A54B3F] dark:text-[#BD584B] font-semibold'
-                : 'text-[#3B7A57] dark:text-[#489369]';
+                ? 'text-status-danger font-semibold'
+                : 'text-status-ok';
 
               return (
                 <tr
@@ -112,7 +112,7 @@ export function ActiveCasesTable({ cases, pageSize = 15 }: ActiveCasesTableProps
                   <td className="py-3 px-4">
                     <div className="flex items-center gap-1.5">
                       {c.product_code && (
-                        <span className="font-mono text-[10px] font-semibold px-1.5 py-0.2 rounded bg-accent-brass/10 text-accent-brass border border-accent-brass/30 shrink-0">
+                        <span className="font-mono text-[10px] font-semibold px-1.5 py-0.2 rounded bg-base text-ink-muted border border-border shrink-0">
                           {c.product_code}
                         </span>
                       )}
@@ -154,7 +154,7 @@ export function ActiveCasesTable({ cases, pageSize = 15 }: ActiveCasesTableProps
                     {c.is_carried_over ? (
                       <span
                         title="Carried over from previous month"
-                        className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-medium bg-[#B8863B]/15 text-[#B8863B] border border-[#B8863B]/30"
+                        className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-medium bg-status-warn/15 text-status-warn border border-status-warn/30"
                       >
                         <CornerDownRight className="w-2.5 h-2.5" />
                         Carried-Over
@@ -169,7 +169,7 @@ export function ActiveCasesTable({ cases, pageSize = 15 }: ActiveCasesTableProps
                     <Link
                       href={`/operations/diagnostic?id=${c.issue_case_id}`}
                       aria-label={`View Diagnostic for case ${c.customer_name}`}
-                      className="inline-flex items-center justify-center p-1.5 rounded-md text-accent-brass hover:bg-accent-brass/10 transition-colors border border-accent-brass/30"
+                      className="inline-flex items-center justify-center p-1.5 rounded-md text-ink-muted hover:text-ink-primary hover:bg-surface-hover transition-colors border border-border"
                     >
                       <Stethoscope className="w-4 h-4" />
                     </Link>

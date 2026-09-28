@@ -29,7 +29,7 @@ export function Sidebar() {
         {/* Brand Header */}
         <div className="p-5 border-b border-border shrink-0">
           <div className="flex items-center gap-2.5">
-            <div className="w-8 h-8 rounded bg-accent-brass/15 border border-accent-brass/30 flex items-center justify-center text-accent-brass font-bold text-sm">
+            <div className="w-8 h-8 rounded bg-base border border-border flex items-center justify-center text-ink-primary font-bold text-sm">
               STS
             </div>
             <div>
@@ -51,7 +51,7 @@ export function Sidebar() {
                 href="/operations/active-case"
                 className={`flex items-center gap-2.5 px-3 py-1.5 rounded-md text-xs font-medium transition-colors ${
                   pathname === '/operations/active-case' || pathname === '/case-overview' || pathname === '/'
-                    ? 'bg-accent-brass/10 text-accent-brass font-semibold border-l-2 border-accent-brass'
+                    ? 'bg-base text-ink-primary font-semibold border-l-2 border-ink-primary'
                     : 'text-ink-muted hover:text-ink-primary hover:bg-surface-hover'
                 }`}
               >
@@ -63,7 +63,7 @@ export function Sidebar() {
                 href="/operations/issues"
                 className={`flex items-center gap-2.5 px-3 py-1.5 rounded-md text-xs font-medium transition-colors ${
                   isActive('/operations/issues')
-                    ? 'bg-accent-brass/10 text-accent-brass font-semibold border-l-2 border-accent-brass'
+                    ? 'bg-base text-ink-primary font-semibold border-l-2 border-ink-primary'
                     : 'text-ink-muted hover:text-ink-primary hover:bg-surface-hover'
                 }`}
               >
@@ -75,7 +75,7 @@ export function Sidebar() {
                 href="/operations/diagnostic"
                 className={`flex items-center gap-2.5 px-3 py-1.5 rounded-md text-xs font-medium transition-colors ${
                   isActive('/operations/diagnostic') || isActive('/case-solution-process/diagnostic')
-                    ? 'bg-accent-brass/10 text-accent-brass font-semibold border-l-2 border-accent-brass'
+                    ? 'bg-base text-ink-primary font-semibold border-l-2 border-ink-primary'
                     : 'text-ink-muted hover:text-ink-primary hover:bg-surface-hover'
                 }`}
               >
@@ -87,7 +87,7 @@ export function Sidebar() {
                 href="/operations/master-data"
                 className={`flex items-center gap-2.5 px-3 py-1.5 rounded-md text-xs font-medium transition-colors ${
                   isActive('/operations/master-data')
-                    ? 'bg-accent-brass/10 text-accent-brass font-semibold border-l-2 border-accent-brass'
+                    ? 'bg-base text-ink-primary font-semibold border-l-2 border-ink-primary'
                     : 'text-ink-muted hover:text-ink-primary hover:bg-surface-hover'
                 }`}
               >
@@ -99,16 +99,16 @@ export function Sidebar() {
 
           {/* Top-level Group 2: Dashboard Analytics (NEW Phase 8) */}
           <div>
-            <div className="px-3 mb-1.5 text-[10px] font-semibold tracking-wider text-accent-brass uppercase flex items-center justify-between">
+            <div className="px-3 mb-1.5 text-[10px] font-semibold tracking-wider text-ink-muted uppercase flex items-center justify-between">
               <span>Dashboard Analytics</span>
-              <span className="text-[9px] font-mono px-1 py-0.2 rounded bg-accent-brass/10 text-accent-brass font-bold">NEW</span>
+              <span className="text-[9px] font-mono px-1.5 py-0.2 rounded bg-base text-ink-muted border border-border font-bold">NEW</span>
             </div>
             <div className="space-y-0.5">
               <Link
                 href="/dashboard-analytics/branch"
                 className={`flex items-center gap-2.5 px-3 py-1.5 rounded-md text-xs font-medium transition-colors ${
                   isActive('/dashboard-analytics/branch')
-                    ? 'bg-accent-brass/10 text-accent-brass font-semibold border-l-2 border-accent-brass'
+                    ? 'bg-base text-ink-primary font-semibold border-l-2 border-ink-primary'
                     : 'text-ink-muted hover:text-ink-primary hover:bg-surface-hover'
                 }`}
               >
@@ -120,7 +120,7 @@ export function Sidebar() {
                 href="/dashboard-analytics/unit"
                 className={`flex items-center gap-2.5 px-3 py-1.5 rounded-md text-xs font-medium transition-colors ${
                   isActive('/dashboard-analytics/unit')
-                    ? 'bg-accent-brass/10 text-accent-brass font-semibold border-l-2 border-accent-brass'
+                    ? 'bg-base text-ink-primary font-semibold border-l-2 border-ink-primary'
                     : 'text-ink-muted hover:text-ink-primary hover:bg-surface-hover'
                 }`}
               >
@@ -132,7 +132,7 @@ export function Sidebar() {
                 href="/dashboard-analytics/root-cause"
                 className={`flex items-center gap-2.5 px-3 py-1.5 rounded-md text-xs font-medium transition-colors ${
                   isActive('/dashboard-analytics/root-cause')
-                    ? 'bg-accent-brass/10 text-accent-brass font-semibold border-l-2 border-accent-brass'
+                    ? 'bg-base text-ink-primary font-semibold border-l-2 border-ink-primary'
                     : 'text-ink-muted hover:text-ink-primary hover:bg-surface-hover'
                 }`}
               >
@@ -144,7 +144,7 @@ export function Sidebar() {
                 href="/dashboard-analytics/claim-status"
                 className={`flex items-center gap-2.5 px-3 py-1.5 rounded-md text-xs font-medium transition-colors ${
                   isActive('/dashboard-analytics/claim-status')
-                    ? 'bg-accent-brass/10 text-accent-brass font-semibold border-l-2 border-accent-brass'
+                    ? 'bg-base text-ink-primary font-semibold border-l-2 border-ink-primary'
                     : 'text-ink-muted hover:text-ink-primary hover:bg-surface-hover'
                 }`}
               >
@@ -156,7 +156,7 @@ export function Sidebar() {
                 href="/dashboard-analytics/solution-time"
                 className={`flex items-center gap-2.5 px-3 py-1.5 rounded-md text-xs font-medium transition-colors ${
                   isActive('/dashboard-analytics/solution-time')
-                    ? 'bg-accent-brass/10 text-accent-brass font-semibold border-l-2 border-accent-brass'
+                    ? 'bg-base text-ink-primary font-semibold border-l-2 border-ink-primary'
                     : 'text-ink-muted hover:text-ink-primary hover:bg-surface-hover'
                 }`}
               >
@@ -168,7 +168,7 @@ export function Sidebar() {
                 href="/dashboard-analytics/volume-trends"
                 className={`flex items-center gap-2.5 px-3 py-1.5 rounded-md text-xs font-medium transition-colors ${
                   isActive('/dashboard-analytics/volume-trends')
-                    ? 'bg-accent-brass/10 text-accent-brass font-semibold border-l-2 border-accent-brass'
+                    ? 'bg-base text-ink-primary font-semibold border-l-2 border-ink-primary'
                     : 'text-ink-muted hover:text-ink-primary hover:bg-surface-hover'
                 }`}
               >
@@ -188,7 +188,7 @@ export function Sidebar() {
                 href="/case-solution-process/solution-time"
                 className={`flex items-center gap-2.5 px-3 py-1.5 rounded-md text-xs font-medium transition-colors ${
                   isActive('/case-solution-process/solution-time') || pathname === '/case-solution-process/performance'
-                    ? 'bg-accent-brass/10 text-accent-brass font-semibold border-l-2 border-accent-brass'
+                    ? 'bg-base text-ink-primary font-semibold border-l-2 border-ink-primary'
                     : 'text-ink-muted hover:text-ink-primary hover:bg-surface-hover'
                 }`}
               >
@@ -200,7 +200,7 @@ export function Sidebar() {
                 href="/case-solution-process/volume-trends"
                 className={`flex items-center gap-2.5 px-3 py-1.5 rounded-md text-xs font-medium transition-colors ${
                   isActive('/case-solution-process/volume-trends')
-                    ? 'bg-accent-brass/10 text-accent-brass font-semibold border-l-2 border-accent-brass'
+                    ? 'bg-base text-ink-primary font-semibold border-l-2 border-ink-primary'
                     : 'text-ink-muted hover:text-ink-primary hover:bg-surface-hover'
                 }`}
               >
@@ -212,7 +212,7 @@ export function Sidebar() {
                 href="/case-solution-process/data-quality"
                 className={`flex items-center gap-2.5 px-3 py-1.5 rounded-md text-xs font-medium transition-colors ${
                   isActive('/case-solution-process/data-quality')
-                    ? 'bg-accent-brass/10 text-accent-brass font-semibold border-l-2 border-accent-brass'
+                    ? 'bg-base text-ink-primary font-semibold border-l-2 border-ink-primary'
                     : 'text-ink-muted hover:text-ink-primary hover:bg-surface-hover'
                 }`}
               >
@@ -227,7 +227,7 @@ export function Sidebar() {
       {/* Footer Info */}
       <div className="p-4 border-t border-border bg-base/40 text-[11px] text-ink-muted">
         <div className="flex items-center gap-2 mb-1">
-          <span className="w-2 h-2 rounded-full bg-[#3B7A57]" />
+          <span className="w-2 h-2 rounded-full" style={{ backgroundColor: 'var(--status-ok)' }} />
           <span className="font-medium text-ink-primary">PostgreSQL / Supabase</span>
         </div>
         <p className="text-[10px] text-ink-muted">Database: <code className="font-mono text-ink-primary">sts_db</code></p>

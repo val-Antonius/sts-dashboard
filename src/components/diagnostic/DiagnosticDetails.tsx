@@ -59,8 +59,8 @@ export function DiagnosticDetails({
               <span
                 className={
                   isOverdue
-                    ? 'text-[#A54B3F] dark:text-[#BD584B]'
-                    : 'text-[#3B7A57] dark:text-[#489369]'
+                    ? 'text-status-danger font-bold'
+                    : 'text-status-ok font-bold'
                 }
               >
                 {caseDetail.solution_time_days}
@@ -105,7 +105,7 @@ export function DiagnosticDetails({
         <div className="bg-surface border border-border rounded-lg p-5 shadow-xs flex flex-col justify-between">
           <div>
             <div className="flex items-center gap-2 mb-3 pb-2 border-b border-border">
-              <Package className="w-4 h-4 text-accent-brass" />
+              <Package className="w-4 h-4 text-ink-muted" />
               <h3 className="text-xs font-semibold uppercase tracking-wider text-ink-muted">
                 Spare Part Requirements
               </h3>
@@ -143,11 +143,11 @@ export function DiagnosticDetails({
                         </td>
                         <td className="py-2.5 px-2.5 text-center">
                           {p.is_full_supplied ? (
-                            <span className="inline-flex items-center text-[#3B7A57] text-[11px] font-medium gap-1">
+                            <span className="inline-flex items-center text-status-ok text-[11px] font-medium gap-1">
                               <CheckCircle2 className="w-3.5 h-3.5" /> Full
                             </span>
                           ) : (
-                            <span className="inline-flex items-center text-[#B8863B] text-[11px] font-medium gap-1">
+                            <span className="inline-flex items-center text-status-warn text-[11px] font-medium gap-1">
                               <Clock className="w-3.5 h-3.5" /> Pending
                             </span>
                           )}
@@ -169,7 +169,7 @@ export function DiagnosticDetails({
         <div className="bg-surface border border-border rounded-lg p-5 shadow-xs flex flex-col justify-between">
           <div>
             <div className="flex items-center gap-2 mb-3 pb-2 border-b border-border">
-              <MessageSquare className="w-4 h-4 text-accent-brass" />
+              <MessageSquare className="w-4 h-4 text-ink-muted" />
               <h3 className="text-xs font-semibold uppercase tracking-wider text-ink-muted">
                 Progress Log
               </h3>

@@ -66,7 +66,7 @@ export function TimeRangeFilter({
               onClick={() => handleSelect(opt.id)}
               className={`px-3 py-1.5 text-xs font-medium rounded-md transition-all ${
                 isActive
-                  ? 'bg-surface text-accent-brass shadow-xs font-semibold'
+                  ? 'bg-surface text-ink-primary shadow-xs font-semibold'
                   : 'text-ink-muted hover:text-ink-primary hover:bg-surface-hover'
               }`}
             >
@@ -99,7 +99,7 @@ export function TimeRangeFilter({
           />
           <button
             type="submit"
-            className="bg-accent-brass text-white px-2.5 py-0.5 rounded text-xs font-bold hover:bg-accent-brass/90 transition-colors shadow-xs cursor-pointer shrink-0"
+            className="bg-surface-inverted text-ink-inverted px-2.5 py-0.5 rounded text-xs font-bold hover:opacity-90 transition-opacity shadow-xs cursor-pointer shrink-0"
           >
             Apply
           </button>

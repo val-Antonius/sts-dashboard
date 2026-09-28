@@ -1,21 +1,17 @@
 'use client';
 
-import React, { useState, useEffect, useMemo } from 'react';
+import React, { useState, useEffect, useMemo, useRef } from 'react';
 import { CaseProgressLog, SingleCaseDetail } from '@/types/database';
 import { formatDisplayDate } from '@/lib/dateUtils';
 import {
-  MessageSquare,
   Plus,
   Edit2,
   Trash2,
-  Save,
-  X,
   Loader2,
   Clock,
-  User,
   AlertCircle,
   Check,
-  Info,
+  FileText,
 } from 'lucide-react';
 
 interface CaseProgressLogFeedProps {
@@ -34,10 +30,9 @@ export function CaseProgressLogFeed({
   caseDetail,
   initialLogs,
   highlightedPhase,
-  onClearHighlight,
 }: CaseProgressLogFeedProps) {
   const [logs, setLogs] = useState<CaseProgressLog[]>(initialLogs);
-  const listContainerRef = React.useRef<HTMLDivElement>(null);
+  const listContainerRef = useRef<HTMLDivElement>(null);
   const issueCaseId = caseDetail.issue_case_id;
   const complaintDate = caseDetail.complaint_date;
   const isClosed = caseDetail.status_wo === 'Closed';
@@ -74,6 +69,7 @@ export function CaseProgressLogFeed({
 
   // Inline Delete State
   const [deletingLogId, setDeletingLogId] = useState<string | null>(null);
+  const [isDeleting, setIsDeleting] = useState<boolean>(false);
 
   // Sync state whenever caseDetail or initialLogs change
   useEffect(() => {
@@ -86,7 +82,7 @@ export function CaseProgressLogFeed({
     setNewText('');
     setNewDate(defaultDate);
   }, [caseDetail.issue_case_id, initialLogs, defaultDate]);
-  
+
   // Auto-scroll to first matching log entry when highlightedPhase is set
   useEffect(() => {
     if (!highlightedPhase || !listContainerRef.current) return;
@@ -100,8 +96,6 @@ export function CaseProgressLogFeed({
 
     return () => clearTimeout(timer);
   }, [highlightedPhase]);
-
-  const [isDeleting, setIsDeleting] = useState<boolean>(false);
 
   // Validation function
   const validateLogInput = (date: string, text: string): string | null => {
@@ -243,11 +237,11 @@ export function CaseProgressLogFeed({
 
   return (
     <div className="bg-surface border border-border rounded-xl shadow-xs overflow-hidden">
-      {/* 1. COMPACT INLINE QUICK-CREATE BAR (Horizontal Single Row) */}
+      {/* 1. COMPACT INLINE QUICK-CREATE BAR */}
       <div className="p-3 sm:p-3.5 bg-base/40 border-b border-border">
         <form onSubmit={handleAddLog} className="space-y-2">
           {addError && (
-            <div className="p-2 rounded bg-red-500/10 border border-red-500/30 text-red-600 text-xs flex items-center gap-1.5 animate-in fade-in">
+            <div className="p-2 rounded bg-status-danger/10 border border-status-danger/30 text-status-danger text-xs flex items-center gap-1.5 animate-in fade-in">
               <AlertCircle className="w-3.5 h-3.5 shrink-0" />
               <span>{addError}</span>
             </div>
@@ -266,12 +260,12 @@ export function CaseProgressLogFeed({
                   setNewDate(e.target.value);
                   setAddError(null);
                 }}
-                className="w-full px-2.5 py-1.5 bg-surface border border-border rounded-lg text-xs font-mono focus:outline-none focus:border-accent-brass transition-colors shadow-xs"
+                className="w-full px-2.5 py-1.5 bg-surface border border-border rounded-lg text-xs font-mono focus:outline-none focus:border-border-strong transition-colors shadow-xs"
                 title={`Rentang tanggal valid: ${complaintDate} s/d ${maxAllowedDate}`}
               />
             </div>
 
-            {/* Narrative Input (Single Row Auto-Grow) */}
+            {/* Narrative Input */}
             <div className="flex-1 w-full">
               <input
                 type="text"
@@ -282,7 +276,7 @@ export function CaseProgressLogFeed({
                   setAddError(null);
                 }}
                 placeholder="Tulis catatan aktivitas / perkembangan harian kasus (Enter atau klik Tambah)..."
-                className="w-full px-3 py-1.5 bg-surface border border-border rounded-lg text-xs focus:outline-none focus:border-accent-brass transition-colors shadow-xs"
+                className="w-full px-3 py-1.5 bg-surface border border-border rounded-lg text-xs focus:outline-none focus:border-border-strong transition-colors shadow-xs"
               />
             </div>
 
@@ -290,7 +284,7 @@ export function CaseProgressLogFeed({
             <button
               type="submit"
               disabled={isAdding || !newText.trim()}
-              className="w-full sm:w-auto flex items-center justify-center gap-1 px-3.5 py-1.5 bg-accent-brass hover:bg-accent-brass/90 text-white rounded-lg text-xs font-bold transition-colors shadow-xs shrink-0 disabled:opacity-50"
+              className="w-full sm:w-auto flex items-center justify-center gap-1 px-3.5 py-1.5 bg-surface-inverted text-ink-inverted hover:opacity-90 rounded-lg text-xs font-bold transition-opacity shadow-xs shrink-0 disabled:opacity-50 cursor-pointer"
             >
               {isAdding ? (
                 <Loader2 className="w-3.5 h-3.5 animate-spin" />
@@ -306,13 +300,24 @@ export function CaseProgressLogFeed({
       {/* 2. LOG FEED HEADER & SUMMARY */}
       <div className="px-4 py-2.5 bg-base/20 border-b border-border flex items-center justify-between text-[11px] text-ink-muted">
         <div className="flex items-center gap-2">
-          <Clock className="w-3.5 h-3.5 text-accent-brass" />
+          <Clock className="w-3.5 h-3.5 text-ink-muted" />
           <span className="font-bold text-ink-primary uppercase tracking-wider text-[11px]">
             Riwayat Aktivitas ({logs.length})
           </span>
         </div>
         <div className="flex items-center gap-2 text-[10px]">
-          <span>Rentang Valid: <strong className="font-mono text-ink-primary">{formatDisplayDate(complaintDate)}</strong> s/d <strong className="font-mono text-ink-primary">{isClosed && caseDetail.closing_date_wo ? formatDisplayDate(caseDetail.closing_date_wo) : 'Hari ini'}</strong></span>
+          <span>
+            Rentang Valid:{' '}
+            <strong className="font-mono text-ink-primary">
+              {formatDisplayDate(complaintDate)}
+            </strong>{' '}
+            s/d{' '}
+            <strong className="font-mono text-ink-primary">
+              {isClosed && caseDetail.closing_date_wo
+                ? formatDisplayDate(caseDetail.closing_date_wo)
+                : 'Hari ini'}
+            </strong>
+          </span>
         </div>
       </div>
 
@@ -322,7 +327,10 @@ export function CaseProgressLogFeed({
           Belum ada catatan aktivitas harian yang tercatat untuk kasus ini.
         </div>
       ) : (
-        <div ref={listContainerRef} className="divide-y divide-border/60 max-h-[520px] overflow-y-auto">
+        <div
+          ref={listContainerRef}
+          className="divide-y divide-border/60 max-h-[520px] overflow-y-auto"
+        >
           {logs.map((log, idx) => {
             const isEditingThis = editingLogId === log.log_id;
             const isDeletingThis = deletingLogId === log.log_id;
@@ -336,19 +344,24 @@ export function CaseProgressLogFeed({
               <div
                 key={log.log_id || idx}
                 data-highlighted-log={isHighlighted ? 'true' : undefined}
+                style={
+                  isHighlighted && !isEditingThis
+                    ? { backgroundColor: 'var(--surface-hover)' }
+                    : undefined
+                }
                 className={`group relative px-4 py-2.5 transition-all duration-300 ${
                   isEditingThis
-                    ? 'bg-accent-brass/5'
+                    ? 'bg-base'
                     : isHighlighted
-                    ? 'bg-accent-brass/15 border-l-4 border-l-accent-brass ring-1 ring-accent-brass/25 shadow-xs'
+                    ? 'border-l-4 border-l-ink-primary ring-1 ring-border-strong shadow-xs'
                     : 'hover:bg-surface-hover/50'
                 }`}
               >
-                {/* INLINE EDIT MODE (Compact Single Row) */}
+                {/* INLINE EDIT MODE */}
                 {isEditingThis ? (
                   <div className="space-y-2 py-1">
                     {editError && (
-                      <div className="p-1.5 rounded bg-red-500/10 border border-red-500/30 text-red-600 text-xs flex items-center gap-1 animate-in fade-in">
+                      <div className="p-1.5 rounded bg-status-danger/10 border border-status-danger/30 text-status-danger text-xs flex items-center gap-1 animate-in fade-in">
                         <AlertCircle className="w-3.5 h-3.5 shrink-0" />
                         <span>{editError}</span>
                       </div>
@@ -363,7 +376,7 @@ export function CaseProgressLogFeed({
                           setEditDate(e.target.value);
                           setEditError(null);
                         }}
-                        className="w-full sm:w-36 px-2.5 py-1 bg-surface border border-border rounded text-xs font-mono focus:border-accent-brass"
+                        className="w-full sm:w-36 px-2.5 py-1 bg-surface border border-border rounded text-xs font-mono focus:border-ink-primary"
                       />
                       <input
                         type="text"
@@ -372,14 +385,14 @@ export function CaseProgressLogFeed({
                           setEditText(e.target.value);
                           setEditError(null);
                         }}
-                        className="w-full flex-1 px-3 py-1 bg-surface border border-border rounded text-xs focus:border-accent-brass"
+                        className="w-full flex-1 px-3 py-1 bg-surface border border-border rounded text-xs focus:border-ink-primary"
                       />
                       <div className="flex items-center gap-1 shrink-0 self-end sm:self-auto">
                         <button
                           type="button"
                           onClick={handleCancelEdit}
                           disabled={isSavingEdit}
-                          className="px-2.5 py-1 text-xs border border-border rounded text-ink-muted hover:bg-base"
+                          className="px-2.5 py-1 text-xs border border-border rounded text-ink-muted hover:bg-base cursor-pointer"
                         >
                           Batal
                         </button>
@@ -387,7 +400,7 @@ export function CaseProgressLogFeed({
                           type="button"
                           onClick={() => log.log_id && handleSaveEdit(log.log_id)}
                           disabled={isSavingEdit || !editText.trim()}
-                          className="flex items-center gap-1 px-3 py-1 bg-accent-brass text-white text-xs font-bold rounded hover:bg-accent-brass/90"
+                          className="flex items-center gap-1 px-3 py-1 bg-surface-inverted text-ink-inverted text-xs font-bold rounded hover:opacity-90 cursor-pointer"
                         >
                           {isSavingEdit ? (
                             <Loader2 className="w-3 h-3 animate-spin" />
@@ -400,14 +413,14 @@ export function CaseProgressLogFeed({
                     </div>
                   </div>
                 ) : (
-                  /* NORMAL DENSE ROW (High Horizontal Utilization) */
+                  /* NORMAL DENSE ROW */
                   <div className="flex items-start justify-between gap-3 text-xs">
                     {/* Left: Date Badge + Author + Phase Highlight Indicator */}
                     <div className="flex items-center gap-2 shrink-0 pt-0.5">
                       <span
                         className={`font-mono text-[11px] font-bold px-2 py-0.5 rounded border transition-colors whitespace-nowrap ${
                           isHighlighted
-                            ? 'bg-accent-brass text-white border-accent-brass shadow-xs'
+                            ? 'bg-surface-inverted text-ink-inverted border-transparent shadow-xs'
                             : 'bg-base border-border text-ink-primary'
                         }`}
                       >
@@ -432,7 +445,7 @@ export function CaseProgressLogFeed({
                           type="button"
                           onClick={() => handleStartEdit(log)}
                           title="Edit catatan ini"
-                          className="p-1 rounded text-ink-muted hover:text-accent-brass hover:bg-base transition-colors"
+                          className="p-1 rounded text-ink-muted hover:text-ink-primary hover:bg-base transition-colors cursor-pointer"
                         >
                           <Edit2 className="w-3.5 h-3.5" />
                         </button>
@@ -440,7 +453,7 @@ export function CaseProgressLogFeed({
                           type="button"
                           onClick={() => setDeletingLogId(log.log_id || null)}
                           title="Hapus catatan ini"
-                          className="p-1 rounded text-ink-muted hover:text-red-500 hover:bg-base transition-colors"
+                          className="p-1 rounded text-ink-muted hover:text-status-danger hover:bg-base transition-colors cursor-pointer"
                         >
                           <Trash2 className="w-3.5 h-3.5" />
                         </button>
@@ -451,8 +464,8 @@ export function CaseProgressLogFeed({
 
                 {/* INLINE DELETE CONFIRMATION */}
                 {isDeletingThis && (
-                  <div className="mt-2 p-2 rounded-lg bg-red-500/10 border border-red-500/30 text-xs flex items-center justify-between gap-2 animate-in fade-in">
-                    <span className="text-red-700 dark:text-red-300 text-[11px] font-medium">
+                  <div className="mt-2 p-2 rounded-lg bg-status-danger/10 border border-status-danger/30 text-xs flex items-center justify-between gap-2 animate-in fade-in">
+                    <span className="text-status-danger text-[11px] font-medium">
                       Hapus log tanggal <strong>{formatDisplayDate(log.log_date)}</strong>?
                     </span>
                     <div className="flex items-center gap-1.5 shrink-0">
@@ -460,7 +473,7 @@ export function CaseProgressLogFeed({
                         type="button"
                         onClick={() => setDeletingLogId(null)}
                         disabled={isDeleting}
-                        className="px-2 py-0.5 text-[10px] rounded border border-border text-ink-muted hover:bg-base"
+                        className="px-2 py-0.5 text-[10px] rounded border border-border text-ink-muted hover:bg-base cursor-pointer"
                       >
                         Batal
                       </button>
@@ -468,7 +481,7 @@ export function CaseProgressLogFeed({
                         type="button"
                         onClick={() => log.log_id && handleDeleteLog(log.log_id)}
                         disabled={isDeleting}
-                        className="flex items-center gap-1 px-2.5 py-0.5 text-[10px] font-bold rounded bg-red-600 hover:bg-red-700 text-white transition-colors"
+                        className="flex items-center gap-1 px-2.5 py-0.5 text-[10px] font-bold rounded bg-status-danger hover:bg-status-danger/90 text-white transition-colors cursor-pointer"
                       >
                         {isDeleting && <Loader2 className="w-2.5 h-2.5 animate-spin" />}
                         <span>Hapus</span>

@@ -2,6 +2,7 @@
 
 import React, { useMemo } from 'react';
 import { BranchOutcomeProfileItem } from '@/types/database';
+import { CLAIM_COLORS } from '@/lib/chartColors';
 import {
   ResponsiveContainer,
   BarChart,
@@ -20,9 +21,9 @@ interface BranchOutcomeProfileChartProps {
 }
 
 const OUTCOME_COLORS = {
-  Covered: '#2E7D52',
-  Goodwill: '#B87A28',
-  Unclaimable: '#B5302E',
+  Covered: CLAIM_COLORS.covered,
+  Goodwill: CLAIM_COLORS.goodwill,
+  Unclaimable: CLAIM_COLORS.unclaimable,
 };
 
 export function BranchOutcomeProfileChart({
@@ -31,7 +32,6 @@ export function BranchOutcomeProfileChart({
   onResetProduct,
 }: BranchOutcomeProfileChartProps) {
   // Posisi dan urutan cabang SELALU tetap stabil (default total cases descending).
-  // Tidak ada perubahan urutan maupun filter cabang saat produk dipilih.
   const chartData = useMemo(() => {
     if (!data || data.length === 0) return [];
 
@@ -54,7 +54,6 @@ export function BranchOutcomeProfileChart({
           unclaimable_pct: b.unclaimable_pct,
           selectedProductCases: prodCases,
           selectedProductData: prodData,
-          // Visual highlight flag: jika ada produk aktif, hanya cabang dengan kasus produk tsb yang ber-opacity penuh
           isHighlighted: !selectedProduct || prodCases > 0,
         };
       });
@@ -68,112 +67,129 @@ export function BranchOutcomeProfileChart({
     );
   }
 
-  // Tinggi tetap stabil berdasarkan jumlah cabang tetap (~25px per baris)
-  const chartHeight = Math.max(280, chartData.length * 25 + 40);
-
-  const customTooltipStyle = {
-    backgroundColor: 'var(--surface)',
-    borderColor: 'var(--border)',
-    color: 'var(--ink-primary)',
-    borderRadius: '6px',
-    fontSize: '11px',
-    boxShadow: '0 4px 6px -1px rgb(0 0 0 / 0.1)',
-  };
-
   return (
     <div className="w-full space-y-2">
-      {/* Banner Indikator Highlight (Tanpa Mengubah Struktur Data) */}
-      {selectedProduct && (
-        <div className="flex items-center justify-between px-3 py-1.5 rounded-md bg-accent/10 border border-accent/20 text-xs text-accent">
-          <div className="flex items-center gap-2">
-            <span className="font-semibold">Highlight Produk:</span>
-            <span className="px-1.5 py-0.5 rounded bg-accent text-white font-mono font-bold text-[11px]">
-              {selectedProduct}
-            </span>
-            <span className="text-ink-muted text-[11px]">
-              (Menyorot cabang penangan {selectedProduct}; cabang tanpa kasus diredupkan)
-            </span>
+      {/* Top Legend & Active Focus Status Header */}
+      <div className="flex items-center justify-between text-[11px] pb-1 border-b border-border">
+        <div className="flex items-center gap-4">
+          <div className="flex items-center gap-1.5">
+            <span
+              className="w-2.5 h-2.5 rounded-xs inline-block shrink-0"
+              style={{ backgroundColor: OUTCOME_COLORS.Covered }}
+            />
+            <span className="text-ink-primary font-medium">Covered</span>
           </div>
-          <button
-            onClick={onResetProduct}
-            className="px-2 py-0.5 rounded bg-surface hover:bg-surface-hover border border-border text-ink-primary font-medium text-[11px] transition-colors cursor-pointer"
-          >
-            Hapus Highlight &times;
-          </button>
+          <div className="flex items-center gap-1.5">
+            <span
+              className="w-2.5 h-2.5 rounded-xs inline-block shrink-0"
+              style={{ backgroundColor: OUTCOME_COLORS.Goodwill }}
+            />
+            <span className="text-ink-primary font-medium">Goodwill</span>
+          </div>
+          <div className="flex items-center gap-1.5">
+            <span
+              className="w-2.5 h-2.5 rounded-xs inline-block shrink-0"
+              style={{ backgroundColor: OUTCOME_COLORS.Unclaimable }}
+            />
+            <span className="text-ink-primary font-medium">Unclaimable</span>
+          </div>
         </div>
-      )}
 
-      {/* Horizontal 100% Stacked Bar Chart dengan Posisi Bar Statis & Opacity Highlight */}
-      <div style={{ height: `${chartHeight}px` }} className="w-full">
+        <div className="flex items-center gap-2 font-mono text-[10px] text-ink-muted">
+          <span>Total {data.length} Cabang</span>
+          {selectedProduct && (
+            <button
+              type="button"
+              onClick={onResetProduct}
+              className="px-1.5 py-0.5 rounded bg-base hover:bg-surface-hover border border-border text-ink-primary font-sans font-medium transition-colors cursor-pointer"
+            >
+              Reset ({selectedProduct}) &times;
+            </button>
+          )}
+        </div>
+      </div>
+
+      {/* 100% Horizontal Stacked Bar Chart */}
+      <div className="w-full" style={{ height: `${Math.max(260, chartData.length * 24 + 40)}px` }}>
         <ResponsiveContainer width="100%" height="100%">
           <BarChart
-            data={chartData}
             layout="vertical"
-            margin={{ top: 5, right: 25, left: 0, bottom: 5 }}
-            barSize={14}
+            data={chartData}
+            margin={{ top: 10, right: 20, left: 10, bottom: 5 }}
+            barCategoryGap={3}
           >
             <XAxis
               type="number"
               domain={[0, 100]}
               unit="%"
               tick={{ fontSize: 10, fill: 'var(--ink-muted)' }}
-              tickLine={false}
-              axisLine={{ stroke: 'var(--border)' }}
+              tickLine={{ stroke: 'var(--border)' }}
             />
             <YAxis
               type="category"
               dataKey="branch_code"
               interval={0}
-              tickLine={false}
-              axisLine={{ stroke: 'var(--border)' }}
-              width={50}
-              tick={({ x, y, payload }) => {
-                const branchCode = payload.value;
-                const item = chartData.find((b) => b.branch_code === branchCode);
-                const isHighlight = item?.isHighlighted;
+              tick={(props: any) => {
+                const { x, y, payload } = props;
+                const item = chartData.find((d) => d.branch_code === payload.value);
+                const isItemHighlighted = item?.isHighlighted ?? true;
+                const hasProduct = selectedProduct && item && item.selectedProductCases > 0;
 
                 return (
                   <g transform={`translate(${x},${y})`}>
                     <text
                       x={-6}
-                      y={4}
+                      y={3}
                       textAnchor="end"
-                      fontSize={11}
-                      fontFamily="var(--font-mono)"
-                      fontWeight={isHighlight ? 600 : 400}
-                      fill={isHighlight ? 'var(--ink-primary)' : 'var(--ink-muted)'}
-                      opacity={isHighlight ? 1 : 0.3}
-                      className="transition-opacity transition-colors"
+                      fontSize={10}
+                      fontWeight={hasProduct ? 700 : 500}
+                      fill={isItemHighlighted ? 'var(--ink-primary)' : 'var(--ink-muted)'}
+                      opacity={isItemHighlighted ? 1 : 0.35}
+                      className="font-mono"
                     >
-                      {branchCode}
+                      {payload.value}
                     </text>
+                    {hasProduct && (
+                      <circle cx={-2} cy={0} r={2} fill="var(--accent)" />
+                    )}
                   </g>
                 );
               }}
+              width={42}
+              axisLine={false}
+              tickLine={false}
             />
             <Tooltip
-              contentStyle={customTooltipStyle}
               content={({ active, payload }) => {
-                if (!active || !payload || payload.length === 0) return null;
+                if (!active || !payload || !payload.length) return null;
                 const d = payload[0].payload;
+
                 return (
-                  <div className="p-2.5 rounded-md bg-surface border border-border shadow-lg text-xs space-y-2 min-w-[220px] font-mono">
-                    <div className="flex items-center justify-between font-bold text-ink-primary font-sans border-b border-border/60 pb-1">
-                      <span>Cabang {d.branch_code}</span>
-                      <span className="text-ink-muted font-mono text-[11px]">{d.total} total kasus</span>
+                  <div className="p-3 bg-surface border border-border rounded-lg shadow-xl text-xs space-y-2 font-mono min-w-[210px]">
+                    <div className="flex items-center justify-between border-b border-border/60 pb-1.5 font-sans">
+                      <span className="font-bold text-sm text-ink-primary">{d.branch_code}</span>
+                      <span className="text-[11px] text-ink-muted">Total: {d.total} kasus</span>
                     </div>
 
-                    {/* Informasi Produk Terhighlight jika ada */}
+                    {/* Breakdown Produk Terpilih */}
                     {selectedProduct && d.selectedProductCases > 0 && d.selectedProductData && (
-                      <div className="p-1.5 rounded bg-accent/5 border border-accent/20 text-[11px] font-sans space-y-1">
-                        <div className="font-semibold text-accent flex justify-between">
+                      <div className="p-2 rounded bg-base/80 border border-border space-y-1">
+                        <div className="flex items-center justify-between text-[11px] font-sans font-bold text-ink-primary">
                           <span>Kontribusi {selectedProduct}:</span>
-                          <span className="font-mono">{d.selectedProductCases} kasus ({Math.round((d.selectedProductCases / d.total) * 100)}%)</span>
+                          <span className="font-mono">
+                            {d.selectedProductCases} kasus ({Math.round((d.selectedProductCases / d.total) * 100)}%)
+                          </span>
                         </div>
                         <div className="flex items-center gap-2.5 text-[10px] font-mono">
-                          <span className="text-[#2E7D52]">Cov: {d.selectedProductData.covered}</span>
-                          <span className="text-[#B87A28]">GW: {d.selectedProductData.goodwill}</span>
-                          <span className="text-[#B5302E]">Uncl: {d.selectedProductData.unclaimable}</span>
+                          <span style={{ color: OUTCOME_COLORS.Covered }}>
+                            Cov: {d.selectedProductData.covered}
+                          </span>
+                          <span style={{ color: OUTCOME_COLORS.Goodwill }}>
+                            GW: {d.selectedProductData.goodwill}
+                          </span>
+                          <span style={{ color: OUTCOME_COLORS.Unclaimable }}>
+                            Uncl: {d.selectedProductData.unclaimable}
+                          </span>
                         </div>
                       </div>
                     )}
@@ -189,27 +205,36 @@ export function BranchOutcomeProfileChart({
                       <div className="text-[10px] font-sans font-semibold text-ink-muted uppercase tracking-wider">
                         Profil Keseluruhan Cabang:
                       </div>
-                      <div className="flex items-center justify-between text-[#2E7D52]">
+                      <div className="flex items-center justify-between" style={{ color: OUTCOME_COLORS.Covered }}>
                         <span className="flex items-center gap-1.5 font-sans">
-                          <span className="w-2 h-2 rounded-xs bg-[#2E7D52]" />
+                          <span
+                            className="w-2 h-2 rounded-xs"
+                            style={{ backgroundColor: OUTCOME_COLORS.Covered }}
+                          />
                           Covered:
                         </span>
                         <span className="tabular-nums font-semibold">
                           {d.covered_count} ({d.covered_pct}%)
                         </span>
                       </div>
-                      <div className="flex items-center justify-between text-[#B87A28]">
+                      <div className="flex items-center justify-between" style={{ color: OUTCOME_COLORS.Goodwill }}>
                         <span className="flex items-center gap-1.5 font-sans">
-                          <span className="w-2 h-2 rounded-xs bg-[#B87A28]" />
+                          <span
+                            className="w-2 h-2 rounded-xs"
+                            style={{ backgroundColor: OUTCOME_COLORS.Goodwill }}
+                          />
                           Goodwill:
                         </span>
                         <span className="tabular-nums font-semibold">
                           {d.goodwill_count} ({d.goodwill_pct}%)
                         </span>
                       </div>
-                      <div className="flex items-center justify-between text-[#B5302E]">
+                      <div className="flex items-center justify-between" style={{ color: OUTCOME_COLORS.Unclaimable }}>
                         <span className="flex items-center gap-1.5 font-sans">
-                          <span className="w-2 h-2 rounded-xs bg-[#B5302E]" />
+                          <span
+                            className="w-2 h-2 rounded-xs"
+                            style={{ backgroundColor: OUTCOME_COLORS.Unclaimable }}
+                          />
                           Unclaimable:
                         </span>
                         <span className="tabular-nums font-semibold">

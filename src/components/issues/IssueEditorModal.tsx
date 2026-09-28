@@ -551,7 +551,7 @@ export function IssueEditorModal({
           <div className="flex items-center justify-between gap-4 mb-3">
             <div>
               <div className="flex items-center gap-2">
-                <span className="font-mono text-xs font-bold px-2 py-0.5 rounded bg-accent-brass/10 border border-accent-brass/30 text-accent-brass uppercase">
+                <span className="font-mono text-xs font-bold px-2 py-0.5 rounded bg-base border border-border text-ink-primary uppercase">
                   {editCaseId ? 'Update Process' : 'New Issue Case'}
                 </span>
                 <h3 className="text-base font-bold text-ink-primary">
@@ -593,18 +593,18 @@ export function IssueEditorModal({
                   onClick={() => setCurrentStep(s.num)}
                   className={`flex items-center gap-2 px-3 py-1.5 rounded-lg text-xs font-semibold transition-all shrink-0 border ${
                     isCurrent
-                      ? 'bg-surface border-accent-brass text-accent-brass shadow-xs'
+                      ? 'bg-surface border-ink-primary text-ink-primary shadow-xs'
                       : isPast
-                      ? 'bg-base/60 border-border text-ink-primary hover:border-accent-brass/40'
+                      ? 'bg-base/60 border-border text-ink-primary hover:border-border-strong'
                       : 'border-transparent text-ink-muted hover:text-ink-primary hover:bg-base/40'
                   }`}
                 >
                   <div
                     className={`w-5 h-5 rounded-full flex items-center justify-center text-[10px] font-bold ${
                       isCurrent
-                        ? 'bg-accent-brass text-white'
+                        ? 'bg-surface-inverted text-ink-inverted'
                         : isPast
-                        ? 'bg-[#3B7A57] text-white'
+                        ? 'bg-status-ok text-white'
                         : 'bg-base border border-border text-ink-muted'
                     }`}
                   >
@@ -619,7 +619,7 @@ export function IssueEditorModal({
           {/* Completion Progress Bar */}
           <div className="w-full bg-base rounded-full h-1.5 mt-3 overflow-hidden border border-border">
             <div
-              className="bg-accent-brass h-full transition-all duration-300 rounded-full"
+              className="bg-surface-inverted h-full transition-all duration-300 rounded-full"
               style={{ width: `${getStageCompletion()}%` }}
             />
           </div>
@@ -629,7 +629,7 @@ export function IssueEditorModal({
         <div className="p-5 sm:p-6 overflow-y-auto flex-1 text-xs">
           {isLoading ? (
             <div className="py-16 flex flex-col items-center justify-center gap-2 text-ink-muted">
-              <Loader2 className="w-6 h-6 animate-spin text-accent-brass" />
+              <Loader2 className="w-6 h-6 animate-spin text-ink-muted" />
               <span>Memuat rincian data kasus...</span>
             </div>
           ) : (
@@ -690,7 +690,7 @@ export function IssueEditorModal({
                         className={`w-full px-3 py-2 bg-surface border rounded-md font-mono focus:outline-none transition-colors ${
                           deliveryDateError || futureDateErrors.some((e) => e.includes('Complaint Date'))
                             ? 'border-red-500 text-red-600'
-                            : 'border-border focus:border-accent-brass'
+                            : 'border-border focus:border-ink-primary'
                         }`}
                       />
                       {deliveryDateError && (
@@ -717,7 +717,7 @@ export function IssueEditorModal({
                         required
                         value={formData.branch_id}
                         onChange={(e) => setFormData({ ...formData, branch_id: e.target.value })}
-                        className="w-full px-3 py-2 bg-surface border border-border rounded-md focus:border-accent-brass"
+                        className="w-full px-3 py-2 bg-surface border border-border rounded-md focus:border-ink-primary"
                       >
                         <option value="">-- Select Branch --</option>
                         {lookups.branches.map((b) => (
@@ -736,7 +736,7 @@ export function IssueEditorModal({
                         required
                         value={formData.customer_id}
                         onChange={(e) => setFormData({ ...formData, customer_id: e.target.value })}
-                        className="w-full px-3 py-2 bg-surface border border-border rounded-md focus:border-accent-brass"
+                        className="w-full px-3 py-2 bg-surface border border-border rounded-md focus:border-ink-primary"
                       >
                         <option value="">-- Select Customer --</option>
                         {lookups.customers.map((c) => (
@@ -755,7 +755,7 @@ export function IssueEditorModal({
                         required
                         value={formData.unit_asset_id}
                         onChange={(e) => setFormData({ ...formData, unit_asset_id: e.target.value })}
-                        className="w-full px-3 py-2 bg-surface border border-border rounded-md focus:border-accent-brass font-mono"
+                        className="w-full px-3 py-2 bg-surface border border-border rounded-md focus:border-ink-primary font-mono"
                       >
                         <option value="">-- Select Unit Asset --</option>
                         {lookups.assets.map((a) => (
@@ -769,7 +769,7 @@ export function IssueEditorModal({
                         <div className="mt-2 p-2.5 rounded-md bg-base/60 border border-border text-[11px] space-y-1 animate-in fade-in">
                           <div className="flex flex-wrap items-center justify-between gap-2 text-ink-primary">
                             <span>
-                              Riwayat Kasus Unit: <strong className="font-mono text-accent-brass">{selectedAsset.total_issue_cases ?? 0} kasus</strong> tercatat sebelumnya di sistem
+                              Riwayat Kasus Unit: <strong className="font-mono text-ink-primary">{selectedAsset.total_issue_cases ?? 0} kasus</strong> tercatat sebelumnya di sistem
                             </span>
                             <span className="font-mono text-[10px] text-ink-muted px-1.5 py-0.5 rounded bg-surface border border-border">
                               Model: {selectedAsset.unit_model_name} | S/N: {selectedAsset.serial_number || '—'}
@@ -791,7 +791,7 @@ export function IssueEditorModal({
                       <select
                         value={formData.pic_id || ''}
                         onChange={(e) => setFormData({ ...formData, pic_id: e.target.value || null })}
-                        className="w-full px-3 py-2 bg-surface border border-border rounded-md focus:border-accent-brass"
+                        className="w-full px-3 py-2 bg-surface border border-border rounded-md focus:border-ink-primary"
                       >
                         <option value="">-- Unassigned / Select PIC --</option>
                         {lookups.pics.map((p) => (
@@ -817,7 +817,7 @@ export function IssueEditorModal({
                           })
                         }
                         placeholder="e.g. 1450.5"
-                        className="w-full px-3 py-2 bg-surface border border-border rounded-md focus:border-accent-brass font-mono"
+                        className="w-full px-3 py-2 bg-surface border border-border rounded-md focus:border-ink-primary font-mono"
                       />
                     </div>
 
@@ -828,7 +828,7 @@ export function IssueEditorModal({
                       <select
                         value={formData.unit_condition_id || ''}
                         onChange={(e) => setFormData({ ...formData, unit_condition_id: e.target.value || null })}
-                        className="w-full px-3 py-2 bg-surface border border-border rounded-md focus:border-accent-brass"
+                        className="w-full px-3 py-2 bg-surface border border-border rounded-md focus:border-ink-primary"
                       >
                         <option value="">-- Select Condition --</option>
                         {lookups.conditions.map((uc) => (
@@ -846,7 +846,7 @@ export function IssueEditorModal({
                       <select
                         value={formData.old_or_new_issue}
                         onChange={(e) => setFormData({ ...formData, old_or_new_issue: e.target.value as any })}
-                        className="w-full px-3 py-2 bg-surface border border-border rounded-md focus:border-accent-brass font-medium"
+                        className="w-full px-3 py-2 bg-surface border border-border rounded-md focus:border-ink-primary font-medium"
                       >
                         <option value="New Issue">New Issue</option>
                         <option value="Old Issue">Old Issue (Recurring)</option>
@@ -872,7 +872,7 @@ export function IssueEditorModal({
                       <select
                         value={formData.root_cause_id || ''}
                         onChange={(e) => setFormData({ ...formData, root_cause_id: e.target.value || null })}
-                        className="w-full px-3 py-2 bg-surface border border-border rounded-md focus:border-accent-brass"
+                        className="w-full px-3 py-2 bg-surface border border-border rounded-md focus:border-ink-primary"
                       >
                         <option value="">-- Select Root Cause (or Not Recorded yet) --</option>
                         {lookups.rootCauses.map((rc) => (
@@ -892,7 +892,7 @@ export function IssueEditorModal({
                         value={formData.symptom_text || ''}
                         onChange={(e) => setFormData({ ...formData, symptom_text: e.target.value })}
                         placeholder="Deskripsi kendala unit yang dilaporkan oleh customer..."
-                        className="w-full px-3 py-2 bg-surface border border-border rounded-md focus:border-accent-brass"
+                        className="w-full px-3 py-2 bg-surface border border-border rounded-md focus:border-ink-primary"
                       />
                     </div>
 
@@ -905,7 +905,7 @@ export function IssueEditorModal({
                         value={formData.technical_analysis_text || ''}
                         onChange={(e) => setFormData({ ...formData, technical_analysis_text: e.target.value })}
                         placeholder="Hasil pemeriksaan dan investigasi teknis..."
-                        className="w-full px-3 py-2 bg-surface border border-border rounded-md focus:border-accent-brass"
+                        className="w-full px-3 py-2 bg-surface border border-border rounded-md focus:border-ink-primary"
                       />
                     </div>
 
@@ -918,7 +918,7 @@ export function IssueEditorModal({
                         value={formData.corrective_action_text || ''}
                         onChange={(e) => setFormData({ ...formData, corrective_action_text: e.target.value })}
                         placeholder="Tindakan perbaikan yang dilakukan..."
-                        className="w-full px-3 py-2 bg-surface border border-border rounded-md focus:border-accent-brass"
+                        className="w-full px-3 py-2 bg-surface border border-border rounded-md focus:border-ink-primary"
                       />
                     </div>
 
@@ -931,7 +931,7 @@ export function IssueEditorModal({
                         value={formData.preventive_action_text || ''}
                         onChange={(e) => setFormData({ ...formData, preventive_action_text: e.target.value })}
                         placeholder="Rekomendasi pencegahan agar kendala tidak berulang..."
-                        className="w-full px-3 py-2 bg-surface border border-border rounded-md focus:border-accent-brass"
+                        className="w-full px-3 py-2 bg-surface border border-border rounded-md focus:border-ink-primary"
                       />
                     </div>
 
@@ -946,7 +946,7 @@ export function IssueEditorModal({
                             value={formData.wo_checking_number || ''}
                             onChange={(e) => setFormData({ ...formData, wo_checking_number: e.target.value })}
                             placeholder="e.g. 50800123"
-                            className="w-full px-3 py-2 bg-surface border border-border rounded-md focus:border-accent-brass font-mono"
+                            className="w-full px-3 py-2 bg-surface border border-border rounded-md focus:border-ink-primary font-mono"
                           />
                         </div>
                         <div>
@@ -958,7 +958,7 @@ export function IssueEditorModal({
                             value={formData.wo_warranty_repair_number || ''}
                             onChange={(e) => setFormData({ ...formData, wo_warranty_repair_number: e.target.value })}
                             placeholder="e.g. 50700456"
-                            className="w-full px-3 py-2 bg-surface border border-border rounded-md focus:border-accent-brass font-mono"
+                            className="w-full px-3 py-2 bg-surface border border-border rounded-md focus:border-ink-primary font-mono"
                           />
                         </div>
                       </div>
@@ -973,7 +973,7 @@ export function IssueEditorModal({
                             value={formData.tr_document_ref || ''}
                             onChange={(e) => setFormData({ ...formData, tr_document_ref: e.target.value })}
                             placeholder="TR-2024-..."
-                            className="w-full px-3 py-2 bg-surface border border-border rounded-md focus:border-accent-brass font-mono"
+                            className="w-full px-3 py-2 bg-surface border border-border rounded-md focus:border-ink-primary font-mono"
                           />
                         </div>
                         <div>
@@ -985,7 +985,7 @@ export function IssueEditorModal({
                             value={formData.tsr_document_ref || ''}
                             onChange={(e) => setFormData({ ...formData, tsr_document_ref: e.target.value })}
                             placeholder="TSR-2024-..."
-                            className="w-full px-3 py-2 bg-surface border border-border rounded-md focus:border-accent-brass font-mono"
+                            className="w-full px-3 py-2 bg-surface border border-border rounded-md focus:border-ink-primary font-mono"
                           />
                         </div>
                       </div>
@@ -1035,9 +1035,9 @@ export function IssueEditorModal({
                           key={step.code}
                           className={`p-3.5 rounded-lg border transition-all ${
                             isComplaintDate
-                              ? 'bg-accent-brass/5 border-accent-brass/30 shadow-xs'
+                              ? 'bg-base border-border-strong shadow-xs'
                               : isRecorded
-                              ? 'bg-[#3B7A57]/5 border-[#3B7A57]/30 shadow-xs'
+                              ? 'bg-status-ok/5 border-status-ok/30 shadow-xs'
                               : 'bg-surface border-border'
                           }`}
                         >
@@ -1046,9 +1046,9 @@ export function IssueEditorModal({
                               <span
                                 className={`w-2 h-2 rounded-full ${
                                   isComplaintDate
-                                    ? 'bg-accent-brass'
+                                    ? 'bg-ink-primary'
                                     : isRecorded
-                                    ? 'bg-[#3B7A57]'
+                                    ? 'bg-status-ok'
                                     : 'bg-ink-muted/30'
                                 }`}
                               />
@@ -1074,11 +1074,11 @@ export function IssueEditorModal({
                               className={`w-full px-2.5 py-1.5 border rounded text-xs font-mono transition-colors ${
                                 isComplaintDate
                                   ? 'bg-base/60 border-border text-ink-primary cursor-not-allowed opacity-90'
-                                  : 'bg-surface border-border focus:border-accent-brass'
+                                  : 'bg-surface border-border focus:border-ink-primary'
                               }`}
                             />
                             {isComplaintDate ? (
-                              <span className="shrink-0 text-[10px] font-semibold px-2 py-1 rounded bg-accent-brass/10 border border-accent-brass/30 text-accent-brass">
+                              <span className="shrink-0 text-[10px] font-semibold px-2 py-1 rounded bg-base border border-border text-ink-muted">
                                 Step 1 Sync
                               </span>
                             ) : (
@@ -1087,7 +1087,7 @@ export function IssueEditorModal({
                                   type="button"
                                   onClick={() => handleCheckpointChange(step.code, '')}
                                   title="Clear date"
-                                  className="p-1.5 rounded hover:bg-base text-ink-muted hover:text-red-500 transition-colors shrink-0"
+                                  className="p-1.5 rounded hover:bg-base text-ink-muted hover:text-status-danger transition-colors shrink-0"
                                 >
                                   <X className="w-3.5 h-3.5" />
                                 </button>
@@ -1112,7 +1112,7 @@ export function IssueEditorModal({
                     <button
                       type="button"
                       onClick={handleAddPartRow}
-                      className="flex items-center gap-1 px-3 py-1.5 bg-accent-brass/10 hover:bg-accent-brass/20 text-accent-brass border border-accent-brass/30 rounded-md text-xs font-semibold transition-colors self-start sm:self-auto"
+                      className="flex items-center gap-1 px-3 py-1.5 bg-surface-inverted text-ink-inverted hover:opacity-90 rounded-md text-xs font-semibold transition-colors self-start sm:self-auto"
                     >
                       <Plus className="w-3.5 h-3.5" />
                       <span>Add Part Item</span>
@@ -1125,12 +1125,12 @@ export function IssueEditorModal({
                       <div className="flex items-center gap-2">
                         <span className="font-semibold text-ink-primary">Status Agregat Pasokan Part:</span>
                         {formData.parts.every((p) => p.is_full_supplied) ? (
-                          <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[11px] font-bold bg-[#3B7A57]/15 text-[#3B7A57] border border-[#3B7A57]/30">
+                          <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[11px] font-bold bg-status-ok/15 text-status-ok border border-status-ok/30">
                             <CheckCircle2 className="w-3 h-3" />
                             Full Supplied (Semua part telah lengkap)
                           </span>
                         ) : (
-                          <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[11px] font-bold bg-amber-500/15 text-amber-600 dark:text-amber-400 border border-amber-500/30">
+                          <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[11px] font-bold bg-status-warn/15 text-status-warn border border-status-warn/30">
                             <AlertTriangle className="w-3 h-3" />
                             Belum Full Supplied ({formData.parts.filter((p) => !p.is_full_supplied).length} part belum lengkap)
                           </span>
@@ -1163,7 +1163,7 @@ export function IssueEditorModal({
                       <button
                         type="button"
                         onClick={handleAddPartRow}
-                        className="text-accent-brass hover:underline text-xs font-semibold"
+                        className="text-ink-primary hover:underline text-xs font-semibold"
                       >
                         + Tambahkan part pertama
                       </button>
@@ -1196,7 +1196,7 @@ export function IssueEditorModal({
                                   value={part.part_number || ''}
                                   onChange={(e) => handlePartChange(idx, 'part_number', e.target.value)}
                                   placeholder="e.g. 10000-01234"
-                                  className="w-full px-2.5 py-1.5 bg-surface border border-border rounded font-mono text-xs focus:border-accent-brass"
+                                  className="w-full px-2.5 py-1.5 bg-surface border border-border rounded font-mono text-xs focus:border-ink-primary"
                                 />
                               </div>
 
@@ -1209,7 +1209,7 @@ export function IssueEditorModal({
                                   value={part.part_name || ''}
                                   onChange={(e) => handlePartChange(idx, 'part_name', e.target.value)}
                                   placeholder="e.g. GASKET KIT"
-                                  className="w-full px-2.5 py-1.5 bg-surface border border-border rounded text-xs focus:border-accent-brass"
+                                  className="w-full px-2.5 py-1.5 bg-surface border border-border rounded text-xs focus:border-ink-primary"
                                 />
                               </div>
 
@@ -1220,7 +1220,7 @@ export function IssueEditorModal({
                                 <select
                                   value={part.part_readiness_id || ''}
                                   onChange={(e) => handlePartChange(idx, 'part_readiness_id', e.target.value || null)}
-                                  className="w-full px-2.5 py-1.5 bg-surface border border-border rounded text-xs focus:border-accent-brass"
+                                  className="w-full px-2.5 py-1.5 bg-surface border border-border rounded text-xs focus:border-ink-primary"
                                 >
                                   {lookups.readinesses.map((r) => (
                                     <option key={r.part_readiness_id} value={r.part_readiness_id}>
@@ -1241,7 +1241,7 @@ export function IssueEditorModal({
                                   className={`w-full px-2 py-1.5 bg-surface border rounded font-mono text-xs focus:outline-none transition-colors ${
                                     isMissingEta
                                       ? 'border-red-500 text-red-600 focus:border-red-500'
-                                      : 'border-border focus:border-accent-brass'
+                                      : 'border-border focus:border-ink-primary'
                                   }`}
                                 />
                               </div>
@@ -1259,12 +1259,12 @@ export function IssueEditorModal({
                             </div>
 
                             <div className="flex flex-wrap items-center justify-between gap-2 pt-1.5 border-t border-border/50 text-[11px]">
-                              <label className="flex items-center gap-2 cursor-pointer select-none text-ink-primary hover:text-accent-brass transition-colors">
+                              <label className="flex items-center gap-2 cursor-pointer select-none text-ink-primary hover:text-ink-primary transition-colors">
                                 <input
                                   type="checkbox"
                                   checked={Boolean(part.is_full_supplied)}
                                   onChange={(e) => handlePartChange(idx, 'is_full_supplied', e.target.checked)}
-                                  className="rounded border-border text-accent-brass focus:ring-accent-brass/20 w-3.5 h-3.5"
+                                  className="rounded border-border text-ink-primary focus:ring-ink-primary w-3.5 h-3.5"
                                 />
                                 <span className="font-semibold">Part Sudah Diterima Lengkap (Full Supplied)</span>
                               </label>
@@ -1314,7 +1314,7 @@ export function IssueEditorModal({
                         required
                         value={formData.claimable_status_id || ''}
                         onChange={(e) => setFormData({ ...formData, claimable_status_id: e.target.value })}
-                        className="w-full px-3 py-2 bg-surface border border-border rounded-md focus:border-accent-brass"
+                        className="w-full px-3 py-2 bg-surface border border-border rounded-md focus:border-ink-primary"
                       >
                         <option value="">-- Select Claim Status --</option>
                         {lookups.claimableStatuses.map((cs) => (
@@ -1332,7 +1332,7 @@ export function IssueEditorModal({
                       <select
                         value={formData.status_wo}
                         onChange={(e) => setFormData({ ...formData, status_wo: e.target.value as any })}
-                        className={`w-full px-3 py-2 bg-surface border rounded-md focus:border-accent-brass font-bold ${
+                        className={`w-full px-3 py-2 bg-surface border rounded-md focus:border-ink-primary font-bold ${
                           closedDateMissingError ? 'border-red-500 text-red-600' : 'border-border'
                         }`}
                       >
@@ -1348,7 +1348,7 @@ export function IssueEditorModal({
                       <select
                         value={formData.bottleneck_id || ''}
                         onChange={(e) => setFormData({ ...formData, bottleneck_id: e.target.value || null })}
-                        className="w-full px-3 py-2 bg-surface border border-border rounded-md focus:border-accent-brass"
+                        className="w-full px-3 py-2 bg-surface border border-border rounded-md focus:border-ink-primary"
                       >
                         <option value="">-- No Bottleneck Recorded --</option>
                         {lookups.bottlenecks.map((btn) => (
@@ -1370,7 +1370,7 @@ export function IssueEditorModal({
                         className={`w-full px-3 py-2 bg-surface border rounded-md font-mono focus:outline-none transition-colors ${
                           closingDateWoError || (formData.closing_date_wo && formData.closing_date_wo > today)
                             ? 'border-red-500 text-red-600'
-                            : 'border-border focus:border-accent-brass'
+                            : 'border-border focus:border-ink-primary'
                         }`}
                       />
                       {closingDateWoError && (
@@ -1392,7 +1392,7 @@ export function IssueEditorModal({
                         className={`w-full px-3 py-2 bg-surface border rounded-md font-mono focus:outline-none transition-colors ${
                           closingByRfuError || (formData.closing_by_rfu_date && formData.closing_by_rfu_date > today)
                             ? 'border-red-500 text-red-600'
-                            : 'border-border focus:border-accent-brass'
+                            : 'border-border focus:border-ink-primary'
                         }`}
                       />
                       {closingByRfuError && (
@@ -1414,7 +1414,7 @@ export function IssueEditorModal({
                         className={`w-full px-3 py-2 bg-surface border rounded-md font-mono focus:outline-none transition-colors ${
                           formData.goodwill_statement_date && formData.goodwill_statement_date > today
                             ? 'border-red-500 text-red-600'
-                            : 'border-border focus:border-accent-brass'
+                            : 'border-border focus:border-ink-primary'
                         }`}
                       />
                     </div>
@@ -1430,7 +1430,7 @@ export function IssueEditorModal({
                         className={`w-full px-3 py-2 bg-surface border rounded-md font-mono focus:outline-none transition-colors ${
                           srdDateError || (formData.srd_publication_date && formData.srd_publication_date > today)
                             ? 'border-red-500 text-red-600'
-                            : 'border-border focus:border-accent-brass'
+                            : 'border-border focus:border-ink-primary'
                         }`}
                       />
                       {srdDateError && (
@@ -1445,7 +1445,7 @@ export function IssueEditorModal({
                   {/* Goodwill Solution Time Guidance Callout */}
                   <div className="p-3.5 rounded-lg bg-base/40 border border-border text-[11px] text-ink-muted space-y-1">
                     <div className="flex items-center gap-2 font-semibold text-ink-primary">
-                      <span className="w-2 h-2 rounded-full bg-accent-brass" />
+                      <span className="w-2 h-2 rounded-full bg-ink-primary" />
                       <span>Formula Solution Time & Aturan Goodwill (v_claim_metrics)</span>
                     </div>
                     <p className="leading-relaxed">
@@ -1500,7 +1500,7 @@ export function IssueEditorModal({
                   ? 'Harap perbaiki kesalahan tanggal logika sebelum menyimpan'
                   : undefined
               }
-              className="flex items-center gap-1.5 px-4 py-1.5 rounded-md bg-accent-brass text-white text-xs font-bold hover:bg-accent-brass/90 transition-colors shadow-xs disabled:opacity-50"
+              className="flex items-center gap-1.5 px-4 py-1.5 rounded-md bg-surface-inverted text-ink-inverted text-xs font-bold hover:opacity-90 transition-opacity shadow-xs disabled:opacity-50"
             >
               {isSubmitting ? (
                 <Loader2 className="w-4 h-4 animate-spin" />

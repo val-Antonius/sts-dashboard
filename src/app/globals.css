@@ -14,7 +14,8 @@
   --color-ink-primary: var(--ink-primary);
   --color-ink-muted: var(--ink-muted);
   --color-accent: var(--accent);
-  --color-accent-brass: var(--accent); /* backward-compatibility alias */
+  --color-accent-brass: var(--accent);
+  /* backward-compatibility alias */
   --color-status-ok: var(--status-ok);
   --color-status-warn: var(--status-warn);
   --color-status-danger: var(--status-danger);
@@ -22,53 +23,83 @@
 }
 
 :root {
-  /* Surface & Base - Crisp, clean, data-dense */
-  --bg-base: #FAFAFA;
+  /* Surface & Base — warm stone, pairs with terracotta */
+  --bg-base: #F6F4F0;
   --surface: #FFFFFF;
-  --surface-hover: #F3F3F5;
-  --surface-inverted: #121316;
-  --border-subtle: #E4E4E7;
-  --border-inverted: #27272A;
+  --surface-hover: #F1EEE9;
+  --surface-inverted: #1B1A18;
+  --border-subtle: #E4E0D9;
+  --border-inverted: #2C2A27;
 
   /* Typography */
-  --ink-primary: #121316;
-  --ink-muted: #64666E;
+  --ink-primary: #1B1A18;
+  --ink-muted: #6B665E;
   --ink-inverted: #FFFFFF;
 
-  /* Single Disciplined Brand Accent: Terracotta / Deep Rust */
+  /* Brand accent: selected / active / heatmap ramp. Not a "problem" color. */
   --accent: #A3462F;
   --accent-brass: #A3462F;
 
-  /* Functional Status Colors (Muted & Distinct from Brand Accent) */
-  --status-ok: #2E7D52;      /* Achieved, Closed, Success */
-  --status-warn: #B87A28;    /* Warning, Approaching SLA (Warm Ochre) */
-  --status-danger: #B5302E;  /* Overdue SLA, Anomaly, SLA Breach (Crimson) */
-  --status-neutral: #71717A; /* Active, In-progress, Secondary */
+  /* Status: small marks only (dot, text, bar end-cap). Never big fills. */
+  --status-ok: #2E7D52;
+  /* Achieved, Closed OK */
+  --status-warn: #B87A28;
+  /* Data anomaly, approaching SLA */
+  --status-danger: #B3283C;
+  /* SLA breach, overdue (cooler than accent) */
+  --status-neutral: #7A756C;
+  /* Active, in-progress */
+
+  /* Chart data colors: no green / amber / red, so nothing reads as a verdict */
+  --chart-1: #3F5B6E;
+  /* primary series, Claimable, Product-side */
+  --chart-2: #B8AB94;
+  /* secondary series, Non-Claimable, Intake, External */
+  --chart-3: #6B4E8E;
+  /* Customer-side */
+  --chart-4: #7D6F60;
+  /* Process-side */
+  --chart-5: #A9A69F;
+  /* Unrecorded, Others */
+
+  /* Label text drawn on top of chart-1 / chart-2 fills */
+  --on-chart-1: #FFFFFF;
+  --on-chart-2: #1B1A18;
 }
 
 [data-theme="dark"] {
-  /* Surface & Base - Deep sleek dark */
-  --bg-base: #0C0D0E;
-  --surface: #16181A;
-  --surface-hover: #202226;
-  --surface-inverted: #F4F4F6;
-  --border-subtle: #272A2E;
-  --border-inverted: #E4E4E7;
+  /* Surface & Base */
+  --bg-base: #0E0E0D;
+  --surface: #171614;
+  --surface-hover: #211F1D;
+  --surface-inverted: #F2EFEA;
+  --border-subtle: #2A2825;
+  --border-inverted: #E4E0D9;
 
   /* Typography */
-  --ink-primary: #F4F4F6;
-  --ink-muted: #91939C;
-  --ink-inverted: #121316;
+  --ink-primary: #F2EFEA;
+  --ink-muted: #98938A;
+  --ink-inverted: #1B1A18;
 
-  /* Brand Accent: Adjusted for Dark Mode Legibility */
+  /* Brand accent */
   --accent: #D96B4F;
   --accent-brass: #D96B4F;
 
-  /* Functional Status Colors (Calibrated for Dark Contrast) */
+  /* Status */
   --status-ok: #41A86F;
   --status-warn: #D4953C;
-  --status-danger: #E05350;
-  --status-neutral: #A1A1AA;
+  --status-danger: #E4566A;
+  --status-neutral: #A19C92;
+
+  /* Chart data colors */
+  --chart-1: #7FA3BC;
+  --chart-2: #9C907A;
+  --chart-3: #A48CC4;
+  --chart-4: #B8A28C;
+  --chart-5: #6F6D68;
+
+  --on-chart-1: #0E0E0D;
+  --on-chart-2: #0E0E0D;
 }
 
 * {
@@ -139,10 +170,12 @@ table,
     transform: scale(0.95);
     opacity: 0.6;
   }
+
   50% {
     transform: scale(1.6);
     opacity: 0;
   }
+
   100% {
     transform: scale(0.95);
     opacity: 0;
@@ -154,13 +187,16 @@ table,
   width: 5px;
   height: 5px;
 }
+
 ::-webkit-scrollbar-track {
   background: transparent;
 }
+
 ::-webkit-scrollbar-thumb {
   background: var(--border-subtle);
   border-radius: 3px;
 }
+
 ::-webkit-scrollbar-thumb:hover {
   background: var(--ink-muted);
 }

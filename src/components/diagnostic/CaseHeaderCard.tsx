@@ -36,7 +36,7 @@ export function CaseHeaderCard({ caseDetail }: CaseHeaderCardProps) {
             {caseDetail.branch_city ? ` • ${caseDetail.branch_city}` : ''}
           </span>
           <StatusBadge status={caseDetail.status_wo} />
-          <span className="text-[11px] px-2 py-0.5 rounded-full bg-accent-brass/10 border border-accent-brass/30 text-accent-brass font-medium">
+          <span className="text-[11px] px-2 py-0.5 rounded-full bg-base border border-border text-ink-primary font-medium">
             {caseDetail.golongan_customer}
           </span>
         </div>
@@ -51,8 +51,8 @@ export function CaseHeaderCard({ caseDetail }: CaseHeaderCardProps) {
               <span
                 className={
                   isOverdue
-                    ? 'text-[#A54B3F] dark:text-[#BD584B]'
-                    : 'text-[#3B7A57] dark:text-[#489369]'
+                    ? 'text-status-danger font-semibold'
+                    : 'text-status-ok font-semibold'
                 }
               >
                 {caseDetail.solution_time_days}d
@@ -76,7 +76,7 @@ export function CaseHeaderCard({ caseDetail }: CaseHeaderCardProps) {
             Product & Model
           </span>
           <div className="font-medium text-ink-primary truncate mt-0.5">
-            <span className="font-mono font-bold text-accent-brass">[{caseDetail.product_code || '—'}]</span>{' '}
+            <span className="font-mono font-bold text-ink-primary">[{caseDetail.product_code || '—'}]</span>{' '}
             {caseDetail.unit_model_name}
           </div>
         </div>

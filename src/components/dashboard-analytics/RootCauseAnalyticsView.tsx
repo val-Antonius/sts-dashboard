@@ -27,6 +27,10 @@ import {
   Cpu,
 } from 'lucide-react';
 
+import {
+  PARETO_COLORS,
+} from '@/lib/chartColors';
+
 interface RootCauseAnalyticsViewProps {
   initialData: RootCauseAnalyticsData;
 }
@@ -113,11 +117,11 @@ export function RootCauseAnalyticsView({ initialData }: RootCauseAnalyticsViewPr
               <div className="text-xs font-semibold uppercase tracking-wider text-ink-muted mb-1">
                 Akar Masalah Dominan
               </div>
-              <div className="text-2xl font-mono font-bold text-accent-brass tabular-nums tracking-tight truncate max-w-[200px]" title={summary.dominant_cause?.name}>
+              <div className="text-2xl font-mono font-bold text-ink-primary tabular-nums tracking-tight truncate max-w-[200px]" title={summary.dominant_cause?.name}>
                 {summary.dominant_cause?.name || '-'}
               </div>
             </div>
-            <div className="p-2 rounded-md bg-accent-brass/10 text-accent-brass border border-accent-brass/20 shrink-0">
+            <div className="p-2 rounded-md bg-base text-ink-muted border border-border shrink-0">
               <AlertTriangle className="w-5 h-5" />
             </div>
           </div>
@@ -134,11 +138,11 @@ export function RootCauseAnalyticsView({ initialData }: RootCauseAnalyticsViewPr
               <div className="text-xs font-semibold uppercase tracking-wider text-ink-muted mb-1">
                 Top 3 Causes Share (80/20)
               </div>
-              <div className="text-3xl font-mono font-bold text-[#2E7D52] tabular-nums tracking-tight">
+              <div className="text-3xl font-mono font-bold text-ink-primary tabular-nums tracking-tight">
                 {summary.top3_share_pct}%
               </div>
             </div>
-            <div className="p-2 rounded-md bg-[#2E7D52]/10 text-[#2E7D52] border border-[#2E7D52]/20">
+            <div className="p-2 rounded-md bg-base text-ink-muted border border-border">
               <PieIcon className="w-5 h-5" />
             </div>
           </div>
@@ -178,7 +182,7 @@ export function RootCauseAnalyticsView({ initialData }: RootCauseAnalyticsViewPr
                 {summary.total_cases}
               </div>
             </div>
-            <div className="p-2 rounded-md bg-accent-brass/10 text-accent-brass border border-accent-brass/20">
+            <div className="p-2 rounded-md bg-base text-ink-muted border border-border">
               <Wrench className="w-5 h-5" />
             </div>
           </div>
@@ -193,7 +197,7 @@ export function RootCauseAnalyticsView({ initialData }: RootCauseAnalyticsViewPr
         <div className="flex items-center justify-between border-b border-border pb-3">
           <div>
             <h3 className="text-xs font-bold uppercase tracking-wider text-ink-primary flex items-center gap-2">
-              <Wrench className="w-3.5 h-3.5 text-accent-brass" />
+              <Wrench className="w-3.5 h-3.5 text-ink-muted" />
               <span>Pareto Root Cause Analysis (Prinsip 80/20)</span>
             </h3>
             <p className="text-[11px] text-ink-muted mt-0.5">
@@ -201,11 +205,11 @@ export function RootCauseAnalyticsView({ initialData }: RootCauseAnalyticsViewPr
             </p>
           </div>
           <div className="flex items-center gap-4 text-xs font-mono">
-            <span className="flex items-center gap-1.5">
-              <span className="w-2.5 h-2.5 rounded-sm bg-[#3F3F46]" /> Kasus
+            <span className="flex items-center gap-1.5 text-ink-muted">
+              <span className="w-2.5 h-2.5 rounded-sm" style={{ backgroundColor: PARETO_COLORS.bar }} /> Kasus
             </span>
-            <span className="flex items-center gap-1.5 text-[#2E7D52]">
-              <span className="w-3 h-0.5 bg-[#2E7D52]" /> Kumulatif %
+            <span className="flex items-center gap-1.5 text-ink-primary font-bold">
+              <span className="w-3 h-0.5" style={{ backgroundColor: PARETO_COLORS.cumulativeLine }} /> Kumulatif %
             </span>
           </div>
         </div>
@@ -245,12 +249,12 @@ export function RootCauseAnalyticsView({ initialData }: RootCauseAnalyticsViewPr
                     name,
                   ]}
                 />
-                <ReferenceLine yAxisId="right" y={80} stroke="#A3462F" strokeDasharray="3 3" label={{ value: 'Threshold 80%', fill: '#A3462F', fontSize: 9, position: 'insideTopRight' }} />
+                <ReferenceLine yAxisId="right" y={80} stroke={PARETO_COLORS.threshold80} strokeDasharray="3 3" label={{ value: 'Threshold 80%', fill: 'var(--ink-muted)', fontSize: 9, position: 'insideTopRight' }} />
                 <Bar
                   yAxisId="left"
                   dataKey="jumlah_kasus"
                   name="Jumlah Kasus"
-                  fill="#3F3F46"
+                  fill={PARETO_COLORS.bar}
                   radius={[3, 3, 0, 0]}
                 />
                 <Line
@@ -258,9 +262,9 @@ export function RootCauseAnalyticsView({ initialData }: RootCauseAnalyticsViewPr
                   type="monotone"
                   dataKey="cumulative_pct"
                   name="Kumulatif %"
-                  stroke="#2E7D52"
+                  stroke={PARETO_COLORS.cumulativeLine}
                   strokeWidth={2}
-                  dot={{ r: 3, fill: '#2E7D52' }}
+                  dot={{ r: 3, fill: PARETO_COLORS.cumulativeLine }}
                 />
               </ComposedChart>
             </ResponsiveContainer>
@@ -273,7 +277,7 @@ export function RootCauseAnalyticsView({ initialData }: RootCauseAnalyticsViewPr
         <div className="flex items-center justify-between border-b border-border pb-3">
           <div>
             <h3 className="text-xs font-bold uppercase tracking-wider text-ink-primary flex items-center gap-2">
-              <Cpu className="w-3.5 h-3.5 text-accent-brass" />
+              <Cpu className="w-3.5 h-3.5 text-ink-muted" />
               <span>Fault Attribution by Unit (5 Taksonomi Pertanggungjawaban Kesalahan)</span>
             </h3>
             <p className="text-[11px] text-ink-muted mt-0.5">
@@ -294,7 +298,7 @@ export function RootCauseAnalyticsView({ initialData }: RootCauseAnalyticsViewPr
         <div className="flex items-center justify-between border-b border-border pb-3">
           <div>
             <h3 className="text-xs font-bold uppercase tracking-wider text-ink-primary flex items-center gap-2">
-              <FileSpreadsheet className="w-3.5 h-3.5 text-accent-brass" />
+              <FileSpreadsheet className="w-3.5 h-3.5 text-ink-muted" />
               <span>Detail Data &amp; Aging per Akar Masalah</span>
             </h3>
             <p className="text-[11px] text-ink-muted mt-0.5">
@@ -337,11 +341,7 @@ export function RootCauseAnalyticsView({ initialData }: RootCauseAnalyticsViewPr
                       {r.pct}%
                     </td>
                     <td className="py-2.5 px-3 text-center">
-                      <span className={`px-2 py-0.5 rounded font-bold text-[11px] ${
-                        r.cumulative_pct <= 80
-                          ? 'bg-[#2E7D52]/10 text-[#2E7D52] border border-[#2E7D52]/20'
-                          : 'bg-base text-ink-muted border border-border'
-                      }`}>
+                      <span className="px-2 py-0.5 rounded font-bold text-[11px] bg-base text-ink-primary border border-border">
                         {r.cumulative_pct}%
                       </span>
                     </td>

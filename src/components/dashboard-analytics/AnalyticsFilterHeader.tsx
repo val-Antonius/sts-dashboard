@@ -47,7 +47,7 @@ export function AnalyticsFilterHeader({
             onClick={() => onSegmentChange('all')}
             className={`flex items-center gap-1.5 px-3 py-1.5 rounded-md text-xs font-medium transition-all ${
               selectedSegment === 'all'
-                ? 'bg-surface text-accent-brass shadow-xs font-semibold'
+                ? 'bg-surface text-ink-primary shadow-xs font-semibold'
                 : 'text-ink-muted hover:text-ink-primary'
             }`}
           >
@@ -59,7 +59,7 @@ export function AnalyticsFilterHeader({
             onClick={() => onSegmentChange('All Customer')}
             className={`flex items-center gap-1.5 px-3 py-1.5 rounded-md text-xs font-medium transition-all ${
               selectedSegment === 'All Customer'
-                ? 'bg-surface text-accent-brass shadow-xs font-semibold'
+                ? 'bg-surface text-ink-primary shadow-xs font-semibold'
                 : 'text-ink-muted hover:text-ink-primary'
             }`}
           >
@@ -71,7 +71,7 @@ export function AnalyticsFilterHeader({
             onClick={() => onSegmentChange('KA Nasional')}
             className={`flex items-center gap-1.5 px-3 py-1.5 rounded-md text-xs font-medium transition-all ${
               selectedSegment === 'KA Nasional'
-                ? 'bg-surface text-accent-brass shadow-xs font-semibold'
+                ? 'bg-surface text-ink-primary shadow-xs font-semibold'
                 : 'text-ink-muted hover:text-ink-primary'
             }`}
           >
@@ -82,7 +82,7 @@ export function AnalyticsFilterHeader({
 
         {/* Right: Time Range Filter & Loading Spinner */}
         <div className="flex items-center gap-2 self-start sm:self-auto">
-          {loading && <Loader2 className="w-3.5 h-3.5 animate-spin text-accent-brass" />}
+          {loading && <Loader2 className="w-3.5 h-3.5 animate-spin text-ink-muted" />}
           <TimeRangeFilter
             selectedRange={range}
             onChange={onRangeChange}

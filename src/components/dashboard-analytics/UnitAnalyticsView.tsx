@@ -24,6 +24,11 @@ import {
   Cpu,
 } from 'lucide-react';
 
+import {
+  getProductColorByRank,
+  getHeatmapColor,
+} from '@/lib/chartColors';
+
 interface UnitAnalyticsViewProps {
   initialVolumeData: PerformanceVolumeData;
   initialPrincipalData: PrincipalClaimableData;
@@ -104,14 +109,14 @@ export function UnitAnalyticsView({
     return Math.round((top3Sum / totalCases) * 1000) / 10;
   }, [productPortfolio.productBreakdown, totalCases]);
 
-  // Pie chart dataset for Product Portfolio
+  // Pie chart dataset for Product Portfolio with rank-based tints of var(--chart-1)
   const productDonutData = useMemo(() => {
-    return (productPortfolio.productBreakdown || []).map((p) => ({
+    return (productPortfolio.productBreakdown || []).map((p, idx) => ({
       name: p.product_code,
       fullName: p.product_name,
       value: p.count,
       pct: p.pct,
-      color: p.color,
+      color: getProductColorByRank(idx, p.product_code.toLowerCase().includes('other')),
     }));
   }, [productPortfolio.productBreakdown]);
 
@@ -139,11 +144,11 @@ export function UnitAnalyticsView({
               <div className="text-xs font-semibold uppercase tracking-wider text-ink-muted mb-1">
                 Lini Produk Dominan
               </div>
-              <div className="text-3xl font-mono font-bold text-accent-brass tabular-nums tracking-tight">
+              <div className="text-3xl font-mono font-bold text-ink-primary tabular-nums tracking-tight">
                 {productPortfolio.dominant_product?.product_code || '-'}
               </div>
             </div>
-            <div className="p-2 rounded-md bg-accent-brass/10 text-accent-brass border border-accent-brass/20">
+            <div className="p-2 rounded-md bg-base text-ink-muted border border-border">
               <Package className="w-5 h-5" />
             </div>
           </div>
@@ -184,7 +189,7 @@ export function UnitAnalyticsView({
                 {top3ConcentrationPct}%
               </div>
             </div>
-            <div className="p-2 rounded-md bg-accent-brass/10 text-accent-brass border border-accent-brass/20">
+            <div className="p-2 rounded-md bg-base text-ink-muted border border-border">
               <PieIcon className="w-5 h-5" />
             </div>
           </div>
@@ -219,7 +224,7 @@ export function UnitAnalyticsView({
         <div className="flex items-center justify-between border-b border-border pb-3 mb-4">
           <div>
             <h3 className="text-xs font-bold uppercase tracking-wider text-ink-primary flex items-center gap-2">
-              <Package className="w-3.5 h-3.5 text-accent-brass" />
+              <Package className="w-3.5 h-3.5 text-ink-muted" />
               <span>Product Portfolio &amp; Equipment Category Breakdown</span>
             </h3>
             <p className="text-[11px] text-ink-muted mt-0.5">
@@ -258,7 +263,7 @@ export function UnitAnalyticsView({
                   </PieChart>
                 </ResponsiveContainer>
                 <div className="absolute flex flex-col items-center justify-center pointer-events-none text-center px-1">
-                  <span className="text-xl font-mono font-bold text-accent-brass tabular-nums leading-tight">
+                  <span className="text-xl font-mono font-bold text-ink-primary tabular-nums leading-tight">
                     {productPortfolio.dominant_product?.product_code || '-'}
                   </span>
                   <span className="text-[9px] uppercase font-semibold text-ink-muted tracking-wider">
@@ -318,7 +323,7 @@ export function UnitAnalyticsView({
         <div className="flex items-center justify-between border-b border-border pb-3">
           <div>
             <h3 className="text-xs font-bold uppercase tracking-wider text-ink-primary flex items-center gap-2">
-              <ShieldCheck className="w-3.5 h-3.5 text-accent-brass" />
+              <ShieldCheck className="w-3.5 h-3.5 text-ink-muted" />
               <span>Product Claimable Profile (Dot Plot Pareto)</span>
             </h3>
             <p className="text-[11px] text-ink-muted mt-0.5">
@@ -339,7 +344,7 @@ export function UnitAnalyticsView({
         <div className="flex items-center justify-between border-b border-border pb-3">
           <div>
             <h3 className="text-xs font-bold uppercase tracking-wider text-ink-primary flex items-center gap-2">
-              <MapPin className="w-3.5 h-3.5 text-accent-brass" />
+              <MapPin className="w-3.5 h-3.5 text-ink-muted" />
               <span>Unit &times; Branch Territorial Heatmap (Konsentrasi Kasus Cabang)</span>
             </h3>
             <p className="text-[11px] text-ink-muted mt-0.5">
@@ -349,7 +354,7 @@ export function UnitAnalyticsView({
           {selectedProduct && (
             <button
               onClick={() => setSelectedProduct(null)}
-              className="text-xs font-mono text-accent-brass hover:underline cursor-pointer"
+              className="text-xs font-mono text-ink-primary hover:underline cursor-pointer"
             >
               Reset Highlight ({selectedProduct})
             </button>
@@ -385,23 +390,24 @@ export function UnitAnalyticsView({
                       key={p}
                       onClick={() => setSelectedProduct(isHighlighted ? null : p)}
                       className={`hover:bg-surface-hover transition-all cursor-pointer font-mono ${
-                        isHighlighted ? 'bg-accent-brass/10 ring-1 ring-accent-brass/40 font-bold' : ''
+                        isHighlighted ? 'bg-surface-hover ring-1 ring-border font-bold' : ''
                       } ${isMuted ? 'opacity-35' : 'opacity-100'}`}
                     >
                       <td className="py-2 px-3 font-bold text-ink-primary font-sans sticky left-0 bg-surface z-10 flex items-center gap-1.5">
-                        <Cpu className="w-3.5 h-3.5 text-accent-brass" />
+                        <Cpu className="w-3.5 h-3.5 text-ink-muted" />
                         <span>{p}</span>
                       </td>
                       {heatmapData.branches.map((b: string) => {
                         const count = heatmapData.matrix[p]?.[b] || 0;
                         const intensity = count > 0 ? Math.min(1, count / (heatmapData.maxCount || 1)) : 0;
+                        const cellBg = count > 0 ? getHeatmapColor(intensity) : undefined;
                         return (
                           <td
                             key={`${p}-${b}`}
                             className="py-2 px-1 text-center font-bold"
                             style={{
-                              backgroundColor: count > 0 ? `rgba(163, 70, 47, ${0.15 + intensity * 0.7})` : undefined,
-                              color: count > 0 && intensity > 0.4 ? '#FFFFFF' : 'var(--ink-primary)',
+                              backgroundColor: cellBg,
+                              color: count > 0 && intensity > 0.5 ? '#FFFFFF' : 'var(--ink-primary)',
                             }}
                           >
                             {count > 0 ? count : '-'}

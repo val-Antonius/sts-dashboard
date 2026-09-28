@@ -32,6 +32,11 @@ import {
   Clock,
   ArrowRight,
 } from 'lucide-react';
+import {
+  CLAIM_COLORS,
+  FLOW_COLORS,
+  BUBBLE_MATRIX_COLORS,
+} from '@/lib/chartColors';
 
 interface VolumeTrendsAnalyticsViewProps {
   initialData: PerformanceVolumeData;
@@ -110,16 +115,16 @@ export function VolumeTrendsAnalyticsView({ initialData }: VolumeTrendsAnalytics
     return [...backlogFlowData].sort((a, b) => b.cases_opened - a.cases_opened)[0];
   }, [backlogFlowData]);
 
-  // OFFICIAL 8 CLAIM STATUSES for distribution matrix
+  // 8 Official Claimable Statuses matching VolumeTrendsTabs
   const OFFICIAL_CLAIM_STATUSES = useMemo(() => [
-    { key: 'Claimable Principal', label: 'Claimable Principal', color: '#2E7D52', isPrimary: true },
-    { key: 'Unclaimable', label: 'Unclaimable', color: '#A3462F', isPrimary: true },
-    { key: 'Goodwill', label: 'Goodwill', color: '#B87A28', isPrimary: true },
-    { key: 'Claimable GOEM', label: 'Claimable GOEM', color: '#6366F1', isPrimary: true },
-    { key: 'Claimable Vendor (Attachment)', label: 'Claimable Vendor (Attachment)', color: '#0284C7', isPrimary: false },
-    { key: 'Claimable Vendor (Genset Maker)', label: 'Claimable Vendor (Genset Maker)', color: '#0D9488', isPrimary: false },
-    { key: 'Progress Checking Unit', label: 'Progress Checking Unit', color: '#8B5CF6', isPrimary: false },
-    { key: 'Waiting Created WO Checking', label: 'Waiting Created WO Checking', color: '#71717A', isPrimary: false },
+    { key: 'Claimable Principal', label: 'Claimable Principal', color: CLAIM_COLORS.claimable, isPrimary: true },
+    { key: 'Unclaimable', label: 'Unclaimable', color: CLAIM_COLORS.unclaimable, isPrimary: true },
+    { key: 'Goodwill', label: 'Goodwill', color: CLAIM_COLORS.goodwill, isPrimary: true },
+    { key: 'Claimable GOEM', label: 'Claimable GOEM', color: CLAIM_COLORS.goem, isPrimary: true },
+    { key: 'Claimable Vendor (Attachment)', label: 'Claimable Vendor (Attachment)', color: 'var(--chart-3)', isPrimary: false },
+    { key: 'Claimable Vendor (Genset Maker)', label: 'Claimable Vendor (Genset Maker)', color: 'var(--chart-4)', isPrimary: false },
+    { key: 'Progress Checking Unit', label: 'Progress Checking Unit', color: CLAIM_COLORS.unrecorded, isPrimary: false },
+    { key: 'Waiting Created WO Checking', label: 'Waiting Created WO Checking', color: CLAIM_COLORS.unrecorded, isPrimary: false },
   ], []);
 
   const activeStatusObj = useMemo(() => {
@@ -161,6 +166,8 @@ export function VolumeTrendsAnalyticsView({ initialData }: VolumeTrendsAnalytics
         total_cases: b.total_cases,
         metric_count: count,
         metric_pct: pct,
+        overdue_cases: b.overdue_cases,
+        overdue_pct: b.overdue_pct,
         avg_solution_days: b.avg_solution_days,
       });
     });
@@ -191,9 +198,9 @@ export function VolumeTrendsAnalyticsView({ initialData }: VolumeTrendsAnalytics
   }, [branchRiskData, selectedStatus]);
 
   const nationalStatusPct = useMemo(() => {
-    const total = data?.kpiStats?.total_cases || 1;
-    return Math.round((totalSelectedStatusCases / total) * 1000) / 10;
-  }, [data?.kpiStats?.total_cases, totalSelectedStatusCases]);
+    const totalAll = data?.kpiStats?.total_cases || branchRiskData.reduce((s, b) => s + (b.total_cases || 0), 0) || 1;
+    return Math.round((totalSelectedStatusCases / totalAll) * 1000) / 10;
+  }, [data?.kpiStats?.total_cases, branchRiskData, totalSelectedStatusCases]);
 
   const renderBubble = (props: any) => {
     const { cx, cy, payload } = props;
@@ -202,15 +209,18 @@ export function VolumeTrendsAnalyticsView({ initialData }: VolumeTrendsAnalytics
     const count = payload.metric_count ?? 0;
     const isZero = count === 0;
 
+    // Sizing: Radius directly scales with real status case volume (Area Proportional)
+    // 0 cases -> 5px clean dot marker; >0 cases -> 11px to 32px
     const minRadius = 11;
     const maxRadius = 32;
     const r = isZero
       ? 5
       : minRadius + Math.sqrt(count / maxStatusCount) * (maxRadius - minRadius);
 
-    const activeColor = activeStatusObj?.color || '#A3462F';
-    const fillColor = isZero ? '#71717A' : activeColor;
-    const strokeColor = isZero ? '#3F3F46' : activeColor;
+    const activeColor = activeStatusObj?.color || CLAIM_COLORS.claimable;
+    const fillColor = isZero ? BUBBLE_MATRIX_COLORS.zeroCase : activeColor;
+    const strokeColor = isZero ? 'var(--border)' : activeColor;
+
     const isMulti = payload.is_multi && payload.branches && payload.branches.length > 1;
 
     return (
@@ -233,41 +243,41 @@ export function VolumeTrendsAnalyticsView({ initialData }: VolumeTrendsAnalytics
         />
         {!isZero && (
           isMulti ? (
-            <g>
-              <rect
-                x={cx - 18}
-                y={cy - 8}
-                width={36}
-                height={16}
-                rx={3}
-                fill="var(--surface)"
-                stroke={activeColor}
-                strokeWidth={1}
-                className="shadow-xs"
-              />
-              <text
-                x={cx}
-                y={cy + 3.5}
-                textAnchor="middle"
-                fontSize={9}
-                fontWeight={700}
-                fill="var(--ink-primary)"
-                className="font-mono select-none"
-              >
-                {payload.displayCode}
-              </text>
-            </g>
+            <text
+              x={cx}
+              y={cy}
+              textAnchor="middle"
+              dominantBaseline="central"
+              className="font-mono font-bold select-none pointer-events-none"
+              style={{
+                fontSize: r >= 22 ? '9.5px' : '8px',
+                fill: 'var(--ink-primary)',
+                paintOrder: 'stroke',
+                stroke: 'var(--surface)',
+                strokeWidth: '2.5px',
+                strokeLinejoin: 'round',
+              }}
+            >
+              <tspan x={cx} dy="-0.5em">{payload.branches[0].branch_code}</tspan>
+              <tspan x={cx} dy="1.15em">{payload.branches[1].branch_code}</tspan>
+            </text>
           ) : (
             <text
               x={cx}
-              y={cy - r - 4}
+              y={cy + 0.5}
               textAnchor="middle"
-              fontSize={10}
-              fontWeight={600}
-              fill="var(--ink-primary)"
-              className="font-mono select-none"
+              dominantBaseline="central"
+              className="font-mono font-bold select-none pointer-events-none"
+              style={{
+                fontSize: r >= 24 ? '11px' : r >= 16 ? '9.5px' : '8px',
+                fill: 'var(--ink-primary)',
+                paintOrder: 'stroke',
+                stroke: 'var(--surface)',
+                strokeWidth: '2.5px',
+                strokeLinejoin: 'round',
+              }}
             >
-              {payload.displayCode} ({payload.metric_count}/{payload.total_cases})
+              {payload.displayCode}
             </text>
           )
         )}
@@ -293,17 +303,18 @@ export function VolumeTrendsAnalyticsView({ initialData }: VolumeTrendsAnalytics
       {/* TOP 4 EXECUTIVE SUMMARY STAT CARDS */}
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
         {/* Card 1: Intake (Opened) */}
+        {/* Card 1: Total Intake */}
         <div className="p-4 bg-surface border border-border rounded-lg shadow-xs flex flex-col justify-between card-interactive">
           <div className="flex items-start justify-between">
             <div>
               <div className="text-xs font-semibold uppercase tracking-wider text-ink-muted mb-1">
                 Total Case Intake (Opened)
               </div>
-              <div className="text-3xl font-mono font-bold text-[#A3462F] tabular-nums tracking-tight">
+              <div className="text-3xl font-mono font-bold text-ink-primary tabular-nums tracking-tight">
                 {totalOpened}
               </div>
             </div>
-            <div className="p-2 rounded-md bg-[#A3462F]/10 text-[#A3462F] border border-[#A3462F]/20">
+            <div className="p-2 rounded-md bg-base text-ink-muted border border-border">
               <Inbox className="w-5 h-5" />
             </div>
           </div>
@@ -319,16 +330,16 @@ export function VolumeTrendsAnalyticsView({ initialData }: VolumeTrendsAnalytics
               <div className="text-xs font-semibold uppercase tracking-wider text-ink-muted mb-1">
                 Total Cases Closed
               </div>
-              <div className="text-3xl font-mono font-bold text-[#2E7D52] tabular-nums tracking-tight">
+              <div className="text-3xl font-mono font-bold text-ink-primary tabular-nums tracking-tight">
                 {totalClosed}
               </div>
             </div>
-            <div className="p-2 rounded-md bg-[#2E7D52]/10 text-[#2E7D52] border border-[#2E7D52]/20">
+            <div className="p-2 rounded-md bg-base text-ink-muted border border-border">
               <CheckCircle2 className="w-5 h-5" />
             </div>
           </div>
           <div className="text-[11px] text-ink-muted mt-2 font-mono">
-            Tingkat penyelesaian: <strong className="text-[#2E7D52]">{totalOpened > 0 ? Math.round((totalClosed / totalOpened) * 100) : 0}%</strong> dari intake
+            Tingkat penyelesaian: <strong className="text-ink-primary">{totalOpened > 0 ? Math.round((totalClosed / totalOpened) * 100) : 0}%</strong> dari intake
           </div>
         </div>
 
@@ -340,23 +351,23 @@ export function VolumeTrendsAnalyticsView({ initialData }: VolumeTrendsAnalytics
                 Net Backlog Delta
               </div>
               <div className="flex items-baseline gap-2">
-                <span className={`text-3xl font-mono font-bold tabular-nums tracking-tight ${netBacklogTotal > 0 ? 'text-[#A3462F]' : 'text-[#2E7D52]'}`}>
+                <span className="text-3xl font-mono font-bold text-ink-primary tabular-nums tracking-tight">
                   {netBacklogTotal > 0 ? `+${netBacklogTotal}` : `${netBacklogTotal}`}
                 </span>
                 <span className="text-xs font-mono text-ink-muted">kasus</span>
               </div>
             </div>
-            <div className={`p-2 rounded-md border ${netBacklogTotal > 0 ? 'bg-[#A3462F]/10 text-[#A3462F] border-[#A3462F]/20' : 'bg-[#2E7D52]/10 text-[#2E7D52] border-[#2E7D52]/20'}`}>
+            <div className="p-2 rounded-md bg-base text-ink-muted border border-border">
               {netBacklogTotal > 0 ? <TrendingUp className="w-5 h-5" /> : <TrendingDown className="w-5 h-5" />}
             </div>
           </div>
           <div className="text-[11px] text-ink-muted mt-2">
             {netBacklogTotal > 0 ? (
-              <span className="text-[#A3462F] font-semibold">Akumulasi Backlog (Intake &gt; Closed)</span>
+              <span className="font-semibold text-ink-primary">Akumulasi Backlog (Intake &gt; Closed)</span>
             ) : netBacklogTotal === 0 ? (
-              <span className="text-ink-muted font-semibold">Keseimbangan Sempurna (1:1)</span>
+              <span className="font-semibold text-ink-muted">Keseimbangan Sempurna (1:1)</span>
             ) : (
-              <span className="text-[#2E7D52] font-semibold">Pengurangan Backlog Bersih</span>
+              <span className="font-semibold text-ink-primary">Pengurangan Backlog Bersih</span>
             )}
           </div>
         </div>
@@ -372,7 +383,7 @@ export function VolumeTrendsAnalyticsView({ initialData }: VolumeTrendsAnalytics
                 {peakIntakeMonth ? peakIntakeMonth.bulan : '-'}
               </div>
             </div>
-            <div className="p-2 rounded-md bg-accent/10 text-accent border border-accent/20">
+            <div className="p-2 rounded-md bg-base text-ink-muted border border-border">
               <Calendar className="w-5 h-5" />
             </div>
           </div>
@@ -391,7 +402,7 @@ export function VolumeTrendsAnalyticsView({ initialData }: VolumeTrendsAnalytics
         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 border-b border-border pb-3">
           <div>
             <h3 className="text-xs font-bold uppercase tracking-wider text-ink-primary flex items-center gap-2">
-              <TrendingUp className="w-3.5 h-3.5 text-accent" />
+              <TrendingUp className="w-3.5 h-3.5 text-ink-muted" />
               <span>Monthly Backlog Flow: Intake vs Closure Dynamics</span>
             </h3>
             <p className="text-[11px] text-ink-muted mt-0.5">
@@ -399,14 +410,14 @@ export function VolumeTrendsAnalyticsView({ initialData }: VolumeTrendsAnalytics
             </p>
           </div>
           <div className="flex items-center gap-4 text-xs font-mono">
-            <span className="flex items-center gap-1.5 text-[#A3462F]">
-              <span className="w-2.5 h-2.5 rounded-xs bg-[#A3462F]" /> Intake (Opened)
+            <span className="flex items-center gap-1.5" style={{ color: FLOW_COLORS.intake }}>
+              <span className="w-2.5 h-2.5 rounded-xs" style={{ backgroundColor: FLOW_COLORS.intake }} /> Intake (Opened)
             </span>
-            <span className="flex items-center gap-1.5 text-[#2E7D52]">
-              <span className="w-2.5 h-2.5 rounded-xs bg-[#2E7D52]" /> Closed
+            <span className="flex items-center gap-1.5" style={{ color: FLOW_COLORS.closed }}>
+              <span className="w-2.5 h-2.5 rounded-xs" style={{ backgroundColor: FLOW_COLORS.closed }} /> Closed
             </span>
             <span className="flex items-center gap-1.5 text-ink-primary font-bold">
-              <span className="w-3 h-0.5 bg-ink-primary" /> Net Backlog Delta
+              <span className="w-3 h-0.5" style={{ backgroundColor: FLOW_COLORS.netDelta }} /> Net Backlog Delta
             </span>
           </div>
         </div>
@@ -426,29 +437,29 @@ export function VolumeTrendsAnalyticsView({ initialData }: VolumeTrendsAnalytics
                   ]}
                 />
                 <ReferenceLine y={0} stroke="var(--border)" strokeDasharray="3 3" />
-                <Bar dataKey="cases_opened" fill="#A3462F" name="Intake (Opened)" radius={[4, 4, 0, 0]} maxBarSize={36}>
+                <Bar dataKey="cases_opened" fill={FLOW_COLORS.intake} name="Intake (Opened)" radius={[4, 4, 0, 0]} maxBarSize={36}>
                   <LabelList
                     dataKey="cases_opened"
                     position="top"
                     formatter={(val: any) => (val ? `${val}` : '')}
-                    style={{ fontSize: '10px', fontWeight: 600, fill: '#A3462F' }}
+                    style={{ fontSize: '10px', fontWeight: 600, fill: FLOW_COLORS.intake }}
                   />
                 </Bar>
-                <Bar dataKey="cases_closed" fill="#2E7D52" name="Closed" radius={[4, 4, 0, 0]} maxBarSize={36}>
+                <Bar dataKey="cases_closed" fill={FLOW_COLORS.closed} name="Closed" radius={[4, 4, 0, 0]} maxBarSize={36}>
                   <LabelList
                     dataKey="cases_closed"
                     position="top"
                     formatter={(val: any) => (val ? `${val}` : '')}
-                    style={{ fontSize: '10px', fontWeight: 600, fill: '#2E7D52' }}
+                    style={{ fontSize: '10px', fontWeight: 600, fill: FLOW_COLORS.closed }}
                   />
                 </Bar>
                 <Line
                   type="linear"
                   dataKey="net_backlog"
-                  stroke="var(--ink-primary)"
+                  stroke={FLOW_COLORS.netDelta}
                   strokeWidth={2.5}
                   name="Net Backlog (Intake - Closed)"
-                  dot={{ r: 4, fill: 'var(--ink-primary)', stroke: 'var(--surface)', strokeWidth: 1.5 }}
+                  dot={{ r: 4, fill: FLOW_COLORS.netDelta, stroke: 'var(--surface)', strokeWidth: 1.5 }}
                 />
               </ComposedChart>
             </ResponsiveContainer>
@@ -475,18 +486,18 @@ export function VolumeTrendsAnalyticsView({ initialData }: VolumeTrendsAnalytics
                 return (
                   <tr key={idx} className="hover:bg-surface-hover transition-colors font-mono">
                     <td className="py-2 px-3 font-semibold text-ink-primary font-sans">{row.bulan}</td>
-                    <td className="py-2 px-3 text-center font-bold text-[#A3462F]">{row.cases_opened}</td>
-                    <td className="py-2 px-3 text-center font-bold text-[#2E7D52]">{row.cases_closed}</td>
+                    <td className="py-2 px-3 text-center font-bold text-ink-primary">{row.cases_opened}</td>
+                    <td className="py-2 px-3 text-center font-bold text-ink-primary">{row.cases_closed}</td>
                     <td className="py-2 px-3 text-center">
-                      <span className={`px-2 py-0.5 rounded font-bold ${delta > 0 ? 'bg-[#A3462F]/10 text-[#A3462F]' : delta < 0 ? 'bg-[#2E7D52]/10 text-[#2E7D52]' : 'bg-base text-ink-muted'}`}>
+                      <span className="px-2 py-0.5 rounded font-bold bg-base border border-border text-ink-primary">
                         {delta > 0 ? `+${delta}` : delta}
                       </span>
                     </td>
                     <td className="py-2 px-3 text-right font-sans">
                       {delta > 0 ? (
-                        <span className="text-[11px] text-[#A3462F] font-semibold">Penumpukan Backlog</span>
+                        <span className="text-[11px] text-ink-primary font-semibold">Penumpukan Backlog</span>
                       ) : delta < 0 ? (
-                        <span className="text-[11px] text-[#2E7D52] font-semibold">Resolusi Backlog</span>
+                        <span className="text-[11px] text-ink-primary font-semibold">Resolusi Backlog</span>
                       ) : (
                         <span className="text-[11px] text-ink-muted">Netral (100% Selesai)</span>
                       )}
@@ -499,21 +510,18 @@ export function VolumeTrendsAnalyticsView({ initialData }: VolumeTrendsAnalytics
         </div>
       </div>
 
-      {/* SECTION 2: BRANCH VOLUME & CLAIM STATUS DISTRIBUTION MATRIX */}
-      <div className="p-5 bg-surface border border-border rounded-lg shadow-xs space-y-4">
+      {/* SECTION 2: FULL-WIDTH MATRIX WITH DYNAMIC MULTI-STATUS RATE */}
+      <div className="p-5 bg-surface border border-border rounded-lg shadow-xs space-y-3 w-full">
         <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-3 border-b border-border pb-3">
-          <div>
+          <div className="flex items-center gap-2">
             <h3 className="text-xs font-bold uppercase tracking-wider text-ink-primary flex items-center gap-2">
-              <Building2 className="w-3.5 h-3.5 text-accent" />
-              <span>Branch Volume & Claim Status Matrix</span>
+              <Building2 className="w-3.5 h-3.5 text-ink-muted" />
+              <span>Branch Volume &amp; Claim Distribution Matrix</span>
             </h3>
-            <p className="text-[11px] text-ink-muted mt-0.5">
-              Pola distribusi volume kasus per cabang terhadap status klaim terpilih. Ukuran lingkaran proporsional terhadap volume absolut.
-            </p>
           </div>
 
-          {/* Status Filter Buttons */}
-          <div className="flex items-center gap-1 p-0.5 bg-base/70 border border-border rounded-lg self-start lg:self-auto flex-wrap">
+          {/* Space-Efficient Filter: 4 Primary Pills + 1 Dropdown with High-Visibility Active States */}
+          <div className="flex items-center gap-1 p-0.5 bg-base/70 border border-border rounded-lg self-start lg:self-auto">
             {OFFICIAL_CLAIM_STATUSES.filter((s) => s.isPrimary).map((opt) => {
               const isActive = selectedStatus === opt.key;
               return (
@@ -546,7 +554,7 @@ export function VolumeTrendsAnalyticsView({ initialData }: VolumeTrendsAnalytics
               );
             })}
 
-            {/* Compact Dropdown for Other Statuses */}
+            {/* Compact Dropdown for Remaining 4 Minor Statuses with Prominent Active State */}
             <select
               value={!OFFICIAL_CLAIM_STATUSES.find((s) => s.key === selectedStatus)?.isPrimary ? selectedStatus : ''}
               onChange={(e) => {
@@ -562,49 +570,58 @@ export function VolumeTrendsAnalyticsView({ initialData }: VolumeTrendsAnalytics
                   }
                   : undefined
               }
-              className="px-2.5 py-1 text-[11px] font-semibold rounded-md border border-border bg-base text-ink-primary cursor-pointer hover:bg-surface transition-colors"
+              className={`h-7 px-2.5 text-[11px] font-medium rounded-md border transition-all cursor-pointer outline-none ${
+                !OFFICIAL_CLAIM_STATUSES.find((s) => s.key === selectedStatus)?.isPrimary
+                  ? 'font-bold border-solid'
+                  : 'bg-transparent text-ink-muted border-transparent hover:text-ink-primary'
+              }`}
             >
-              <option value="" disabled>Status Lainnya...</option>
+              <option value="" disabled>
+                {!OFFICIAL_CLAIM_STATUSES.find((s) => s.key === selectedStatus)?.isPrimary
+                  ? selectedStatus
+                  : 'Status Lainnya (4) ▾'}
+              </option>
               {OFFICIAL_CLAIM_STATUSES.filter((s) => !s.isPrimary).map((opt) => (
-                <option key={opt.key} value={opt.key}>{opt.label}</option>
+                <option key={opt.key} value={opt.key}>
+                  {opt.label}
+                </option>
               ))}
             </select>
           </div>
         </div>
 
-        {/* Scatter Chart Container */}
         <div className="h-80 w-full">
           {branchRiskData.length === 0 ? (
-            <EmptyState />
+            <EmptyState className="h-80" />
           ) : (
             <ResponsiveContainer width="100%" height="100%">
-              <ScatterChart margin={{ top: 25, right: 35, left: 15, bottom: 25 }}>
+              <ScatterChart margin={{ top: 15, right: 30, bottom: 20, left: 15 }}>
                 <CartesianGrid strokeDasharray="3 3" stroke="var(--border)" opacity={0.6} />
                 <XAxis
                   type="number"
                   dataKey="x"
-                  name="Kasus Status Terpilih"
+                  name={`Kasus ${activeStatusObj.label}`}
                   domain={[0, statusXDomainMax]}
                   ticks={statusXTicks}
-                  allowDecimals={false}
-                  tick={{ fontSize: 11, fill: 'var(--ink-muted)' }}
+                  tick={{ fontSize: 10, fill: 'var(--ink-muted)' }}
                   label={{
-                    value: `Jumlah Kasus: ${selectedStatus}`,
+                    value: `Jumlah Kasus ${activeStatusObj.label} (Volume Cabang)`,
                     position: 'insideBottom',
-                    offset: -12,
-                    style: { textAnchor: 'middle', fontSize: 11, fontWeight: 600, fill: activeStatusObj.color },
+                    offset: -10,
+                    fontSize: 10,
+                    fill: 'var(--ink-muted)',
                   }}
                 />
                 <YAxis
                   type="number"
                   dataKey="y"
-                  name="% Share Kasus"
-                  domain={[0, 100]}
-                  ticks={[0, 20, 40, 60, 80, 100]}
+                  name={`${activeStatusObj.label} %`}
                   unit="%"
-                  tick={{ fontSize: 11, fill: 'var(--ink-muted)' }}
+                  domain={[0, 100]}
+                  ticks={[0, 25, 50, 75, 100]}
+                  tick={{ fontSize: 10, fill: 'var(--ink-muted)' }}
                   label={{
-                    value: `% Proporsi Kasus Cabang`,
+                    value: `% Kasus ${activeStatusObj.label}`,
                     angle: -90,
                     position: 'insideLeft',
                     offset: 0,
@@ -615,30 +632,64 @@ export function VolumeTrendsAnalyticsView({ initialData }: VolumeTrendsAnalytics
                   contentStyle={customTooltipStyle}
                   content={({ active, payload }) => {
                     if (active && payload && payload.length) {
-                      const item = payload[0].payload;
-                      const branches = item.branches || [item];
-                      return (
-                        <div className="p-3 bg-surface border border-border rounded-lg shadow-xl text-xs space-y-2 font-mono min-w-[200px]">
-                          {branches.map((b: any, idx: number) => (
-                            <div key={idx} className={idx > 0 ? 'pt-2 border-t border-border/40 space-y-1' : 'space-y-1'}>
-                              <div className="flex items-center justify-between font-sans">
-                                <span className="font-bold text-sm text-ink-primary">{b.branch_code}</span>
-                                <span className="text-[11px] text-ink-muted">{b.branch_city}</span>
-                              </div>
-                              <div className="flex items-center justify-between text-xs">
-                                <span className="font-bold" style={{ color: activeStatusObj.color }}>
-                                  {b.metric_count}/{b.total_cases} kasus
-                                </span>
-                                <span className="font-bold text-ink-primary px-1.5 py-0.5 rounded bg-base border border-border">
-                                  {b.metric_pct}%
-                                </span>
-                              </div>
-                              <div className="flex items-center justify-between text-[11px] text-ink-muted pt-1 border-t border-border/30">
-                                <span>Avg Lead Time:</span>
-                                <span className="text-ink-primary font-medium">{b.avg_solution_days} hari</span>
-                              </div>
+                      const data = payload[0].payload;
+                      const branches = data.branches || [data];
+                      const isSingle = branches.length === 1;
+
+                      if (isSingle) {
+                        const b = branches[0];
+                        return (
+                          <div className="p-2.5 bg-surface border border-border rounded-lg shadow-xl text-xs space-y-2 font-mono min-w-[190px]">
+                            {/* Header: Branch Code & City */}
+                            <div className="flex items-center justify-between border-b border-border/60 pb-1.5 font-sans">
+                              <span className="font-bold text-sm text-ink-primary">{b.branch_code}</span>
+                              <span className="text-[11px] text-ink-muted">{b.branch_city}</span>
                             </div>
-                          ))}
+
+                            {/* Status Focus: Count/Total & Rate */}
+                            <div className="flex items-center justify-between text-xs">
+                              <span className="font-mono font-bold text-sm" style={{ color: activeStatusObj.color }}>
+                                {b.metric_count}/{b.total_cases} kasus
+                              </span>
+                              <span className="font-mono font-bold text-xs text-ink-primary px-1.5 py-0.5 rounded bg-base border border-border">
+                                {b.metric_pct}%
+                              </span>
+                            </div>
+
+                            {/* Operational Lead Time */}
+                            <div className="flex items-center justify-between text-[11px] text-ink-muted font-mono pt-1 border-t border-border/40">
+                              <span className="font-sans">Avg Lead Time:</span>
+                              <span className="text-ink-primary font-medium">{b.avg_solution_days} hari</span>
+                            </div>
+                          </div>
+                        );
+                      }
+
+                      // Multi-branch on same coordinate
+                      return (
+                        <div className="p-2.5 bg-surface border border-border rounded-lg shadow-xl text-xs space-y-2 font-mono min-w-[210px]">
+                          <div className="space-y-2 divide-y divide-border/40">
+                            {branches.map((b: any, idx: number) => (
+                              <div key={idx} className={idx > 0 ? 'pt-2 space-y-1.5' : 'space-y-1.5'}>
+                                <div className="flex items-center justify-between font-sans">
+                                  <span className="font-bold text-sm text-ink-primary">{b.branch_code}</span>
+                                  <span className="text-[11px] text-ink-muted">{b.branch_city}</span>
+                                </div>
+                                <div className="flex items-center justify-between text-xs">
+                                  <span className="font-mono font-bold text-sm" style={{ color: activeStatusObj.color }}>
+                                    {b.metric_count}/{b.total_cases} kasus
+                                  </span>
+                                  <span className="font-mono font-bold text-xs text-ink-primary px-1.5 py-0.5 rounded bg-base border border-border">
+                                    {b.metric_pct}%
+                                  </span>
+                                </div>
+                                <div className="flex items-center justify-between text-[11px] text-ink-muted font-mono pt-1 border-t border-border/30">
+                                  <span className="font-sans">Avg Lead Time:</span>
+                                  <span className="text-ink-primary font-medium">{b.avg_solution_days} hari</span>
+                                </div>
+                              </div>
+                            ))}
+                          </div>
                         </div>
                       );
                     }
@@ -655,13 +706,10 @@ export function VolumeTrendsAnalyticsView({ initialData }: VolumeTrendsAnalytics
           )}
         </div>
 
-        {/* Footer */}
-        <div className="pt-2 border-t border-border flex items-center justify-between text-[11px] font-mono text-ink-muted">
+        {/* Summary Footer */}
+        <div className="pt-2 border-t border-border flex items-center justify-end text-[10px] font-mono text-ink-muted">
           <span>
-            {branchRiskData.length} Cabang Terdata
-          </span>
-          <span>
-            Populasi Nasional: <strong className="text-ink-primary">{totalSelectedStatusCases} kasus ({nationalStatusPct}%)</strong>
+            {branchRiskData.length} Cabang Terdata · Populasi Nasional: <strong className="text-ink-primary font-mono">{totalSelectedStatusCases} kasus ({nationalStatusPct}%)</strong>
           </span>
         </div>
       </div>

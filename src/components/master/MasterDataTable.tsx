@@ -89,7 +89,7 @@ export function MasterDataTable<T extends { [key: string]: any }>({
               placeholder={searchPlaceholder}
               value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)}
-              className="pl-8 pr-3 py-1.5 text-xs bg-surface border border-border rounded-md focus:outline-none focus:border-accent-brass transition-all w-36 sm:w-44 focus:w-48"
+              className="pl-8 pr-3 py-1.5 text-xs bg-surface border border-border rounded-md focus:outline-none focus:border-border-strong transition-all w-36 sm:w-44 focus:w-48"
             />
           </div>
 
@@ -97,7 +97,7 @@ export function MasterDataTable<T extends { [key: string]: any }>({
           {onAdd && (
             <button
               onClick={onAdd}
-              className="flex items-center gap-1.5 px-3 py-1.5 bg-accent-brass text-white text-xs font-semibold rounded-md hover:bg-accent-brass/90 transition-colors shrink-0 shadow-xs whitespace-nowrap"
+              className="flex items-center gap-1.5 px-3 py-1.5 bg-surface-inverted text-ink-inverted text-xs font-semibold rounded-md hover:opacity-90 transition-opacity shrink-0 shadow-xs whitespace-nowrap"
             >
               <Plus className="w-3.5 h-3.5 shrink-0" />
               <span>{addLabel}</span>
@@ -162,7 +162,7 @@ export function MasterDataTable<T extends { [key: string]: any }>({
                           <button
                             onClick={() => onDelete(row)}
                             title="Delete Record"
-                            className="p-1.5 rounded hover:bg-base text-[#A54B3F]/70 hover:text-[#A54B3F] transition-colors border border-transparent hover:border-border"
+                            className="p-1.5 rounded hover:bg-base text-status-danger/70 hover:text-status-danger transition-colors border border-transparent hover:border-border"
                           >
                             <Trash2 className="w-3.5 h-3.5" />
                           </button>

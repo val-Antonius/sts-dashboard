@@ -19,9 +19,9 @@ export function StatusBadge({ status, variant, className = '' }: StatusBadgeProp
   }
 
   const colorStyles = {
-    ok: 'bg-[#2E7D52]/10 text-[#2E7D52] border-[#2E7D52]/25 dark:bg-[#41A86F]/15 dark:text-[#60C990] dark:border-[#41A86F]/30 font-medium',
-    warn: 'bg-[#B87A28]/10 text-[#B87A28] border-[#B87A28]/25 dark:bg-[#D4953C]/15 dark:text-[#EBB562] dark:border-[#D4953C]/30 font-medium',
-    danger: 'bg-[#B5302E]/10 text-[#B5302E] border-[#B5302E]/25 dark:bg-[#E05350]/15 dark:text-[#F3817F] dark:border-[#E05350]/30 font-medium',
+    ok: 'bg-status-ok/10 text-status-ok border-status-ok/25 font-medium',
+    warn: 'bg-status-warn/10 text-status-warn border-status-warn/25 font-medium',
+    danger: 'bg-status-danger/10 text-status-danger border-status-danger/25 font-medium',
     neutral: 'bg-base text-ink-muted border-border font-medium',
     invert: 'badge-inverted font-semibold shadow-xs',
   };

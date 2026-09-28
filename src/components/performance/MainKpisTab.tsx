@@ -211,7 +211,7 @@ export function MainKpisTab({ initialData }: MainKpisTabProps) {
             onClick={() => setDimension('branch')}
             className={`flex items-center gap-1.5 px-3 py-1.5 rounded-md text-xs font-medium transition-all ${
               dimension === 'branch'
-                ? 'bg-surface text-accent-brass shadow-xs font-semibold'
+                ? 'bg-surface text-ink-primary shadow-xs font-semibold'
                 : 'text-ink-muted hover:text-ink-primary'
             }`}
           >
@@ -223,7 +223,7 @@ export function MainKpisTab({ initialData }: MainKpisTabProps) {
             onClick={() => setDimension('product')}
             className={`flex items-center gap-1.5 px-3 py-1.5 rounded-md text-xs font-medium transition-all ${
               dimension === 'product'
-                ? 'bg-surface text-accent-brass shadow-xs font-semibold'
+                ? 'bg-surface text-ink-primary shadow-xs font-semibold'
                 : 'text-ink-muted hover:text-ink-primary'
             }`}
           >
@@ -235,7 +235,7 @@ export function MainKpisTab({ initialData }: MainKpisTabProps) {
             onClick={() => setDimension('segment')}
             className={`flex items-center gap-1.5 px-3 py-1.5 rounded-md text-xs font-medium transition-all ${
               dimension === 'segment'
-                ? 'bg-surface text-accent-brass shadow-xs font-semibold'
+                ? 'bg-surface text-ink-primary shadow-xs font-semibold'
                 : 'text-ink-muted hover:text-ink-primary'
             }`}
           >
@@ -247,7 +247,7 @@ export function MainKpisTab({ initialData }: MainKpisTabProps) {
         {/* Time Range Filter */}
         <div className="flex items-center gap-2">
           {loading && (
-            <div className="flex items-center gap-1 text-xs text-accent-brass animate-pulse">
+            <div className="flex items-center gap-1 text-xs text-ink-muted animate-pulse">
               <Loader2 className="w-3.5 h-3.5 animate-spin" />
             </div>
           )}
@@ -261,8 +261,8 @@ export function MainKpisTab({ initialData }: MainKpisTabProps) {
       </div>
 
       {/* FILTER CONTEXT BANNER */}
-      <div className="p-3 bg-accent-brass/5 border border-accent-brass/20 rounded-lg text-xs text-ink-muted flex items-start gap-2">
-        <Info className="w-4 h-4 text-accent-brass shrink-0 mt-0.5" />
+      <div className="p-3 bg-base border border-border rounded-lg text-xs text-ink-muted flex items-start gap-2">
+        <Info className="w-4 h-4 text-ink-muted shrink-0 mt-0.5" />
         <div>
           Hanya mencakup kasus dengan 4 status klaim warranty: <em>Claimable Principal</em>, <em>Claimable Vendor (Attachment)</em>, <em>Claimable Vendor (Genset Maker)</em>, dan <em>Goodwill</em>.
         </div>
@@ -281,15 +281,7 @@ export function MainKpisTab({ initialData }: MainKpisTabProps) {
                 {data.summary.overall_achieve_pct}%
               </div>
             </div>
-            <div
-              className={`p-2.5 rounded-md border ${
-                data.summary.overall_achieve_pct >= 85
-                  ? 'bg-[#2E7D52]/10 text-[#2E7D52] dark:text-[#41A86F] border-[#2E7D52]/20'
-                  : data.summary.overall_achieve_pct >= 70
-                  ? 'bg-[#B87A28]/10 text-[#B87A28] dark:text-[#D4953C] border-[#B87A28]/20'
-                  : 'bg-[#B5302E]/10 text-[#B5302E] dark:text-[#E05350] border-[#B5302E]/20'
-              }`}
-            >
+            <div className="p-2.5 rounded-md bg-base text-ink-muted border border-border">
               <Target className="w-5 h-5" />
             </div>
           </div>
@@ -297,14 +289,11 @@ export function MainKpisTab({ initialData }: MainKpisTabProps) {
           <div className="mt-3">
             <div className="w-full bg-base rounded-full h-1.5 overflow-hidden border border-border/50">
               <div
-                className={`h-full rounded-full transition-all duration-500 ${
-                  data.summary.overall_achieve_pct >= 85
-                    ? 'bg-[#2E7D52]'
-                    : data.summary.overall_achieve_pct >= 70
-                    ? 'bg-[#B87A28]'
-                    : 'bg-[#B5302E]'
-                }`}
-                style={{ width: `${Math.min(data.summary.overall_achieve_pct, 100)}%` }}
+                className="h-full rounded-full transition-all duration-500"
+                style={{
+                  backgroundColor: 'var(--chart-1)',
+                  width: `${Math.min(data.summary.overall_achieve_pct, 100)}%`,
+                }}
               />
             </div>
             <div className="flex items-center justify-between text-[11px] text-ink-muted mt-1.5 font-mono">
@@ -321,11 +310,11 @@ export function MainKpisTab({ initialData }: MainKpisTabProps) {
               <div className="text-xs font-semibold uppercase tracking-wider text-ink-muted mb-1">
                 Case Volume
               </div>
-              <div className="text-3xl font-mono font-bold text-accent tabular-nums tracking-tight">
+              <div className="text-3xl font-mono font-bold text-ink-primary tabular-nums tracking-tight">
                 {data.summary.overall_case_volume}
               </div>
             </div>
-            <div className="p-2.5 rounded-md bg-accent/10 text-accent border border-accent/20">
+            <div className="p-2.5 rounded-md bg-base text-ink-muted border border-border">
               <BarChart3 className="w-5 h-5" />
             </div>
           </div>
@@ -370,7 +359,7 @@ export function MainKpisTab({ initialData }: MainKpisTabProps) {
           <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 border-b border-border pb-3">
             <div>
               <h3 className="text-xs font-bold uppercase tracking-wider text-ink-primary flex items-center gap-2">
-                <Target className="w-3.5 h-3.5 text-accent" />
+                <Target className="w-3.5 h-3.5 text-ink-muted" />
                 <span>Achievement Rate (Solution Time) — {getDimensionLabel()}</span>
               </h3>
               <p className="text-[11px] text-ink-muted mt-0.5">
@@ -378,14 +367,14 @@ export function MainKpisTab({ initialData }: MainKpisTabProps) {
               </p>
             </div>
             <div className="flex items-center gap-3 text-xs font-mono">
-              <span className="flex items-center gap-1.5 text-[#2E7D52] dark:text-[#41A86F]">
-                <span className="w-2.5 h-2.5 rounded-xs bg-[#2E7D52]" /> Achieved
+              <span className="flex items-center gap-1.5" style={{ color: 'var(--chart-1)' }}>
+                <span className="w-2.5 h-2.5 rounded-xs" style={{ backgroundColor: 'var(--chart-1)' }} /> Achieved
               </span>
               <span className="flex items-center gap-1.5 text-ink-muted">
-                <span className="w-2.5 h-2.5 rounded-xs bg-[#71717A]" /> Total
+                <span className="w-2.5 h-2.5 rounded-xs" style={{ backgroundColor: 'var(--chart-5)' }} /> Total
               </span>
-              <span className="flex items-center gap-1.5 text-accent">
-                <span className="w-3 h-0.5 bg-accent" /> % Rate
+              <span className="flex items-center gap-1.5" style={{ color: 'var(--accent)' }}>
+                <span className="w-3 h-0.5" style={{ backgroundColor: 'var(--accent)' }} /> % Rate
               </span>
             </div>
           </div>
@@ -435,26 +424,26 @@ export function MainKpisTab({ initialData }: MainKpisTabProps) {
                   <ReferenceLine
                     yAxisId="right"
                     y={85}
-                    stroke="#B5302E"
+                    stroke="var(--ink-muted)"
                     strokeDasharray="4 4"
-                    label={{ value: 'Target 85%', fill: '#B5302E', fontSize: 10, position: 'insideTopRight' }}
+                    label={{ value: 'Target 85%', fill: 'var(--ink-muted)', fontSize: 10, position: 'insideTopRight' }}
                   />
-                  <Bar yAxisId="left" dataKey="total_count" name="Total Cases" fill="#71717A" radius={[4, 4, 0, 0]} opacity={0.35} maxBarSize={32} />
-                  <Bar yAxisId="left" dataKey="achieve_count" name="Achieved Cases" fill="#2E7D52" radius={[4, 4, 0, 0]} maxBarSize={32}>
+                  <Bar yAxisId="left" dataKey="total_count" name="Total Cases" fill="var(--chart-5)" radius={[4, 4, 0, 0]} opacity={0.35} maxBarSize={32} />
+                  <Bar yAxisId="left" dataKey="achieve_count" name="Achieved Cases" fill="var(--chart-1)" radius={[4, 4, 0, 0]} maxBarSize={32}>
                     <LabelList
                       dataKey="achieve_count"
                       position="top"
                       formatter={(val: any) => (val ? `${val}` : '')}
-                      style={{ fontSize: '10px', fontWeight: 600, fill: '#2E7D52' }}
+                      style={{ fontSize: '10px', fontWeight: 600, fill: 'var(--chart-1)' }}
                     />
                   </Bar>
-                  <Line yAxisId="right" type="monotone" dataKey="achieve_pct" name="Achievement %" stroke="#A3462F" strokeWidth={2.5} dot={{ r: 4, fill: '#A3462F' }}>
+                  <Line yAxisId="right" type="monotone" dataKey="achieve_pct" name="Achievement %" stroke="var(--accent)" strokeWidth={2.5} dot={{ r: 4, fill: 'var(--accent)' }}>
                     <LabelList
                       dataKey="achieve_pct"
                       position="top"
                       offset={8}
                       formatter={(val: any) => (val !== undefined && val !== null ? `${val}%` : '')}
-                      style={{ fontSize: '10px', fontWeight: 700, fill: '#A3462F' }}
+                      style={{ fontSize: '10px', fontWeight: 700, fill: 'var(--accent)' }}
                     />
                   </Line>
                 </ComposedChart>
@@ -468,7 +457,7 @@ export function MainKpisTab({ initialData }: MainKpisTabProps) {
           <div className="flex items-center justify-between border-b border-border pb-3">
             <div>
               <h3 className="text-xs font-bold uppercase tracking-wider text-ink-primary flex items-center gap-2">
-                <BarChart3 className="w-3.5 h-3.5 text-accent" />
+                <BarChart3 className="w-3.5 h-3.5 text-ink-muted" />
                 <span>Case Volume (Monthly Count)</span>
               </h3>
               <p className="text-[11px] text-ink-muted mt-0.5">
@@ -502,16 +491,13 @@ export function MainKpisTab({ initialData }: MainKpisTabProps) {
                     allowDecimals={false}
                   />
                   <Tooltip contentStyle={customTooltipStyle} formatter={(val: any) => [`${val} cases`, 'Case Volume']} />
-                  <Bar dataKey="case_volume" fill="#A3462F" radius={[4, 4, 0, 0]} maxBarSize={36}>
+                  <Bar dataKey="case_volume" fill="var(--chart-1)" radius={[4, 4, 0, 0]} maxBarSize={36}>
                     <LabelList
                       dataKey="case_volume"
                       position="top"
                       formatter={(val: any) => (val ? `${val}` : '')}
-                      style={{ fontSize: '10px', fontWeight: 600, fill: '#A3462F' }}
+                      style={{ fontSize: '10px', fontWeight: 600, fill: 'var(--chart-1)' }}
                     />
-                    {dimensionAggregates.map((entry, index) => (
-                      <Cell key={`cell-qty-${index}`} fill={index % 2 === 0 ? '#A3462F' : '#C2573D'} />
-                    ))}
                   </Bar>
                 </BarChart>
               </ResponsiveContainer>
@@ -564,24 +550,15 @@ export function MainKpisTab({ initialData }: MainKpisTabProps) {
                       'Avg Solution Time',
                     ]}
                   />
-                  <ReferenceLine y={20} stroke="#B5302E" strokeDasharray="3 3" label={{ value: 'SLA 20d', fill: '#B5302E', fontSize: 10 }} />
-                  <ReferenceLine y={15} stroke="#2E7D52" strokeDasharray="3 3" label={{ value: 'KA 15d', fill: '#2E7D52', fontSize: 10 }} />
-                  <Bar dataKey="avg_solution_time_days" radius={[4, 4, 0, 0]} maxBarSize={36}>
+                  <ReferenceLine y={20} stroke="var(--ink-muted)" strokeDasharray="3 3" label={{ value: 'SLA 20d', fill: 'var(--ink-muted)', fontSize: 10 }} />
+                  <ReferenceLine y={15} stroke="var(--ink-muted)" strokeDasharray="3 3" label={{ value: 'KA 15d', fill: 'var(--ink-muted)', fontSize: 10 }} />
+                  <Bar dataKey="avg_solution_time_days" fill="var(--chart-1)" radius={[4, 4, 0, 0]} maxBarSize={36}>
                     <LabelList
                       dataKey="avg_solution_time_days"
                       position="top"
                       formatter={(val: any) => (val ? `${val}d` : '')}
                       style={{ fontSize: '10px', fontWeight: 600, fill: 'var(--ink-primary)' }}
                     />
-                    {dimensionAggregates.map((entry, idx) => {
-                      const color =
-                        entry.avg_solution_time_days <= 15
-                          ? '#2E7D52'
-                          : entry.avg_solution_time_days <= 20
-                          ? '#B87A28'
-                          : '#B5302E';
-                      return <Cell key={`cell-aging-${idx}`} fill={color} />;
-                    })}
                   </Bar>
                 </BarChart>
               </ResponsiveContainer>
@@ -608,7 +585,7 @@ export function MainKpisTab({ initialData }: MainKpisTabProps) {
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
               placeholder={`Search ${getDimensionLabel().toLowerCase()}...`}
-              className="w-full px-3 py-1.5 bg-surface border border-border rounded-md text-xs focus:outline-none focus:border-accent transition-colors shadow-xs"
+              className="w-full px-3 py-1.5 bg-surface border border-border rounded-md text-xs focus:outline-none focus:border-ink-primary transition-colors shadow-xs"
             />
           </div>
         </div>
@@ -637,20 +614,18 @@ export function MainKpisTab({ initialData }: MainKpisTabProps) {
                     <td className="py-2.5 px-4 font-semibold text-ink-primary">
                       {row.key}
                     </td>
-                    <td className="py-2.5 px-4 text-center font-mono font-medium">
+                    <td className="py-2.5 px-4 text-center font-mono font-medium text-ink-primary">
                       {row.case_volume}
                     </td>
-                    <td className="py-2.5 px-4 text-center font-mono text-[#2E7D52] dark:text-[#41A86F] font-semibold">
+                    <td className="py-2.5 px-4 text-center font-mono text-ink-primary font-semibold">
                       {row.achieve_count}
                     </td>
                     <td className="py-2.5 px-4 text-center">
                       <span
                         className={`inline-block font-mono text-[11px] font-semibold px-2 py-0.5 rounded border ${
                           row.achieve_pct >= 85
-                            ? 'bg-[#2E7D52]/10 text-[#2E7D52] dark:text-[#41A86F] border-[#2E7D52]/20'
-                            : row.achieve_pct >= 70
-                            ? 'bg-[#B87A28]/10 text-[#B87A28] dark:text-[#D4953C] border-[#B87A28]/20'
-                            : 'bg-[#B5302E]/10 text-[#B5302E] dark:text-[#E05350] border-[#B5302E]/20'
+                            ? 'bg-surface text-ink-primary border border-border'
+                            : 'bg-status-danger/10 text-status-danger border border-status-danger/20'
                         }`}
                       >
                         {row.achieve_pct}%

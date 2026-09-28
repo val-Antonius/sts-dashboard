@@ -58,7 +58,7 @@ export function DataQualityView({ anomalies }: DataQualityViewProps) {
     pct: s.pct_of_total,
   }));
 
-  const DONUT_COLORS = ['#3B7A57', '#A54B3F'];
+  const DONUT_COLORS = ['var(--chart-1)', 'var(--status-danger)'];
 
   return (
     <div className="space-y-6">
@@ -68,10 +68,10 @@ export function DataQualityView({ anomalies }: DataQualityViewProps) {
           <div>
             <div className="flex items-center justify-between mb-1">
               <h4 className="text-xs font-semibold text-ink-primary flex items-center gap-1.5">
-                <AlertCircle className="w-4 h-4 text-[#A54B3F]" />
+                <AlertCircle className="w-4 h-4 text-ink-muted" />
                 <span>Closed Cases Checkpoint Count Distribution</span>
               </h4>
-              <span className="text-[11px] font-mono bg-[#A54B3F]/10 text-[#A54B3F] px-2 py-0.5 rounded">
+              <span className="text-[11px] font-mono bg-status-danger/10 text-status-danger px-2 py-0.5 rounded">
                 {anomalousCases.length} anomalous cases (&lt;8)
               </span>
             </div>
@@ -89,7 +89,7 @@ export function DataQualityView({ anomalies }: DataQualityViewProps) {
                     {checkpointBuckets.map((b, idx) => (
                       <Cell
                         key={`bucket-${idx}`}
-                        fill={b.is_anomaly ? '#A54B3F' : '#3B7A57'}
+                        fill={b.is_anomaly ? 'var(--status-danger)' : 'var(--chart-1)'}
                       />
                     ))}
                   </Bar>
@@ -108,7 +108,7 @@ export function DataQualityView({ anomalies }: DataQualityViewProps) {
                     <Link
                       key={ac.issue_case_id}
                       href={`/operations/diagnostic?id=${ac.issue_case_id}`}
-                      className="inline-flex items-center gap-1 px-2 py-0.5 rounded text-[10px] font-mono bg-base border border-border hover:border-accent-brass hover:text-accent-brass transition-colors"
+                      className="inline-flex items-center gap-1 px-2 py-0.5 rounded text-[10px] font-mono bg-base border border-border hover:border-ink-primary hover:text-ink-primary transition-colors"
                     >
                       <Stethoscope className="w-3 h-3" />
                       <span>{ac.customer_name} ({ac.recorded_checkpoint_count}/8)</span>

@@ -82,7 +82,7 @@ export function TimeFilteredCharts({ initialData }: TimeFilteredChartsProps) {
         />
         {loading && (
           <div className="flex items-center gap-1 text-xs text-ink-muted">
-            <Loader2 className="w-3.5 h-3.5 animate-spin text-accent" />
+            <Loader2 className="w-3.5 h-3.5 animate-spin text-ink-muted" />
             <span>Updating charts...</span>
           </div>
         )}
@@ -104,7 +104,7 @@ export function TimeFilteredCharts({ initialData }: TimeFilteredChartsProps) {
                   <XAxis dataKey="branch_code" tick={{ fontSize: 11, fill: 'var(--ink-muted)' }} />
                   <YAxis allowDecimals={false} tick={{ fontSize: 11, fill: 'var(--ink-muted)' }} />
                   <Tooltip contentStyle={customTooltipStyle} />
-                  <Bar dataKey="count" fill="#A3462F" radius={[4, 4, 0, 0]} name="Active Cases">
+                  <Bar dataKey="count" fill="var(--chart-1)" radius={[4, 4, 0, 0]} name="Active Cases">
                     <LabelList
                       dataKey="count"
                       position="top"
@@ -143,7 +143,7 @@ export function TimeFilteredCharts({ initialData }: TimeFilteredChartsProps) {
                     width={110}
                   />
                   <Tooltip contentStyle={customTooltipStyle} />
-                  <Bar dataKey="count" fill="#71717A" radius={[0, 4, 4, 0]} name="Active Cases">
+                  <Bar dataKey="count" fill="var(--chart-1)" radius={[0, 4, 4, 0]} name="Active Cases">
                     <LabelList
                       dataKey="count"
                       position="right"
@@ -182,7 +182,7 @@ export function TimeFilteredCharts({ initialData }: TimeFilteredChartsProps) {
                     width={110}
                   />
                   <Tooltip contentStyle={customTooltipStyle} />
-                  <Bar dataKey="count" fill="#A3462F" radius={[0, 4, 4, 0]} name="Active Cases">
+                  <Bar dataKey="count" fill="var(--chart-1)" radius={[0, 4, 4, 0]} name="Active Cases">
                     <LabelList
                       dataKey="count"
                       position="right"
@@ -212,7 +212,7 @@ export function TimeFilteredCharts({ initialData }: TimeFilteredChartsProps) {
                   <XAxis dataKey="product_code" tick={{ fontSize: 11, fill: 'var(--ink-muted)' }} />
                   <YAxis allowDecimals={false} tick={{ fontSize: 11, fill: 'var(--ink-muted)' }} />
                   <Tooltip contentStyle={customTooltipStyle} />
-                  <Bar dataKey="count" fill="#71717A" radius={[4, 4, 0, 0]} name="Active Cases">
+                  <Bar dataKey="count" fill="var(--chart-1)" radius={[4, 4, 0, 0]} name="Active Cases">
                     <LabelList
                       dataKey="count"
                       position="top"
@@ -242,19 +242,13 @@ export function TimeFilteredCharts({ initialData }: TimeFilteredChartsProps) {
                   <XAxis dataKey="golongan_customer" tick={{ fontSize: 11, fill: 'var(--ink-muted)' }} />
                   <YAxis allowDecimals={false} tick={{ fontSize: 11, fill: 'var(--ink-muted)' }} />
                   <Tooltip contentStyle={customTooltipStyle} />
-                  <Bar dataKey="count" radius={[4, 4, 0, 0]} name="Cases">
+                  <Bar dataKey="count" fill="var(--chart-1)" radius={[4, 4, 0, 0]} name="Cases">
                     <LabelList
                       dataKey="count"
                       position="top"
                       formatter={(val: any) => (val ? `${val}` : '')}
                       style={{ fontSize: '10px', fontWeight: 600, fill: 'var(--ink-primary)' }}
                     />
-                    {data.customerSegments.map((entry, index) => (
-                      <Cell
-                        key={`cell-${index}`}
-                        fill={entry.golongan_customer === 'KA Nasional' ? '#A3462F' : '#71717A'}
-                      />
-                    ))}
                   </Bar>
                 </BarChart>
               </ResponsiveContainer>
@@ -278,12 +272,12 @@ export function TimeFilteredCharts({ initialData }: TimeFilteredChartsProps) {
                   <XAxis dataKey="branch_code" tick={{ fontSize: 11, fill: 'var(--ink-muted)' }} />
                   <YAxis allowDecimals={false} tick={{ fontSize: 11, fill: 'var(--ink-muted)' }} />
                   <Tooltip contentStyle={customTooltipStyle} />
-                  <Bar dataKey="count" fill="#B5302E" radius={[4, 4, 0, 0]} name="Carried-Over Backlog">
+                  <Bar dataKey="count" fill="var(--chart-2)" radius={[4, 4, 0, 0]} name="Carried-Over Backlog">
                     <LabelList
                       dataKey="count"
                       position="top"
                       formatter={(val: any) => (val ? `${val}` : '')}
-                      style={{ fontSize: '10px', fontWeight: 600, fill: '#B5302E' }}
+                      style={{ fontSize: '10px', fontWeight: 600, fill: 'var(--ink-primary)' }}
                     />
                   </Bar>
                 </BarChart>

@@ -95,7 +95,7 @@ export interface ProductPortfolioItem {
   product_name: string;
   count: number;
   pct: number;
-  color: string;
+  color?: string;
 }
 
 export interface TopUnitModelItem {
@@ -428,17 +428,6 @@ export async function getPerformanceVolumeData(
     LIMIT 6;
   `, queryParams);
 
-  const PRODUCT_PALETTE = [
-    '#6366F1', // Indigo (MFT)
-    '#0284C7', // Sky Blue (PER)
-    '#2E7D52', // Emerald (CNC)
-    '#D97706', // Amber (KBT)
-    '#A3462F', // Terracotta (HSC)
-    '#8B5CF6', // Purple (FGW)
-    '#EC4899', // Pink (JLG)
-    '#71717A', // Neutral Slate
-  ];
-
   // Calculate high-level summary KPIs
   const totalCases = branchRiskMatrix.reduce((sum, b) => sum + b.total_cases, 0);
   const totalOverdue = branchRiskMatrix.reduce((sum, b) => sum + b.overdue_cases, 0);
@@ -446,14 +435,13 @@ export async function getPerformanceVolumeData(
   const totalNonWarrantyCases = branchRiskMatrix.reduce((sum, b) => sum + b.non_warranty_cases, 0);
   const slaTarget = segment === 'KA Nasional' ? 15 : 20;
 
-  const productBreakdown: ProductPortfolioItem[] = productRes.rows.map((r, idx) => {
+  const productBreakdown: ProductPortfolioItem[] = productRes.rows.map((r) => {
     const count = Number(r.count) || 0;
     return {
       product_code: r.product_code,
       product_name: r.product_type_name,
       count,
       pct: totalCases > 0 ? Math.round((count / totalCases) * 1000) / 10 : 0,
-      color: PRODUCT_PALETTE[idx % PRODUCT_PALETTE.length],
     };
   });
 

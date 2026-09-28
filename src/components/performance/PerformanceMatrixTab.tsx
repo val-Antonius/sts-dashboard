@@ -125,7 +125,7 @@ export function PerformanceMatrixTab({
     pct: s.pct_of_total,
   }));
 
-  const DONUT_COLORS = ['#3B7A57', '#A54B3F'];
+  const DONUT_COLORS = ['var(--chart-1)', 'var(--status-danger)'];
 
   return (
     <div className="space-y-8">
@@ -179,7 +179,7 @@ export function PerformanceMatrixTab({
               <Bar
                 yAxisId="left"
                 dataKey="jumlah_kasus"
-                fill="#A6763C"
+                fill="var(--chart-1)"
                 name="Case Volume"
                 radius={[4, 4, 0, 0]}
               />
@@ -187,10 +187,10 @@ export function PerformanceMatrixTab({
                 yAxisId="right"
                 type="monotone"
                 dataKey="cumulative_pct"
-                stroke="#A54B3F"
+                stroke="var(--accent)"
                 strokeWidth={2.5}
                 name="Cumulative %"
-                dot={{ r: 3, fill: '#A54B3F' }}
+                dot={{ r: 3, fill: 'var(--accent)' }}
               />
             </ComposedChart>
           </ResponsiveContainer>
@@ -217,7 +217,7 @@ export function PerformanceMatrixTab({
               customStart={customStart}
               customEnd={customEnd}
             />
-            {loading && <Loader2 className="w-3.5 h-3.5 animate-spin text-accent-brass" />}
+            {loading && <Loader2 className="w-3.5 h-3.5 animate-spin text-ink-muted" />}
           </div>
         </div>
 
@@ -235,7 +235,7 @@ export function PerformanceMatrixTab({
                     <XAxis dataKey="branch_code" tick={{ fontSize: 10, fill: 'var(--ink-muted)' }} />
                     <YAxis allowDecimals={false} tick={{ fontSize: 10, fill: 'var(--ink-muted)' }} />
                     <Tooltip contentStyle={customTooltipStyle} />
-                    <Bar dataKey="count" fill="#A6763C" radius={[4, 4, 0, 0]} name="Cases" />
+                    <Bar dataKey="count" fill="var(--chart-1)" radius={[4, 4, 0, 0]} name="Cases" />
                   </BarChart>
                 </ResponsiveContainer>
               </div>
@@ -265,7 +265,7 @@ export function PerformanceMatrixTab({
                       width={90}
                     />
                     <Tooltip contentStyle={customTooltipStyle} />
-                    <Bar dataKey="count" fill="#3B7A57" radius={[0, 4, 4, 0]} name="Cases" />
+                    <Bar dataKey="count" fill="var(--chart-1)" radius={[0, 4, 4, 0]} name="Cases" />
                   </BarChart>
                 </ResponsiveContainer>
               </div>
@@ -286,14 +286,7 @@ export function PerformanceMatrixTab({
                     <XAxis dataKey="golongan_customer" tick={{ fontSize: 10, fill: 'var(--ink-muted)' }} />
                     <YAxis allowDecimals={false} tick={{ fontSize: 10, fill: 'var(--ink-muted)' }} />
                     <Tooltip contentStyle={customTooltipStyle} />
-                    <Bar dataKey="count" radius={[4, 4, 0, 0]} name="Cases">
-                      {volumeData.customerSegments.map((entry, idx) => (
-                        <Cell
-                          key={`seg-${idx}`}
-                          fill={entry.golongan_customer === 'KA Nasional' ? '#A6763C' : '#8B897F'}
-                        />
-                      ))}
-                    </Bar>
+                    <Bar dataKey="count" fill="var(--chart-1)" radius={[4, 4, 0, 0]} name="Cases" />
                   </BarChart>
                 </ResponsiveContainer>
               </div>
@@ -322,11 +315,10 @@ export function PerformanceMatrixTab({
                   <YAxis allowDecimals={false} tick={{ fontSize: 11, fill: 'var(--ink-muted)' }} />
                   <Tooltip contentStyle={customTooltipStyle} />
                   <Legend wrapperStyle={{ fontSize: '11px', paddingTop: '10px' }} />
-                  {/* Per styleguide: distinct line styles solid vs dashed */}
                   <Line
                     type="monotone"
                     dataKey="cases_opened"
-                    stroke="#A6763C"
+                    stroke="var(--chart-2)"
                     strokeWidth={2.5}
                     name="Cases Opened (Intake)"
                     dot={{ r: 3 }}
@@ -334,7 +326,7 @@ export function PerformanceMatrixTab({
                   <Line
                     type="monotone"
                     dataKey="cases_closed"
-                    stroke="#3B7A57"
+                    stroke="var(--chart-1)"
                     strokeWidth={2}
                     strokeDasharray="4 4"
                     name="Cases Closed"
@@ -368,10 +360,10 @@ export function PerformanceMatrixTab({
             <div>
               <div className="flex items-center justify-between mb-1">
                 <h4 className="text-xs font-semibold text-ink-primary flex items-center gap-1.5">
-                  <AlertCircle className="w-4 h-4 text-[#A54B3F]" />
+                  <AlertCircle className="w-4 h-4 text-ink-muted" />
                   <span>Closed Cases Checkpoint Count Distribution</span>
                 </h4>
-                <span className="text-[11px] font-mono bg-[#A54B3F]/10 text-[#A54B3F] px-2 py-0.5 rounded">
+                <span className="text-[11px] font-mono bg-status-danger/10 text-status-danger px-2 py-0.5 rounded">
                   {anomalousCases.length} anomalous cases (&lt;8)
                 </span>
               </div>
@@ -389,7 +381,7 @@ export function PerformanceMatrixTab({
                       {checkpointBuckets.map((b, idx) => (
                         <Cell
                           key={`bucket-${idx}`}
-                          fill={b.is_anomaly ? '#A54B3F' : '#3B7A57'}
+                          fill={b.is_anomaly ? 'var(--status-danger)' : 'var(--chart-1)'}
                         />
                       ))}
                     </Bar>
@@ -408,7 +400,7 @@ export function PerformanceMatrixTab({
                       <Link
                         key={ac.issue_case_id}
                         href={`/case-solution-process/diagnostic?id=${ac.issue_case_id}`}
-                        className="inline-flex items-center gap-1 px-2 py-0.5 rounded text-[10px] font-mono bg-base border border-border hover:border-accent-brass hover:text-accent-brass transition-colors"
+                        className="inline-flex items-center gap-1 px-2 py-0.5 rounded text-[10px] font-mono bg-base border border-border hover:border-ink-primary hover:text-ink-primary transition-colors"
                       >
                         <Stethoscope className="w-3 h-3" />
                         <span>{ac.customer_name} ({ac.recorded_checkpoint_count}/8)</span>

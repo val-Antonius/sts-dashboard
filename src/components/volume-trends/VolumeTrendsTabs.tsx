@@ -43,9 +43,14 @@ import {
   Info,
   SlidersHorizontal,
   Package,
-  Repeat,
-  ArrowUpDown,
 } from 'lucide-react';
+import {
+  CLAIM_COLORS,
+  FLOW_COLORS,
+  PARETO_COLORS,
+  BUBBLE_MATRIX_COLORS,
+  getProductColorByRank,
+} from '@/lib/chartColors';
 import { PrincipalClaimableTab } from './PrincipalClaimableTab';
 
 interface VolumeTrendsTabsProps {
@@ -67,8 +72,6 @@ export function VolumeTrendsTabs({
   const [customEnd, setCustomEnd] = useState('');
   const [volumeData, setVolumeData] = useState<PerformanceVolumeData>(initialVolumeData);
   const [loading, setLoading] = useState(false);
-  const [warrantyViewMode, setWarrantyViewMode] = useState<'volume' | 'rate'>('volume');
-  const [nonWarrantyViewMode, setNonWarrantyViewMode] = useState<'volume' | 'rate'>('volume');
 
   const fetchVolumeData = async (
     selectedRange: TimeRangeOption,
@@ -150,19 +153,19 @@ export function VolumeTrendsTabs({
 
   // Pie chart dataset for Claimable Health
   const donutData = [
-    { name: 'Claimable', value: claimableHealth.claimable_count, color: '#2E7D52' },
-    { name: 'Unclaimable', value: claimableHealth.unclaimable_count, color: '#A3462F' },
-    { name: 'In-Progress / Other', value: claimableHealth.other_count, color: '#71717A' },
+    { name: 'Claimable', value: claimableHealth.claimable_count, color: CLAIM_COLORS.claimable },
+    { name: 'Unclaimable', value: claimableHealth.unclaimable_count, color: CLAIM_COLORS.unclaimable },
+    { name: 'In-Progress / Other', value: claimableHealth.other_count, color: CLAIM_COLORS.unrecorded },
   ].filter((d) => d.value > 0);
 
-  // Pie chart dataset for Product Portfolio
+  // Pie chart dataset for Product Portfolio with rank-based tints of var(--chart-1)
   const productDonutData = useMemo(() => {
-    return (productPortfolio.productBreakdown || []).map((p) => ({
+    return (productPortfolio.productBreakdown || []).map((p, idx) => ({
       name: p.product_code,
       fullName: p.product_name,
       value: p.count,
       pct: p.pct,
-      color: p.color,
+      color: getProductColorByRank(idx, p.product_code.toLowerCase().includes('other')),
     }));
   }, [productPortfolio.productBreakdown]);
 
@@ -170,16 +173,16 @@ export function VolumeTrendsTabs({
     return Math.max(...branchRiskData.map((d) => d.total_cases), 1);
   }, [branchRiskData]);
 
-  // --- EXPERIMENTAL: 8 Official Claimable Statuses (ref_claimable_status) ---
+  // 8 Official Claimable Statuses
   const OFFICIAL_CLAIM_STATUSES = useMemo(() => [
-    { key: 'Claimable Principal', label: 'Claimable Principal', color: '#2E7D52', isPrimary: true },
-    { key: 'Unclaimable', label: 'Unclaimable', color: '#A3462F', isPrimary: true },
-    { key: 'Goodwill', label: 'Goodwill', color: '#B87A28', isPrimary: true },
-    { key: 'Claimable GOEM', label: 'Claimable GOEM', color: '#6366F1', isPrimary: true },
-    { key: 'Claimable Vendor (Attachment)', label: 'Claimable Vendor (Attachment)', color: '#0284C7', isPrimary: false },
-    { key: 'Claimable Vendor (Genset Maker)', label: 'Claimable Vendor (Genset Maker)', color: '#0D9488', isPrimary: false },
-    { key: 'Progress Checking Unit', label: 'Progress Checking Unit', color: '#8B5CF6', isPrimary: false },
-    { key: 'Waiting Created WO Checking', label: 'Waiting Created WO Checking', color: '#71717A', isPrimary: false },
+    { key: 'Claimable Principal', label: 'Claimable Principal', color: CLAIM_COLORS.claimable, isPrimary: true },
+    { key: 'Unclaimable', label: 'Unclaimable', color: CLAIM_COLORS.unclaimable, isPrimary: true },
+    { key: 'Goodwill', label: 'Goodwill', color: CLAIM_COLORS.goodwill, isPrimary: true },
+    { key: 'Claimable GOEM', label: 'Claimable GOEM', color: CLAIM_COLORS.goem, isPrimary: true },
+    { key: 'Claimable Vendor (Attachment)', label: 'Claimable Vendor (Attachment)', color: 'var(--chart-3)', isPrimary: false },
+    { key: 'Claimable Vendor (Genset Maker)', label: 'Claimable Vendor (Genset Maker)', color: 'var(--chart-4)', isPrimary: false },
+    { key: 'Progress Checking Unit', label: 'Progress Checking Unit', color: CLAIM_COLORS.unrecorded, isPrimary: false },
+    { key: 'Waiting Created WO Checking', label: 'Waiting Created WO Checking', color: CLAIM_COLORS.unrecorded, isPrimary: false },
   ], []);
 
   const activeExpMetricObj = useMemo(() => {
@@ -272,9 +275,9 @@ export function VolumeTrendsTabs({
       ? 5
       : minRadius + Math.sqrt(count / maxExpMetricCount) * (maxRadius - minRadius);
 
-    const activeColor = activeExpMetricObj?.color || '#A3462F';
-    const fillColor = isZero ? '#71717A' : activeColor;
-    const strokeColor = isZero ? '#3F3F46' : activeColor;
+    const activeColor = activeExpMetricObj?.color || CLAIM_COLORS.claimable;
+    const fillColor = isZero ? BUBBLE_MATRIX_COLORS.zeroCase : activeColor;
+    const strokeColor = isZero ? 'var(--border)' : activeColor;
 
     const isMulti = payload.is_multi && payload.branches && payload.branches.length > 1;
 
@@ -362,7 +365,7 @@ export function VolumeTrendsTabs({
           type="button"
           onClick={() => setActiveTab('overview')}
           className={`flex items-center gap-2 px-4 py-2.5 text-xs font-medium border-b-2 transition-colors -mb-px ${activeTab === 'overview'
-            ? 'border-accent text-accent font-semibold'
+            ? 'border-ink-primary text-ink-primary font-semibold'
             : 'border-transparent text-ink-muted hover:text-ink-primary hover:border-border'
             }`}
         >
@@ -374,7 +377,7 @@ export function VolumeTrendsTabs({
           type="button"
           onClick={() => setActiveTab('principal')}
           className={`flex items-center gap-2 px-4 py-2.5 text-xs font-medium border-b-2 transition-colors -mb-px ${activeTab === 'principal'
-            ? 'border-accent text-accent font-semibold'
+            ? 'border-ink-primary text-ink-primary font-semibold'
             : 'border-transparent text-ink-muted hover:text-ink-primary hover:border-border'
             }`}
         >
@@ -386,7 +389,7 @@ export function VolumeTrendsTabs({
           type="button"
           onClick={() => setActiveTab('root_cause')}
           className={`flex items-center gap-2 px-4 py-2.5 text-xs font-medium border-b-2 transition-colors -mb-px ${activeTab === 'root_cause'
-            ? 'border-accent text-accent font-semibold'
+            ? 'border-ink-primary text-ink-primary font-semibold'
             : 'border-transparent text-ink-muted hover:text-ink-primary hover:border-border'
             }`}
         >
@@ -406,7 +409,7 @@ export function VolumeTrendsTabs({
                 type="button"
                 onClick={() => handleSegmentChange('all')}
                 className={`flex items-center gap-1.5 px-3 py-1.5 rounded-md text-xs font-medium transition-all ${selectedSegment === 'all'
-                  ? 'bg-surface text-accent shadow-xs font-semibold'
+                  ? 'bg-surface text-ink-primary shadow-xs font-semibold'
                   : 'text-ink-muted hover:text-ink-primary'
                   }`}
               >
@@ -417,7 +420,7 @@ export function VolumeTrendsTabs({
                 type="button"
                 onClick={() => handleSegmentChange('All Customer')}
                 className={`flex items-center gap-1.5 px-3 py-1.5 rounded-md text-xs font-medium transition-all ${selectedSegment === 'All Customer'
-                  ? 'bg-surface text-accent shadow-xs font-semibold'
+                  ? 'bg-surface text-ink-primary shadow-xs font-semibold'
                   : 'text-ink-muted hover:text-ink-primary'
                   }`}
               >
@@ -428,7 +431,7 @@ export function VolumeTrendsTabs({
                 type="button"
                 onClick={() => handleSegmentChange('KA Nasional')}
                 className={`flex items-center gap-1.5 px-3 py-1.5 rounded-md text-xs font-medium transition-all ${selectedSegment === 'KA Nasional'
-                  ? 'bg-surface text-accent shadow-xs font-semibold'
+                  ? 'bg-surface text-ink-primary shadow-xs font-semibold'
                   : 'text-ink-muted hover:text-ink-primary'
                   }`}
               >
@@ -439,7 +442,7 @@ export function VolumeTrendsTabs({
 
             {/* Time Filter & Spinner */}
             <div className="flex items-center gap-2">
-              {loading && <Loader2 className="w-3.5 h-3.5 animate-spin text-accent" />}
+              {loading && <Loader2 className="w-3.5 h-3.5 animate-spin text-ink-muted" />}
               <TimeRangeFilter
                 selectedRange={range}
                 onChange={handleRangeChange}
@@ -462,7 +465,7 @@ export function VolumeTrendsTabs({
                     {kpiStats.total_cases}
                   </div>
                 </div>
-                <div className="p-2 rounded-md bg-accent/10 text-accent border border-accent/20">
+                <div className="p-2 rounded-md bg-base text-ink-muted border border-border">
                   <BarChart3 className="w-5 h-5" />
                 </div>
               </div>
@@ -471,121 +474,43 @@ export function VolumeTrendsTabs({
               </div>
             </div>
 
-            {/* Stat 2: Warranty Scope (Interactive Flip Card) */}
-            <div
-              onClick={() => setWarrantyViewMode((prev) => (prev === 'volume' ? 'rate' : 'volume'))}
-              className="p-4 bg-surface border border-border hover:border-[#2E7D52]/40 rounded-lg shadow-xs flex flex-col justify-between cursor-pointer transition-all duration-200 group relative overflow-hidden"
-              title="Klik untuk beralih antara Absolute Volume dan Rate (%)"
-            >
+            {/* Stat 2: Warranty Scope */}
+            <div className="p-4 bg-surface border border-border rounded-lg shadow-xs flex flex-col justify-between card-interactive">
               <div className="flex items-start justify-between">
                 <div>
-                  <div className="flex items-center gap-1.5 mb-1">
-                    <span className="text-xs font-semibold uppercase tracking-wider text-ink-muted">
-                      Warranty Scope
-                    </span>
-                    <span className="inline-flex items-center gap-0.5 text-[9px] font-mono font-semibold px-1.5 py-0.5 rounded bg-[#2E7D52]/10 text-[#2E7D52] border border-[#2E7D52]/20">
-                      <Repeat className="w-2.5 h-2.5" />
-                      {warrantyViewMode === 'volume' ? 'Vol' : 'Rate'}
-                    </span>
+                  <div className="text-xs font-semibold uppercase tracking-wider text-ink-muted mb-1">
+                    Warranty Scope
                   </div>
-
-                  {warrantyViewMode === 'volume' ? (
-                    <div className="flex items-baseline gap-1.5 animate-in fade-in duration-200">
-                      <span className="text-3xl font-mono font-bold text-[#2E7D52] tabular-nums tracking-tight">
-                        {kpiStats.warranty_cases}
-                      </span>
-                      <span className="text-xs font-semibold text-ink-muted font-mono">Kasus</span>
-                    </div>
-                  ) : (
-                    <div className="flex items-baseline gap-1.5 animate-in fade-in duration-200">
-                      <span className="text-3xl font-mono font-bold text-[#2E7D52] tabular-nums tracking-tight">
-                        {kpiStats.warranty_pct}%
-                      </span>
-                      <span className="text-xs font-semibold text-ink-muted font-mono">Coverage</span>
-                    </div>
-                  )}
+                  <div className="text-3xl font-mono font-bold text-ink-primary tabular-nums tracking-tight">
+                    {kpiStats.warranty_cases}
+                  </div>
                 </div>
-
-                <div className="p-2 rounded-md bg-[#2E7D52]/10 text-[#2E7D52] border border-[#2E7D52]/20 group-hover:scale-105 transition-transform">
+                <div className="p-2 rounded-md bg-base text-ink-muted border border-border">
                   <ShieldCheck className="w-5 h-5" />
                 </div>
               </div>
-
-              <div className="text-[11px] text-ink-muted mt-2 flex items-center justify-between font-mono">
-                {warrantyViewMode === 'volume' ? (
-                  <>
-                    <span>Share: <strong className="text-[#2E7D52] font-semibold">{kpiStats.warranty_pct}%</strong> dari total</span>
-                    <span className="text-[10px] text-ink-muted/80 flex items-center gap-0.5 group-hover:text-[#2E7D52]">
-                      <ArrowUpDown className="w-2.5 h-2.5" /> Lihat Rate
-                    </span>
-                  </>
-                ) : (
-                  <>
-                    <span>Vol: <strong className="text-[#2E7D52] font-semibold">{kpiStats.warranty_cases}</strong> / {kpiStats.total_cases} kasus</span>
-                    <span className="text-[10px] text-ink-muted/80 flex items-center gap-0.5 group-hover:text-[#2E7D52]">
-                      <ArrowUpDown className="w-2.5 h-2.5" /> Lihat Vol
-                    </span>
-                  </>
-                )}
+              <div className="text-[11px] text-ink-muted mt-2 font-mono">
+                Share: <strong className="text-ink-primary font-semibold">{kpiStats.warranty_pct}%</strong> dari total ({kpiStats.warranty_cases} kasus)
               </div>
             </div>
 
-            {/* Stat 3: Non-Warranty Exposure (Interactive Flip Card) */}
-            <div
-              onClick={() => setNonWarrantyViewMode((prev) => (prev === 'volume' ? 'rate' : 'volume'))}
-              className="p-4 bg-surface border border-border hover:border-[#A3462F]/40 rounded-lg shadow-xs flex flex-col justify-between cursor-pointer transition-all duration-200 group relative overflow-hidden"
-              title="Klik untuk beralih antara Absolute Volume dan Rate (%)"
-            >
+            {/* Stat 3: Non-Warranty Exposure */}
+            <div className="p-4 bg-surface border border-border rounded-lg shadow-xs flex flex-col justify-between card-interactive">
               <div className="flex items-start justify-between">
                 <div>
-                  <div className="flex items-center gap-1.5 mb-1">
-                    <span className="text-xs font-semibold uppercase tracking-wider text-ink-muted">
-                      Non-Warranty Exposure
-                    </span>
-                    <span className="inline-flex items-center gap-0.5 text-[9px] font-mono font-semibold px-1.5 py-0.5 rounded bg-[#A3462F]/10 text-[#A3462F] border border-[#A3462F]/20">
-                      <Repeat className="w-2.5 h-2.5" />
-                      {nonWarrantyViewMode === 'volume' ? 'Vol' : 'Rate'}
-                    </span>
+                  <div className="text-xs font-semibold uppercase tracking-wider text-ink-muted mb-1">
+                    Non-Warranty Exposure
                   </div>
-
-                  {nonWarrantyViewMode === 'volume' ? (
-                    <div className="flex items-baseline gap-1.5 animate-in fade-in duration-200">
-                      <span className="text-3xl font-mono font-bold text-[#A3462F] tabular-nums tracking-tight">
-                        {kpiStats.non_warranty_cases}
-                      </span>
-                      <span className="text-xs font-semibold text-ink-muted font-mono">Kasus</span>
-                    </div>
-                  ) : (
-                    <div className="flex items-baseline gap-1.5 animate-in fade-in duration-200">
-                      <span className="text-3xl font-mono font-bold text-[#A3462F] tabular-nums tracking-tight">
-                        {kpiStats.non_warranty_pct}%
-                      </span>
-                      <span className="text-xs font-semibold text-ink-muted font-mono">Unclaimable</span>
-                    </div>
-                  )}
+                  <div className="text-3xl font-mono font-bold text-ink-primary tabular-nums tracking-tight">
+                    {kpiStats.non_warranty_cases}
+                  </div>
                 </div>
-
-                <div className="p-2 rounded-md bg-[#A3462F]/10 text-[#A3462F] border border-[#A3462F]/20 group-hover:scale-105 transition-transform">
+                <div className="p-2 rounded-md bg-base text-ink-muted border border-border">
                   <ShieldAlert className="w-5 h-5" />
                 </div>
               </div>
-
-              <div className="text-[11px] text-ink-muted mt-2 flex items-center justify-between font-mono">
-                {nonWarrantyViewMode === 'volume' ? (
-                  <>
-                    <span>Share: <strong className="text-[#A3462F] font-semibold">{kpiStats.non_warranty_pct}%</strong> dari total</span>
-                    <span className="text-[10px] text-ink-muted/80 flex items-center gap-0.5 group-hover:text-[#A3462F]">
-                      <ArrowUpDown className="w-2.5 h-2.5" /> Lihat Rate
-                    </span>
-                  </>
-                ) : (
-                  <>
-                    <span>Vol: <strong className="text-[#A3462F] font-semibold">{kpiStats.non_warranty_cases}</strong> / {kpiStats.total_cases} kasus</span>
-                    <span className="text-[10px] text-ink-muted/80 flex items-center gap-0.5 group-hover:text-[#A3462F]">
-                      <ArrowUpDown className="w-2.5 h-2.5" /> Lihat Vol
-                    </span>
-                  </>
-                )}
+              <div className="text-[11px] text-ink-muted mt-2 font-mono">
+                Share: <strong className="text-ink-primary font-semibold">{kpiStats.non_warranty_pct}%</strong> dari total ({kpiStats.non_warranty_cases} kasus)
               </div>
             </div>
           </div>
@@ -598,7 +523,7 @@ export function VolumeTrendsTabs({
                 <div className="flex items-center justify-between border-b border-border pb-3 mb-3">
                   <div>
                     <h3 className="text-xs font-bold uppercase tracking-wider text-ink-primary flex items-center gap-2">
-                      <ShieldCheck className="w-3.5 h-3.5 text-[#2E7D52]" />
+                      <ShieldCheck className="w-3.5 h-3.5 text-ink-muted" />
                       <span>Claimable vs Unclaimable Breakdown</span>
                     </h3>
                     <p className="text-[11px] text-ink-muted mt-0.5">
@@ -627,7 +552,7 @@ export function VolumeTrendsTabs({
                       </PieChart>
                     </ResponsiveContainer>
                     <div className="absolute flex flex-col items-center justify-center pointer-events-none text-center">
-                      <span className="text-xl font-mono font-bold text-[#2E7D52] tabular-nums">
+                      <span className="text-xl font-mono font-bold text-ink-primary tabular-nums">
                         {claimableHealth.claimable_pct}%
                       </span>
                       <span className="text-[9px] uppercase font-semibold text-ink-muted tracking-wider">
@@ -668,10 +593,10 @@ export function VolumeTrendsTabs({
 
               {/* Bottom Health Bar */}
               <div className="pt-2 border-t border-border flex items-center justify-between text-[11px] font-mono">
-                <span className="text-[#2E7D52] font-semibold">
+                <span className="text-ink-primary font-semibold">
                   Claimable: {claimableHealth.claimable_count} ({claimableHealth.claimable_pct}%)
                 </span>
-                <span className="text-accent font-semibold">
+                <span className="text-ink-muted font-semibold">
                   Unclaimable: {claimableHealth.unclaimable_count} ({claimableHealth.unclaimable_pct}%)
                 </span>
               </div>
@@ -683,7 +608,7 @@ export function VolumeTrendsTabs({
                 <div className="flex items-center justify-between border-b border-border pb-3 mb-3">
                   <div>
                     <h3 className="text-xs font-bold uppercase tracking-wider text-ink-primary flex items-center gap-2">
-                      <Package className="w-3.5 h-3.5 text-accent" />
+                      <Package className="w-3.5 h-3.5 text-ink-muted" />
                       <span>Product Portfolio &amp; Equipment Category</span>
                     </h3>
                     <p className="text-[11px] text-ink-muted mt-0.5">
@@ -722,7 +647,7 @@ export function VolumeTrendsTabs({
                           </PieChart>
                         </ResponsiveContainer>
                         <div className="absolute flex flex-col items-center justify-center pointer-events-none text-center px-1">
-                          <span className="text-lg font-mono font-bold text-accent tabular-nums leading-tight">
+                          <span className="text-lg font-mono font-bold text-ink-primary tabular-nums leading-tight">
                             {productPortfolio.dominant_product?.product_code || '-'}
                           </span>
                           <span className="text-[9px] uppercase font-semibold text-ink-muted tracking-wider">
@@ -783,7 +708,7 @@ export function VolumeTrendsTabs({
                   Total Lini: <strong className="text-ink-primary">{productPortfolio.productBreakdown.length} Produk</strong>
                 </span>
                 {productPortfolio.dominant_product && (
-                  <span className="text-accent font-semibold truncate max-w-[220px]" title={productPortfolio.dominant_product.product_name}>
+                  <span className="text-ink-primary font-semibold truncate max-w-[220px]" title={productPortfolio.dominant_product.product_name}>
                     Dominan: {productPortfolio.dominant_product.product_code} ({productPortfolio.dominant_product.count} kasus)
                   </span>
                 )}
@@ -796,7 +721,7 @@ export function VolumeTrendsTabs({
             <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-3 border-b border-border pb-3">
               <div className="flex items-center gap-2">
                 <h3 className="text-xs font-bold uppercase tracking-wider text-ink-primary flex items-center gap-2">
-                  <Building2 className="w-3.5 h-3.5 text-accent" />
+                  <Building2 className="w-3.5 h-3.5 text-ink-muted" />
                   <span>Branch Volume & Claim Distribution Matrix</span>
                 </h3>
               </div>
@@ -992,7 +917,7 @@ export function VolumeTrendsTabs({
             <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 border-b border-border pb-3">
               <div>
                 <h4 className="text-xs font-bold uppercase tracking-wider text-ink-primary flex items-center gap-2">
-                  <BarChart3 className="w-3.5 h-3.5 text-accent" />
+                  <BarChart3 className="w-3.5 h-3.5 text-ink-muted" />
                   <span>Monthly Backlog Flow: Intake vs Closure & Net Dynamics</span>
                 </h4>
                 <p className="text-[11px] text-ink-muted mt-0.5">
@@ -1000,14 +925,14 @@ export function VolumeTrendsTabs({
                 </p>
               </div>
               <div className="flex items-center gap-3 text-xs font-mono">
-                <span className="flex items-center gap-1.5 text-accent">
-                  <span className="w-2.5 h-2.5 rounded-xs bg-accent" /> Intake (Opened)
+                <span className="flex items-center gap-1.5 text-ink-muted">
+                  <span className="w-2.5 h-2.5 rounded-xs" style={{ backgroundColor: FLOW_COLORS.intake }} /> Intake (Opened)
                 </span>
-                <span className="flex items-center gap-1.5 text-[#2E7D52]">
-                  <span className="w-2.5 h-2.5 rounded-xs bg-[#2E7D52]" /> Closed
+                <span className="flex items-center gap-1.5 text-ink-muted">
+                  <span className="w-2.5 h-2.5 rounded-xs" style={{ backgroundColor: FLOW_COLORS.closed }} /> Closed
                 </span>
                 <span className="flex items-center gap-1.5 text-ink-primary font-bold">
-                  <span className="w-3 h-0.5 bg-ink-primary" /> Net Backlog Delta
+                  <span className="w-3 h-0.5" style={{ backgroundColor: FLOW_COLORS.netDelta }} /> Net Backlog Delta
                 </span>
               </div>
             </div>
@@ -1026,29 +951,29 @@ export function VolumeTrendsTabs({
                       ]}
                     />
                     <ReferenceLine y={0} stroke="var(--border)" strokeDasharray="3 3" />
-                    <Bar dataKey="cases_opened" fill="#A3462F" name="Intake (Opened)" radius={[4, 4, 0, 0]} maxBarSize={32}>
+                    <Bar dataKey="cases_opened" fill={FLOW_COLORS.intake} name="Intake (Opened)" radius={[4, 4, 0, 0]} maxBarSize={32}>
                       <LabelList
                         dataKey="cases_opened"
                         position="top"
                         formatter={(val: any) => (val ? `${val}` : '')}
-                        style={{ fontSize: '10px', fontWeight: 600, fill: '#A3462F' }}
+                        style={{ fontSize: '10px', fontWeight: 600, fill: 'var(--ink-muted)' }}
                       />
                     </Bar>
-                    <Bar dataKey="cases_closed" fill="#2E7D52" name="Closed" radius={[4, 4, 0, 0]} maxBarSize={32}>
+                    <Bar dataKey="cases_closed" fill={FLOW_COLORS.closed} name="Closed" radius={[4, 4, 0, 0]} maxBarSize={32}>
                       <LabelList
                         dataKey="cases_closed"
                         position="top"
                         formatter={(val: any) => (val ? `${val}` : '')}
-                        style={{ fontSize: '10px', fontWeight: 600, fill: '#2E7D52' }}
+                        style={{ fontSize: '10px', fontWeight: 600, fill: 'var(--ink-primary)' }}
                       />
                     </Bar>
                     <Line
                       type="linear"
                       dataKey="net_backlog"
-                      stroke="var(--ink-primary)"
+                      stroke={FLOW_COLORS.netDelta}
                       strokeWidth={2.5}
                       name="Net Backlog (Intake - Closed)"
-                      dot={{ r: 4, fill: 'var(--ink-primary)' }}
+                      dot={{ r: 4, fill: FLOW_COLORS.netDelta }}
                     >
                       <LabelList
                         dataKey="net_backlog"
@@ -1122,15 +1047,15 @@ export function VolumeTrendsTabs({
                 <ReferenceLine
                   yAxisId="right"
                   y={80}
-                  stroke="var(--ink-muted)"
+                  stroke={PARETO_COLORS.threshold80}
                   strokeDasharray="3 3"
-                  strokeOpacity={0.5}
+                  strokeOpacity={0.7}
                   label={{ value: '80% Pareto Line', fill: 'var(--ink-muted)', fontSize: 9, position: 'insideTopRight' }}
                 />
                 <Bar
                   yAxisId="left"
                   dataKey="jumlah_kasus"
-                  fill="#A3462F"
+                  fill={PARETO_COLORS.bar}
                   name="Case Volume"
                   radius={[4, 4, 0, 0]}
                   maxBarSize={40}
@@ -1146,18 +1071,18 @@ export function VolumeTrendsTabs({
                   yAxisId="right"
                   type="monotone"
                   dataKey="cumulative_pct"
-                  stroke="#D4953C"
+                  stroke={PARETO_COLORS.cumulativeLine}
                   strokeWidth={2.5}
                   name="Cumulative %"
-                  dot={{ r: 3.5, fill: '#D4953C', stroke: 'var(--surface)', strokeWidth: 1.5 }}
-                  activeDot={{ r: 5, fill: '#D4953C' }}
+                  dot={{ r: 3.5, fill: PARETO_COLORS.cumulativeLine, stroke: 'var(--surface)', strokeWidth: 1.5 }}
+                  activeDot={{ r: 5, fill: PARETO_COLORS.cumulativeLine }}
                 >
                   <LabelList
                     dataKey="cumulative_pct"
                     position="top"
                     offset={6}
                     formatter={(val: any) => (val !== undefined ? `${val}%` : '')}
-                    style={{ fontSize: '9px', fontWeight: 700, fill: '#D4953C' }}
+                    style={{ fontSize: '9px', fontWeight: 700, fill: PARETO_COLORS.cumulativeLine }}
                   />
                 </Line>
               </ComposedChart>

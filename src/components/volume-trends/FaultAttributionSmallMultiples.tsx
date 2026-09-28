@@ -2,6 +2,7 @@
 
 import React from 'react';
 import { ProductFaultAttributionPanel, FaultGroupType } from '@/types/database';
+import { FAULT_ATTRIBUTION_COLORS } from '@/lib/chartColors';
 
 interface FaultAttributionSmallMultiplesProps {
   panels: ProductFaultAttributionPanel[];
@@ -11,35 +12,30 @@ interface FaultAttributionSmallMultiplesProps {
 
 const GROUP_CONFIG: Record<
   FaultGroupType,
-  { barColor: string; badgeClass: string; label: string; shortLabel: string }
+  { barColor: string; label: string; shortLabel: string }
 > = {
   'Product-side': {
-    barColor: '#2E7D52', // Forest Green
-    badgeClass: 'bg-emerald-500/10 dark:bg-emerald-500/20 text-[#2E7D52] dark:text-[#41A86F] border-emerald-500/30',
+    barColor: FAULT_ATTRIBUTION_COLORS.productSide,
     label: 'Product-side (Material / Workmanship / Local Component)',
     shortLabel: 'Product-side',
   },
   'Customer-side': {
-    barColor: '#B87A28', // Warm Ochre
-    badgeClass: 'bg-amber-500/10 dark:bg-amber-500/20 text-[#B87A28] dark:text-[#D4953C] border-amber-500/30',
+    barColor: FAULT_ATTRIBUTION_COLORS.customerSide,
     label: 'Customer-side (Operation / Maintenance / Application)',
     shortLabel: 'Customer-side',
   },
   'Process-side': {
-    barColor: '#4B5563', // Slate Steel
-    badgeClass: 'bg-slate-500/10 dark:bg-slate-500/20 text-slate-700 dark:text-slate-300 border-slate-500/30',
+    barColor: FAULT_ATTRIBUTION_COLORS.processSide,
     label: 'Process-side (Storage / Inventory)',
     shortLabel: 'Process-side',
   },
   'External': {
-    barColor: '#B5302E', // Crimson
-    badgeClass: 'bg-rose-500/10 dark:bg-rose-500/20 text-[#B5302E] dark:text-[#E05350] border-rose-500/30',
+    barColor: FAULT_ATTRIBUTION_COLORS.external,
     label: 'External (Accident / Natural Disaster)',
     shortLabel: 'External',
   },
   'Unrecorded': {
-    barColor: '#71717A', // Muted Zinc
-    badgeClass: 'bg-base text-ink-muted border-border',
+    barColor: FAULT_ATTRIBUTION_COLORS.unrecorded,
     label: 'Unrecorded',
     shortLabel: 'Unrecorded',
   },
@@ -61,7 +57,7 @@ export function FaultAttributionSmallMultiples({
   return (
     <div className="w-full space-y-3">
       {/* 5-Color Unified Legend (Only once above the grid) */}
-      <div className="flex flex-wrap items-center justify-between gap-3 pb-2.5 border-b border-border/60 text-[11px]">
+      <div className="flex flex-wrap items-center justify-between gap-3 pb-2.5 border-b border-border text-[11px]">
         <div className="flex flex-wrap items-center gap-4">
           {(Object.keys(GROUP_CONFIG) as FaultGroupType[]).map((groupKey) => {
             const conf = GROUP_CONFIG[groupKey];
@@ -78,9 +74,10 @@ export function FaultAttributionSmallMultiples({
         </div>
 
         {selectedProduct && (
-          <div className="flex items-center gap-1.5 font-mono text-[10px] text-accent font-semibold">
+          <div className="flex items-center gap-1.5 font-mono text-[10px] text-ink-primary font-semibold">
             <span>Fokus: {selectedProduct}</span>
             <button
+              type="button"
               onClick={() => onSelectProduct?.(null)}
               className="px-1.5 py-0.5 rounded bg-base hover:bg-surface-hover border border-border text-ink-primary font-sans font-medium transition-colors cursor-pointer"
             >
@@ -103,7 +100,7 @@ export function FaultAttributionSmallMultiples({
               onClick={() => onSelectProduct?.(isSelected ? null : panel.product_code)}
               className={`flex flex-col p-3 rounded-lg border bg-surface transition-all cursor-pointer select-none ${
                 isSelected
-                  ? 'border-accent ring-1 ring-accent/40 shadow-xs'
+                  ? 'border-ink-primary ring-1 ring-border-strong shadow-xs'
                   : 'border-border hover:border-border/90 hover:bg-surface-hover/30'
               } ${isMuted ? 'opacity-35 hover:opacity-75' : 'opacity-100'}`}
             >
@@ -120,10 +117,16 @@ export function FaultAttributionSmallMultiples({
 
                 {/* Dominant Attribution Group Chip */}
                 <span
-                  className={`px-2 py-0.5 text-[10px] font-bold rounded border tracking-tight ${dominantConf.badgeClass}`}
+                  className="px-2 py-0.5 text-[10px] font-bold rounded border border-border bg-base text-ink-primary tracking-tight flex items-center gap-1.5"
                   title={`Kelompok dominan: ${panel.dominant_group} (${panel.dominant_group_pct}%)`}
                 >
-                  {panel.dominant_group} {panel.dominant_group_pct}%
+                  <span
+                    className="w-2 h-2 rounded-xs shrink-0"
+                    style={{ backgroundColor: dominantConf.barColor }}
+                  />
+                  <span>
+                    {panel.dominant_group} {panel.dominant_group_pct}%
+                  </span>
                 </span>
               </div>
 

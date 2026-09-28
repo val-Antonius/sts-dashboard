@@ -41,7 +41,7 @@ export function PerformanceTabs({
           onClick={() => setActiveTab('overview')}
           className={`flex items-center gap-2 px-4 py-2.5 text-xs font-medium border-b-2 transition-colors -mb-px ${
             activeTab === 'overview'
-              ? 'border-accent-brass text-accent-brass font-semibold'
+              ? 'border-ink-primary text-ink-primary font-semibold'
               : 'border-transparent text-ink-muted hover:text-ink-primary hover:border-border'
           }`}
         >
@@ -53,7 +53,7 @@ export function PerformanceTabs({
           onClick={() => setActiveTab('matrix')}
           className={`flex items-center gap-2 px-4 py-2.5 text-xs font-medium border-b-2 transition-colors -mb-px ${
             activeTab === 'matrix'
-              ? 'border-accent-brass text-accent-brass font-semibold'
+              ? 'border-ink-primary text-ink-primary font-semibold'
               : 'border-transparent text-ink-muted hover:text-ink-primary hover:border-border'
           }`}
         >

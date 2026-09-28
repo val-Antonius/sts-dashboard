@@ -30,7 +30,7 @@ export function CaseProductSpecsTab({
       <div className="bg-surface border border-border rounded-xl p-5 shadow-xs">
         <div className="flex items-center justify-between gap-2 pb-3 mb-4 border-b border-border">
           <div className="flex items-center gap-2">
-            <Package className="w-4 h-4 text-accent-brass" />
+            <Package className="w-4 h-4 text-ink-muted" />
             <h3 className="text-xs font-bold uppercase tracking-wider text-ink-primary">
               Spare Part Requirements ({parts.length})
             </h3>
@@ -71,11 +71,11 @@ export function CaseProductSpecsTab({
                     </td>
                     <td className="py-2.5 px-3 text-center">
                       {p.is_full_supplied ? (
-                        <span className="inline-flex items-center text-[#3B7A57] text-[11px] font-bold gap-1 px-2 py-0.5 rounded-full bg-[#3B7A57]/10 border border-[#3B7A57]/20">
+                        <span className="inline-flex items-center text-status-ok text-[11px] font-bold gap-1 px-2 py-0.5 rounded-full bg-status-ok/10 border border-status-ok/20">
                           <CheckCircle2 className="w-3.5 h-3.5" /> Full Supplied
                         </span>
                       ) : (
-                        <span className="inline-flex items-center text-[#B8863B] text-[11px] font-bold gap-1 px-2 py-0.5 rounded-full bg-[#B8863B]/10 border border-[#B8863B]/20">
+                        <span className="inline-flex items-center text-status-warn text-[11px] font-bold gap-1 px-2 py-0.5 rounded-full bg-status-warn/10 border border-status-warn/20">
                           <Clock className="w-3.5 h-3.5" /> Pending Supply
                         </span>
                       )}
@@ -97,7 +97,7 @@ export function CaseProductSpecsTab({
         {/* Left: Problem & Analysis */}
         <div className="bg-surface border border-border rounded-xl p-5 shadow-xs space-y-4">
           <div className="flex items-center gap-2 pb-2 border-b border-border">
-            <Wrench className="w-4 h-4 text-accent-brass" />
+            <Wrench className="w-4 h-4 text-ink-muted" />
             <h3 className="text-xs font-bold uppercase tracking-wider text-ink-primary">
               Investigation & Technical Analysis
             </h3>
@@ -127,7 +127,7 @@ export function CaseProductSpecsTab({
         {/* Right: Actions & SAP Documents */}
         <div className="bg-surface border border-border rounded-xl p-5 shadow-xs space-y-4">
           <div className="flex items-center gap-2 pb-2 border-b border-border">
-            <FileText className="w-4 h-4 text-accent-brass" />
+            <FileText className="w-4 h-4 text-ink-muted" />
             <h3 className="text-xs font-bold uppercase tracking-wider text-ink-primary">
               Corrective Action & ERP References
             </h3>

@@ -30,6 +30,12 @@ import {
   FileSpreadsheet,
 } from 'lucide-react';
 
+import {
+  CLAIM_COLORS,
+  SLA_STATUS_COLORS,
+  PARETO_COLORS,
+} from '@/lib/chartColors';
+
 interface BranchAnalyticsViewProps {
   initialData: BranchAnalyticsData;
 }
@@ -122,7 +128,7 @@ export function BranchAnalyticsView({ initialData }: BranchAnalyticsViewProps) {
                 {summary.total_cases}
               </div>
             </div>
-            <div className="p-2 rounded-md bg-accent-brass/10 text-accent-brass border border-accent-brass/20">
+            <div className="p-2 rounded-md bg-base text-ink-muted border border-border">
               <Building2 className="w-5 h-5" />
             </div>
           </div>
@@ -138,17 +144,17 @@ export function BranchAnalyticsView({ initialData }: BranchAnalyticsViewProps) {
               <div className="text-xs font-semibold uppercase tracking-wider text-ink-muted mb-1">
                 SLA Achievement Rate
               </div>
-              <div className="text-3xl font-mono font-bold text-[#2E7D52] tabular-nums tracking-tight">
+              <div className="text-3xl font-mono font-bold text-ink-primary tabular-nums tracking-tight">
                 {summary.overall_achievement_pct}%
               </div>
             </div>
-            <div className="p-2 rounded-md bg-[#2E7D52]/10 text-[#2E7D52] border border-[#2E7D52]/20">
+            <div className="p-2 rounded-md bg-base text-ink-muted border border-border">
               <CheckCircle2 className="w-5 h-5" />
             </div>
           </div>
           <div className="text-[11px] text-ink-muted mt-2 flex items-center justify-between">
             <span>Target Benchmark: 85.0%</span>
-            <span className={`font-mono font-semibold text-[10px] ${summary.overall_achievement_pct >= 85 ? 'text-[#2E7D52]' : 'text-accent-brass'}`}>
+            <span className={`font-mono font-semibold text-[10px] ${summary.overall_achievement_pct >= 85 ? 'text-ink-primary' : 'text-ink-muted'}`}>
               {summary.overall_achievement_pct >= 85 ? 'On Target' : 'Under Target'}
             </span>
           </div>
@@ -186,18 +192,18 @@ export function BranchAnalyticsView({ initialData }: BranchAnalyticsViewProps) {
               </div>
               <div className="space-y-1 mt-1">
                 <div className="flex items-center gap-2 text-xs">
-                  <span className="w-2 h-2 rounded-full bg-[#2E7D52]" />
+                  <span className="w-2 h-2 rounded-full" style={{ backgroundColor: 'var(--chart-1)' }} />
                   <span className="text-ink-muted">Tercepat:</span>
                   <strong className="font-mono text-ink-primary">{summary.fastest_branch ? `${summary.fastest_branch.branch_code} (${summary.fastest_branch.days}h)` : '-'}</strong>
                 </div>
                 <div className="flex items-center gap-2 text-xs">
-                  <span className="w-2 h-2 rounded-full bg-[#A3462F]" />
+                  <span className="w-2 h-2 rounded-full" style={{ backgroundColor: 'var(--chart-2)' }} />
                   <span className="text-ink-muted">Terlama:</span>
                   <strong className="font-mono text-ink-primary">{summary.slowest_branch ? `${summary.slowest_branch.branch_code} (${summary.slowest_branch.days}h)` : '-'}</strong>
                 </div>
               </div>
             </div>
-            <div className="p-2 rounded-md bg-accent-brass/10 text-accent-brass border border-accent-brass/20">
+            <div className="p-2 rounded-md bg-base text-ink-muted border border-border">
               <Zap className="w-5 h-5" />
             </div>
           </div>
@@ -215,11 +221,11 @@ export function BranchAnalyticsView({ initialData }: BranchAnalyticsViewProps) {
             <div className="flex items-center justify-between border-b border-border pb-3 mb-3">
               <div>
                 <h3 className="text-xs font-bold uppercase tracking-wider text-ink-primary flex items-center gap-2">
-                  <Building2 className="w-3.5 h-3.5 text-accent-brass" />
+                  <Building2 className="w-3.5 h-3.5 text-ink-muted" />
                   <span>Volume vs SLA Achievement Rate per Cabang</span>
                 </h3>
                 <p className="text-[11px] text-ink-muted mt-0.5">
-                  Identifikasi cabang dengan volume tinggi namun achievement rate di bawah target 85%.
+                  Perbandingan volume kasus dan pencapaian target SLA (85%) per cabang operasional.
                 </p>
               </div>
             </div>
@@ -234,6 +240,7 @@ export function BranchAnalyticsView({ initialData }: BranchAnalyticsViewProps) {
                     <XAxis
                       dataKey="branch_code"
                       tick={{ fontSize: 10, fill: 'var(--ink-muted)' }}
+                      interval={0}
                     />
                     <YAxis
                       yAxisId="left"
@@ -256,29 +263,22 @@ export function BranchAnalyticsView({ initialData }: BranchAnalyticsViewProps) {
                       ]}
                     />
                     <Legend wrapperStyle={{ fontSize: 11 }} />
-                    <ReferenceLine yAxisId="right" y={85} stroke="#2E7D52" strokeDasharray="3 3" label={{ value: 'Target 85%', fill: '#2E7D52', fontSize: 9, position: 'insideTopRight' }} />
+                    <ReferenceLine yAxisId="right" y={85} stroke="var(--ink-muted)" strokeDasharray="3 3" label={{ value: 'Target 85%', fill: 'var(--ink-muted)', fontSize: 9, position: 'insideTopRight' }} />
                     <Bar
                       yAxisId="left"
                       dataKey="total_cases"
                       name="Volume Kasus"
-                      fill="#71717A"
+                      fill="var(--chart-1)"
                       radius={[3, 3, 0, 0]}
-                    >
-                      {branchList.map((entry, index) => (
-                        <Cell
-                          key={`cell-${index}`}
-                          fill={entry.achievement_pct < 85 && entry.total_cases >= 5 ? '#A3462F' : '#3F3F46'}
-                        />
-                      ))}
-                    </Bar>
+                    />
                     <Line
                       yAxisId="right"
                       type="monotone"
                       dataKey="achievement_pct"
                       name="Achievement %"
-                      stroke="#2E7D52"
+                      stroke="var(--accent)"
                       strokeWidth={2}
-                      dot={{ r: 3, fill: '#2E7D52' }}
+                      dot={{ r: 3, fill: 'var(--accent)' }}
                     />
                   </ComposedChart>
                 </ResponsiveContainer>
@@ -286,9 +286,7 @@ export function BranchAnalyticsView({ initialData }: BranchAnalyticsViewProps) {
             </div>
           </div>
           <div className="pt-2 border-t border-border flex items-center justify-between text-[10px] font-mono text-ink-muted">
-            <span className="flex items-center gap-1.5">
-              <span className="w-2.5 h-2.5 rounded-sm bg-[#A3462F]" /> Volume &ge;5 Kasus &amp; Ach &lt;85% (Perlu Perhatian)
-            </span>
+            <span>Target Benchmark: 85.0%</span>
             <span>{branchList.length} Cabang Dievaluasi</span>
           </div>
         </div>
@@ -299,7 +297,7 @@ export function BranchAnalyticsView({ initialData }: BranchAnalyticsViewProps) {
             <div className="flex items-center justify-between border-b border-border pb-3 mb-3">
               <div>
                 <h3 className="text-xs font-bold uppercase tracking-wider text-ink-primary flex items-center gap-2">
-                  <Clock className="w-3.5 h-3.5 text-accent-brass" />
+                  <Clock className="w-3.5 h-3.5 text-ink-muted" />
                   <span>Peringkat Durasi Aging Lead Time (Hari)</span>
                 </h3>
                 <p className="text-[11px] text-ink-muted mt-0.5">
@@ -308,9 +306,9 @@ export function BranchAnalyticsView({ initialData }: BranchAnalyticsViewProps) {
               </div>
             </div>
 
-            <div className="h-72 w-full">
+            <div className="h-80 w-full">
               {agingRankingData.length === 0 ? (
-                <EmptyState className="h-72" />
+                <EmptyState className="h-80" />
               ) : (
                 <ResponsiveContainer width="100%" height="100%">
                   <BarChart
@@ -327,8 +325,9 @@ export function BranchAnalyticsView({ initialData }: BranchAnalyticsViewProps) {
                     <YAxis
                       dataKey="branch_code"
                       type="category"
-                      tick={{ fontSize: 10, fill: 'var(--ink-muted)' }}
+                      tick={{ fontSize: 9, fill: 'var(--ink-muted)' }}
                       width={40}
+                      interval={0}
                     />
                     <Tooltip
                       contentStyle={customTooltipStyle}
@@ -337,37 +336,21 @@ export function BranchAnalyticsView({ initialData }: BranchAnalyticsViewProps) {
                         'Rata-rata Aging',
                       ]}
                     />
-                    <ReferenceLine x={20} stroke="#B87A28" strokeDasharray="3 3" label={{ value: 'Batas 20 Hari', fill: '#B87A28', fontSize: 9, position: 'insideTopRight' }} />
+                    <ReferenceLine x={20} stroke="var(--ink-muted)" strokeDasharray="3 3" label={{ value: 'Batas 20 Hari', fill: 'var(--ink-muted)', fontSize: 9, position: 'insideTopRight' }} />
                     <Bar
                       dataKey="avg_solution_days"
                       name="Rata-rata Hari"
+                      fill="var(--chart-1)"
                       radius={[0, 4, 4, 0]}
-                    >
-                      {agingRankingData.map((entry, index) => (
-                        <Cell
-                          key={`aging-${index}`}
-                          fill={entry.avg_solution_days > 20 ? '#A3462F' : entry.avg_solution_days <= 15 ? '#2E7D52' : '#B87A28'}
-                        />
-                      ))}
-                    </Bar>
+                    />
                   </BarChart>
                 </ResponsiveContainer>
               )}
             </div>
           </div>
           <div className="pt-2 border-t border-border flex items-center justify-between text-[10px] font-mono text-ink-muted">
-            <div className="flex items-center gap-3">
-              <span className="flex items-center gap-1">
-                <span className="w-2 h-2 rounded bg-[#2E7D52]" /> &le;15 Hari
-              </span>
-              <span className="flex items-center gap-1">
-                <span className="w-2 h-2 rounded bg-[#B87A28]" /> 16–20 Hari
-              </span>
-              <span className="flex items-center gap-1">
-                <span className="w-2 h-2 rounded bg-[#A3462F]" /> &gt;20 Hari
-              </span>
-            </div>
-            <span>Benchmark Max: 20 Hari</span>
+            <span>Benchmark Batas Acuan: 20 Hari</span>
+            <span>{agingRankingData.length} Cabang</span>
           </div>
         </div>
       </div>
@@ -377,7 +360,7 @@ export function BranchAnalyticsView({ initialData }: BranchAnalyticsViewProps) {
         <div className="flex items-center justify-between border-b border-border pb-3 mb-4">
           <div>
             <h3 className="text-xs font-bold uppercase tracking-wider text-ink-primary flex items-center gap-2">
-              <ShieldCheck className="w-3.5 h-3.5 text-accent-brass" />
+              <ShieldCheck className="w-3.5 h-3.5 text-ink-muted" />
               <span>Branch Claim Outcome Profile (Komposisi Hasil Klaim)</span>
             </h3>
             <p className="text-[11px] text-ink-muted mt-0.5">
@@ -386,18 +369,18 @@ export function BranchAnalyticsView({ initialData }: BranchAnalyticsViewProps) {
           </div>
           <div className="flex items-center gap-3 text-xs font-mono">
             <span className="flex items-center gap-1.5">
-              <span className="w-2.5 h-2.5 rounded bg-[#2E7D52]" /> Covered
+              <span className="w-2.5 h-2.5 rounded" style={{ backgroundColor: CLAIM_COLORS.covered }} /> Covered
             </span>
             <span className="flex items-center gap-1.5">
-              <span className="w-2.5 h-2.5 rounded bg-[#B87A28]" /> Goodwill
+              <span className="w-2.5 h-2.5 rounded" style={{ backgroundColor: CLAIM_COLORS.goodwill }} /> Goodwill
             </span>
             <span className="flex items-center gap-1.5">
-              <span className="w-2.5 h-2.5 rounded bg-[#A3462F]" /> Unclaimable
+              <span className="w-2.5 h-2.5 rounded" style={{ backgroundColor: CLAIM_COLORS.unclaimable }} /> Unclaimable
             </span>
           </div>
         </div>
 
-        <div className="h-64 w-full">
+        <div className="w-full" style={{ height: `${Math.max(280, outcomeProfile.length * 22 + 40)}px` }}>
           {outcomeProfile.length === 0 ? (
             <EmptyState className="h-64" />
           ) : (
@@ -417,8 +400,9 @@ export function BranchAnalyticsView({ initialData }: BranchAnalyticsViewProps) {
                 <YAxis
                   dataKey="branch_code"
                   type="category"
-                  tick={{ fontSize: 10, fill: 'var(--ink-muted)' }}
+                  tick={{ fontSize: 9, fill: 'var(--ink-muted)' }}
                   width={40}
+                  interval={0}
                 />
                 <Tooltip
                   contentStyle={customTooltipStyle}
@@ -430,9 +414,9 @@ export function BranchAnalyticsView({ initialData }: BranchAnalyticsViewProps) {
                     return [val, name];
                   }}
                 />
-                <Bar dataKey="covered_pct" name="Covered %" stackId="a" fill="#2E7D52" />
-                <Bar dataKey="goodwill_pct" name="Goodwill %" stackId="a" fill="#B87A28" />
-                <Bar dataKey="unclaimable_pct" name="Unclaimable %" stackId="a" fill="#A3462F" radius={[0, 3, 3, 0]} />
+                <Bar dataKey="covered_pct" name="Covered %" stackId="a" fill={CLAIM_COLORS.covered} />
+                <Bar dataKey="goodwill_pct" name="Goodwill %" stackId="a" fill={CLAIM_COLORS.goodwill} />
+                <Bar dataKey="unclaimable_pct" name="Unclaimable %" stackId="a" fill={CLAIM_COLORS.unclaimable} radius={[0, 3, 3, 0]} />
               </BarChart>
             </ResponsiveContainer>
           )}
@@ -444,7 +428,7 @@ export function BranchAnalyticsView({ initialData }: BranchAnalyticsViewProps) {
         <div className="flex items-center justify-between border-b border-border pb-3">
           <div>
             <h3 className="text-xs font-bold uppercase tracking-wider text-ink-primary flex items-center gap-2">
-              <FileSpreadsheet className="w-3.5 h-3.5 text-accent-brass" />
+              <FileSpreadsheet className="w-3.5 h-3.5 text-ink-muted" />
               <span>Detail Kinerja Operasional &amp; Audit per Cabang</span>
             </h3>
             <p className="text-[11px] text-ink-muted mt-0.5">
@@ -488,15 +472,11 @@ export function BranchAnalyticsView({ initialData }: BranchAnalyticsViewProps) {
                     <td className="py-2.5 px-3 text-center font-bold text-ink-primary">
                       {b.total_cases}
                     </td>
-                    <td className="py-2.5 px-3 text-center text-[#2E7D52] font-semibold">
+                    <td className="py-2.5 px-3 text-center text-ink-primary font-semibold">
                       {b.achieved_cases}
                     </td>
                     <td className="py-2.5 px-3 text-center">
-                      <span className={`px-2 py-0.5 rounded text-[11px] font-bold ${
-                        b.achievement_pct >= 85
-                          ? 'bg-[#2E7D52]/10 text-[#2E7D52] border border-[#2E7D52]/20'
-                          : 'bg-[#A3462F]/10 text-[#A3462F] border border-[#A3462F]/20'
-                      }`}>
+                      <span className="px-2 py-0.5 rounded text-[11px] font-bold bg-base border border-border text-ink-primary">
                         {b.achievement_pct}%
                       </span>
                     </td>
@@ -505,18 +485,18 @@ export function BranchAnalyticsView({ initialData }: BranchAnalyticsViewProps) {
                     </td>
                     <td className="py-2.5 px-3 text-center">
                       {b.overdue_cases > 0 ? (
-                        <span className="text-[#A3462F] font-bold">{b.overdue_cases}</span>
+                        <span className="text-status-danger font-bold">{b.overdue_cases}</span>
                       ) : (
                         <span className="text-ink-muted">0</span>
                       )}
                     </td>
-                    <td className="py-2.5 px-3 text-center text-[#2E7D52]">
+                    <td className="py-2.5 px-3 text-center text-ink-primary">
                       {b.covered_cases} <span className="text-[10px] text-ink-muted">({b.covered_pct}%)</span>
                     </td>
-                    <td className="py-2.5 px-3 text-center text-[#B87A28]">
+                    <td className="py-2.5 px-3 text-center text-ink-primary">
                       {b.goodwill_cases} <span className="text-[10px] text-ink-muted">({b.goodwill_pct}%)</span>
                     </td>
-                    <td className="py-2.5 px-3 text-right text-accent-brass font-semibold">
+                    <td className="py-2.5 px-3 text-right text-ink-primary font-semibold">
                       {b.unclaimable_cases} <span className="text-[10px] text-ink-muted">({b.unclaimable_pct}%)</span>
                     </td>
                   </tr>

@@ -109,7 +109,7 @@ export function Pagination({
                 onClick={() => onPageChange(pageNum)}
                 className={`min-w-[28px] h-7 px-2 text-xs font-mono font-medium rounded-md transition-colors flex items-center justify-center ${
                   isActive
-                    ? 'bg-accent-brass text-white font-bold shadow-xs'
+                    ? 'bg-surface-inverted text-ink-inverted font-bold shadow-xs'
                     : 'border border-border text-ink-muted hover:text-ink-primary hover:bg-surface'
                 }`}
               >

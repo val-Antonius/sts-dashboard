@@ -3,7 +3,7 @@
 import React, { useState, useMemo } from 'react';
 import { CheckpointDuration } from '@/types/database';
 import { formatDisplayDate } from '@/lib/dateUtils';
-import { CheckCircle2, Clock, AlertTriangle, Layers, ArrowRight, Edit3 } from 'lucide-react';
+import { CheckCircle2, AlertTriangle, Layers, ArrowRight, Edit3 } from 'lucide-react';
 
 export interface PhaseClickInfo {
   phaseId: number;
@@ -28,8 +28,6 @@ interface PhaseDefinition {
   shortName: string;
   startCheckpoint: string;
   endCheckpoint: string;
-  color: string;
-  accentColor: string;
 }
 
 const OFFICIAL_PHASES: PhaseDefinition[] = [
@@ -39,8 +37,6 @@ const OFFICIAL_PHASES: PhaseDefinition[] = [
     shortName: '1. Complaint Customer',
     startCheckpoint: 'COMPLAINT_DATE',
     endCheckpoint: 'WO_CHECKING_CREATED',
-    color: 'bg-[#A3462F]',
-    accentColor: '#A3462F',
   },
   {
     id: 2,
@@ -48,8 +44,6 @@ const OFFICIAL_PHASES: PhaseDefinition[] = [
     shortName: '2. Warranty Checking',
     startCheckpoint: 'WO_CHECKING_CREATED',
     endCheckpoint: 'WO_CHECKING_CLOSED',
-    color: 'bg-[#52525B]',
-    accentColor: '#52525B',
   },
   {
     id: 3,
@@ -57,8 +51,6 @@ const OFFICIAL_PHASES: PhaseDefinition[] = [
     shortName: '3. PS Approval',
     startCheckpoint: 'WO_CHECKING_CLOSED',
     endCheckpoint: 'PS_APPROVAL',
-    color: 'bg-[#1E6B3F]',
-    accentColor: '#1E6B3F',
   },
   {
     id: 4,
@@ -66,8 +58,6 @@ const OFFICIAL_PHASES: PhaseDefinition[] = [
     shortName: '4. WO Repair Preparation',
     startCheckpoint: 'PS_APPROVAL',
     endCheckpoint: 'WO_REPAIR_RELEASED',
-    color: 'bg-[#965B16]',
-    accentColor: '#965B16',
   },
   {
     id: 5,
@@ -75,8 +65,6 @@ const OFFICIAL_PHASES: PhaseDefinition[] = [
     shortName: '5. Part Supply',
     startCheckpoint: 'WO_REPAIR_RELEASED',
     endCheckpoint: 'PART_GI',
-    color: 'bg-[#3F3F46]',
-    accentColor: '#3F3F46',
   },
   {
     id: 6,
@@ -84,8 +72,6 @@ const OFFICIAL_PHASES: PhaseDefinition[] = [
     shortName: '6. Warranty Repair',
     startCheckpoint: 'PART_GI',
     endCheckpoint: 'UNIT_RFU',
-    color: 'bg-[#15803D]',
-    accentColor: '#15803D',
   },
   {
     id: 7,
@@ -93,8 +79,6 @@ const OFFICIAL_PHASES: PhaseDefinition[] = [
     shortName: '7. Repair Closing',
     startCheckpoint: 'UNIT_RFU',
     endCheckpoint: 'WO_REPAIR_CLOSED',
-    color: 'bg-[#8F432B]',
-    accentColor: '#8F432B',
   },
 ];
 
@@ -118,7 +102,6 @@ const OFFICIAL_CHECKPOINTS: CheckpointDefinition[] = [
 
 export function CheckpointProgressBar({
   checkpoints,
-  totalDays,
   onEditClick,
   selectedPhaseId,
   onPhaseClick,
@@ -199,14 +182,6 @@ export function CheckpointProgressBar({
     return phaseData.some((p) => p.isNegative);
   }, [phaseData]);
 
-  if (!checkpoints || checkpoints.length === 0) {
-    return (
-      <div className="p-6 bg-surface border border-border rounded-lg text-center text-xs text-ink-muted">
-        No recorded checkpoint timeline for this case
-      </div>
-    );
-  }
-
   return (
     <div className="bg-surface border border-border rounded-lg p-5 shadow-xs space-y-5">
       {/* Header */}
@@ -219,7 +194,7 @@ export function CheckpointProgressBar({
 
         <div className="flex items-center gap-2">
           {hasAnyNegative && (
-            <div className="flex items-center gap-1.5 text-[11px] font-semibold text-red-600 dark:text-red-400 bg-red-500/10 border border-red-500/30 px-2.5 py-1 rounded">
+            <div className="flex items-center gap-1.5 text-[11px] font-semibold text-status-warn bg-status-warn/10 border border-status-warn/30 px-2.5 py-1 rounded">
               <AlertTriangle className="w-3.5 h-3.5 shrink-0" />
               <span>Anomali Urutan Tanggal Terdeteksi</span>
             </div>
@@ -228,7 +203,7 @@ export function CheckpointProgressBar({
             <button
               type="button"
               onClick={onEditClick}
-              className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-accent/10 hover:bg-accent/20 text-accent border border-accent/30 text-xs font-bold transition-all shadow-xs cursor-pointer"
+              className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-surface-inverted hover:opacity-90 text-ink-inverted text-xs font-bold transition-all shadow-xs cursor-pointer"
               title="Edit rincian data kasus ini"
             >
               <Edit3 className="w-3.5 h-3.5" />
@@ -239,12 +214,12 @@ export function CheckpointProgressBar({
       </div>
 
       {/* ========================================================================= */}
-      {/* ROW 1: 7 PROCESS PHASES (STACKED BARS)                                    */}
+      {/* ROW 1: 7 PROCESS PHASES (STACKED BARS ENCODING STATE)                     */}
       {/* ========================================================================= */}
       <div className="space-y-1.5">
         <div className="flex items-center justify-between text-[11px]">
           <span className="font-semibold text-ink-muted flex items-center gap-1.5">
-            <Layers className="w-3.5 h-3.5 text-accent" />
+            <Layers className="w-3.5 h-3.5 text-ink-muted" />
             <span>Process Phases</span>
           </span>
         </div>
@@ -265,6 +240,16 @@ export function CheckpointProgressBar({
               flexBasis = 8;
             }
 
+            // State-driven bar classes per Rule 8
+            let stateClass = 'bg-base border border-dashed border-border text-ink-muted';
+            if (p.isNegative) {
+              stateClass = 'border border-dashed border-status-warn bg-status-warn/15 text-status-warn';
+            } else if (p.isCompleted) {
+              stateClass = 'bg-ink-primary text-surface font-semibold shadow-xs';
+            } else if (p.hasStart) {
+              stateClass = 'bg-surface-inverted text-ink-inverted font-bold shadow-xs pulse-dot';
+            }
+
             return (
               <div
                 key={`phase-bar-${p.id}`}
@@ -283,24 +268,16 @@ export function CheckpointProgressBar({
                     });
                   }
                 }}
-                className={`relative h-full rounded-sm cursor-pointer transition-all duration-150 flex items-center justify-center text-[10px] font-bold px-1.5 select-none ${
-                  p.isNegative
-                    ? 'bg-red-600 text-white border border-red-400 animate-pulse'
-                    : p.isCompleted
-                    ? `${p.color} text-white font-bold opacity-95 hover:opacity-100 shadow-xs`
-                    : p.hasStart
-                    ? 'bg-amber-500/20 dark:bg-amber-500/30 border border-dashed border-amber-600/60 dark:border-amber-400/60 text-amber-900 dark:text-amber-200'
-                    : 'bg-base/80 border border-dashed border-border/70 text-ink-muted'
-                } ${
+                className={`relative h-full rounded-sm cursor-pointer transition-all duration-150 flex items-center justify-center text-[10px] font-bold px-1.5 select-none ${stateClass} ${
                   isSelected
-                    ? 'ring-2 ring-accent scale-y-110 z-30 brightness-125 shadow-lg'
+                    ? 'ring-2 ring-ink-primary scale-y-110 z-30 shadow-lg'
                     : isHovered
-                    ? 'ring-2 ring-ink-primary scale-y-105 z-20 brightness-110 shadow-md'
+                    ? 'ring-2 ring-ink-primary scale-y-105 z-20 shadow-md'
                     : ''
                 }`}
               >
                 <div className="flex items-center gap-1 truncate">
-                  {p.isNegative && <AlertTriangle className="w-3 h-3 shrink-0 text-white" />}
+                  {p.isNegative && <AlertTriangle className="w-3 h-3 shrink-0 text-status-warn" />}
                   <span className="truncate hidden md:inline">{p.shortName}:</span>
                   <span className="font-mono tabular-nums">
                     {p.isCompleted
@@ -319,13 +296,13 @@ export function CheckpointProgressBar({
                         Phase {p.id}: {p.name}
                       </span>
                       <span
-                        className={`text-[10px] font-bold px-1.5 py-0.2 rounded font-mono ${
+                        className={`text-[10px] font-bold px-1.5 py-0.5 rounded font-mono ${
                           p.isNegative
-                            ? 'bg-red-500/20 text-red-600 dark:text-red-400 border border-red-500/30'
+                            ? 'bg-status-warn/20 text-status-warn border border-status-warn/30'
                             : p.isCompleted
-                            ? 'bg-[#2E7D52]/15 text-[#2E7D52] dark:bg-[#41A86F]/20 dark:text-[#41A86F] border border-[#2E7D52]/30'
+                            ? 'bg-ink-primary text-surface font-medium'
                             : p.hasStart
-                            ? 'bg-[#B87A28]/15 text-[#B87A28] dark:bg-[#D4953C]/20 dark:text-[#D4953C] border border-[#B87A28]/30'
+                            ? 'bg-base text-ink-primary border border-border-strong'
                             : 'bg-base text-ink-muted border border-border'
                         }`}
                       >
@@ -336,7 +313,7 @@ export function CheckpointProgressBar({
                     <div className="text-[11px] text-ink-muted space-y-1">
                       <div className="flex items-center gap-1.5 text-[10px]">
                         <span className="text-ink-muted font-medium">{p.startCheckpoint}</span>
-                        <ArrowRight className="w-3 h-3 text-accent shrink-0" />
+                        <ArrowRight className="w-3 h-3 text-ink-muted shrink-0" />
                         <span className="text-ink-muted font-medium">{p.endCheckpoint}</span>
                       </div>
 
@@ -348,10 +325,10 @@ export function CheckpointProgressBar({
                       </div>
 
                       {p.isNegative && (
-                        <div className="p-1.5 rounded bg-red-500/10 border border-red-500/30 text-[10px] text-red-600 dark:text-red-400 mt-1 leading-tight flex items-start gap-1">
-                          <AlertTriangle className="w-3.5 h-3.5 text-red-500 shrink-0 mt-0.5" />
+                        <div className="p-1.5 rounded bg-status-warn/10 border border-status-warn/30 text-[10px] text-status-warn mt-1 leading-tight flex items-start gap-1">
+                          <AlertTriangle className="w-3.5 h-3.5 text-status-warn shrink-0 mt-0.5" />
                           <span>
-                            <strong>Data Quality Anomaly:</strong> Tanggal akhir ({formatDisplayDate(p.endDate)}) tercatat lebih awal dari tanggal awal ({formatDisplayDate(p.startDate)}) pada arsip historis.
+                            <strong>Data Quality Anomaly:</strong> Tanggal akhir ({formatDisplayDate(p.endDate)}) tercatat lebih awal dari tanggal awal ({formatDisplayDate(p.startDate)}).
                           </span>
                         </div>
                       )}
@@ -396,9 +373,9 @@ export function CheckpointProgressBar({
                 onMouseLeave={() => setHoveredCheckpointCode(null)}
                 className={`p-2 rounded-lg border transition-all cursor-pointer text-left relative flex flex-col justify-between min-h-[82px] ${
                   isHighlighted
-                    ? 'bg-surface border-accent ring-2 ring-accent/40 shadow-md scale-[1.02] z-10'
+                    ? 'bg-surface border-ink-primary ring-2 ring-border-strong shadow-md scale-[1.02] z-10'
                     : isRecorded
-                    ? 'bg-surface border-border hover:border-accent/50 hover:bg-surface-hover'
+                    ? 'bg-surface border-border hover:border-ink-primary hover:bg-surface-hover'
                     : 'bg-base/30 border-border/50 text-ink-muted/70 hover:bg-base/60'
                 }`}
               >
@@ -408,7 +385,7 @@ export function CheckpointProgressBar({
                     <span
                       className={`w-4 h-4 rounded-full flex items-center justify-center text-[9px] font-bold ${
                         isRecorded
-                          ? 'bg-[#2E7D52] text-white'
+                          ? 'bg-ink-primary text-surface'
                           : 'bg-base border border-border text-ink-muted'
                       }`}
                     >

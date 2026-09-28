@@ -37,7 +37,7 @@ export function CaseSelector({ cases, selectedCaseId }: CaseSelectorProps) {
     <div className="relative w-full max-w-xl">
       <div
         onClick={() => setIsOpen(!isOpen)}
-        className="flex items-center justify-between px-3.5 py-2 rounded-lg bg-surface border border-border cursor-pointer shadow-xs hover:border-accent-brass transition-colors"
+        className="flex items-center justify-between px-3.5 py-2 rounded-lg bg-surface border border-border cursor-pointer shadow-xs hover:border-border-strong transition-colors"
       >
         <div className="flex items-center gap-2 overflow-hidden text-xs">
           <Search className="w-4 h-4 text-ink-muted shrink-0" />
@@ -68,7 +68,7 @@ export function CaseSelector({ cases, selectedCaseId }: CaseSelectorProps) {
               placeholder="Search customer, serial number, model, branch..."
               value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)}
-              className="w-full px-3 py-1.5 text-xs bg-surface border border-border rounded focus:outline-hidden focus:border-accent-brass text-ink-primary"
+              className="w-full px-3 py-1.5 text-xs bg-surface border border-border rounded focus:outline-hidden focus:border-border-strong text-ink-primary"
               autoFocus
             />
           </div>
@@ -81,7 +81,7 @@ export function CaseSelector({ cases, selectedCaseId }: CaseSelectorProps) {
                     key={c.issue_case_id}
                     onClick={() => handleSelect(c.issue_case_id)}
                     className={`w-full text-left px-3.5 py-2.5 text-xs hover:bg-surface-hover transition-colors flex items-center justify-between ${
-                      isSelected ? 'bg-accent-brass/10 font-semibold' : ''
+                      isSelected ? 'bg-surface-hover font-semibold' : ''
                     }`}
                   >
                     <div>
@@ -99,8 +99,8 @@ export function CaseSelector({ cases, selectedCaseId }: CaseSelectorProps) {
                       <span
                         className={`text-[10px] px-1.5 py-0.5 rounded ${
                           c.status_wo === 'Closed'
-                            ? 'bg-[#3B7A57]/15 text-[#3B7A57]'
-                            : 'bg-[#B8863B]/15 text-[#B8863B]'
+                            ? 'bg-status-ok/15 text-status-ok'
+                            : 'bg-status-warn/15 text-status-warn'
                         }`}
                       >
                         {c.status_wo}

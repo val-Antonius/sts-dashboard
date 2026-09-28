@@ -63,7 +63,7 @@ export function BranchWorkloadTable({ workloads, pageSize = 15 }: BranchWorkload
                     <span
                       className={
                         hasOverdue
-                          ? 'text-[#A54B3F] dark:text-[#BD584B] font-semibold bg-[#A54B3F]/10 px-2 py-0.5 rounded'
+                          ? 'text-status-danger font-semibold bg-status-danger/10 px-2 py-0.5 rounded'
                           : 'text-ink-muted'
                       }
                     >
@@ -74,7 +74,7 @@ export function BranchWorkloadTable({ workloads, pageSize = 15 }: BranchWorkload
                   {/* Carried-Over Cases */}
                   <td className="py-3 px-4 text-right tabular-nums text-ink-primary">
                     {w.total_carried_over_cases > 0 ? (
-                      <span className="text-[#B8863B] dark:text-[#C99645] font-medium bg-[#B8863B]/10 px-2 py-0.5 rounded">
+                      <span className="text-status-warn font-medium bg-status-warn/10 px-2 py-0.5 rounded">
                         {w.total_carried_over_cases}
                       </span>
                     ) : (

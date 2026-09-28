@@ -2,6 +2,7 @@
 
 import React, { useState } from 'react';
 import { ProductClaimableDotPlotItem } from '@/types/database';
+import { CLAIM_COLORS } from '@/lib/chartColors';
 
 interface ProductClaimableDotPlotProps {
   data: ProductClaimableDotPlotItem[];
@@ -28,18 +29,24 @@ export function ProductClaimableDotPlot({
 
   return (
     <div className="w-full space-y-2">
-      {/* Top Legend & Active Filter Bar (Ultra Compact) */}
-      <div className="flex items-center justify-between text-[11px] pb-2 border-b border-border/60">
+      {/* Top Legend & Active Filter Bar */}
+      <div className="flex items-center justify-between text-[11px] pb-2 border-b border-border">
         <div className="flex items-center gap-5">
           <div className="flex items-center gap-1.5">
-            <span className="w-2.5 h-2.5 rounded-full bg-[#2E7D52] inline-block" />
+            <span
+              className="w-2.5 h-2.5 rounded-full inline-block shrink-0 shadow-xs"
+              style={{ backgroundColor: CLAIM_COLORS.claimable }}
+            />
             <span className="text-ink-primary font-medium">Claimable %</span>
             <span className="text-ink-muted text-[10px]">(Warranty/Vendor)</span>
           </div>
           <div className="flex items-center gap-1.5">
-            <span className="w-2.5 h-2.5 rounded-full bg-[#B5302E] inline-block" />
+            <span
+              className="w-2.5 h-2.5 rounded-full inline-block shrink-0 shadow-xs"
+              style={{ backgroundColor: CLAIM_COLORS.unclaimable }}
+            />
             <span className="text-ink-primary font-medium">Unclaimable %</span>
-            <span className="text-ink-muted text-[10px]">(Non-Warranty/GOEM)</span>
+            <span className="text-ink-muted text-[10px]">(Non-Warranty)</span>
           </div>
         </div>
 
@@ -47,6 +54,7 @@ export function ProductClaimableDotPlot({
           <span>Radius &prop; &radic;n kasus</span>
           {selectedProduct && (
             <button
+              type="button"
               onClick={() => onSelectProduct?.(null)}
               className="px-1.5 py-0.5 rounded bg-base hover:bg-surface-hover border border-border text-ink-primary font-sans font-medium transition-colors cursor-pointer"
             >
@@ -92,7 +100,7 @@ export function ProductClaimableDotPlot({
               onMouseLeave={() => setHoveredProduct(null)}
               className={`grid grid-cols-[140px_1fr] sm:grid-cols-[160px_1fr] items-center gap-3 py-1.5 px-1.5 rounded transition-all cursor-pointer select-none ${
                 isSelected
-                  ? 'bg-accent/10 ring-1 ring-accent/40 font-semibold'
+                  ? 'bg-base border border-border-strong font-semibold shadow-xs'
                   : isHovered
                   ? 'bg-surface-hover'
                   : ''
@@ -105,7 +113,7 @@ export function ProductClaimableDotPlot({
                     {item.product_code}
                   </span>
                   {isSelected && (
-                    <span className="text-[9px] px-1 py-0.2 rounded bg-accent text-white font-mono">
+                    <span className="text-[9px] px-1 py-0.2 rounded bg-surface-inverted text-ink-inverted font-mono font-bold">
                       Active
                     </span>
                   )}
@@ -138,7 +146,7 @@ export function ProductClaimableDotPlot({
                   }}
                 />
 
-                {/* Unclaimable Dot (Red) */}
+                {/* Unclaimable Dot (Chart-2) */}
                 <div
                   className="absolute transform -translate-x-1/2 -translate-y-1/2 z-10"
                   style={{
@@ -148,20 +156,24 @@ export function ProductClaimableDotPlot({
                   title={`${item.product_code} Unclaimable: ${item.unclaimable_cases} kasus (${item.unclaimable_pct}%)`}
                 >
                   <div
-                    className="rounded-full bg-[#B5302E] border border-surface shadow-xs transition-transform hover:scale-125"
+                    className="rounded-full border border-surface shadow-xs transition-transform hover:scale-125"
                     style={{
+                      backgroundColor: CLAIM_COLORS.unclaimable,
                       width: `${r * 2}px`,
                       height: `${r * 2}px`,
                     }}
                   />
                   {(isHovered || isSelected) && (
-                    <span className="absolute -bottom-3 left-1/2 transform -translate-x-1/2 text-[9px] font-mono font-bold text-[#B5302E] tabular-nums whitespace-nowrap bg-surface/90 px-0.5 rounded">
+                    <span
+                      className="absolute -bottom-3 left-1/2 transform -translate-x-1/2 text-[9px] font-mono font-bold tabular-nums whitespace-nowrap bg-surface/95 px-1 py-0.2 rounded border border-border"
+                      style={{ color: 'var(--ink-primary)' }}
+                    >
                       {item.unclaimable_pct}%
                     </span>
                   )}
                 </div>
 
-                {/* Claimable Dot (Green) */}
+                {/* Claimable Dot (Chart-1) */}
                 <div
                   className="absolute transform -translate-x-1/2 -translate-y-1/2 z-20"
                   style={{
@@ -171,14 +183,18 @@ export function ProductClaimableDotPlot({
                   title={`${item.product_code} Claimable: ${item.claimable_cases} kasus (${item.claimable_pct}%)`}
                 >
                   <div
-                    className="rounded-full bg-[#2E7D52] border border-surface shadow-xs transition-transform hover:scale-125"
+                    className="rounded-full border border-surface shadow-xs transition-transform hover:scale-125"
                     style={{
+                      backgroundColor: CLAIM_COLORS.claimable,
                       width: `${r * 2}px`,
                       height: `${r * 2}px`,
                     }}
                   />
                   {(isHovered || isSelected) && (
-                    <span className="absolute -top-3 left-1/2 transform -translate-x-1/2 text-[9px] font-mono font-bold text-[#2E7D52] tabular-nums whitespace-nowrap bg-surface/90 px-0.5 rounded">
+                    <span
+                      className="absolute -top-3 left-1/2 transform -translate-x-1/2 text-[9px] font-mono font-bold tabular-nums whitespace-nowrap bg-surface/95 px-1 py-0.2 rounded border border-border"
+                      style={{ color: 'var(--ink-primary)' }}
+                    >
                       {item.claimable_pct}%
                     </span>
                   )}

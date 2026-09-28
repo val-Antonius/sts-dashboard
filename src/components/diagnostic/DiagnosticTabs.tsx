@@ -50,7 +50,7 @@ export function DiagnosticTabs({
           onClick={() => handleTabClick('specs')}
           className={`flex items-center gap-2 px-3.5 py-2 rounded-lg text-xs font-bold transition-all border cursor-pointer ${
             currentTab === 'specs'
-              ? 'bg-surface border-border text-accent-brass shadow-xs'
+              ? 'bg-surface border-border text-ink-primary shadow-xs'
               : 'border-transparent text-ink-muted hover:text-ink-primary hover:bg-base/40'
           }`}
         >
@@ -68,14 +68,14 @@ export function DiagnosticTabs({
           onClick={() => handleTabClick('logs')}
           className={`flex items-center gap-2 px-3.5 py-2 rounded-lg text-xs font-bold transition-all border cursor-pointer ${
             currentTab === 'logs'
-              ? 'bg-surface border-border text-accent-brass shadow-xs'
+              ? 'bg-surface border-border text-ink-primary shadow-xs'
               : 'border-transparent text-ink-muted hover:text-ink-primary hover:bg-base/40'
           }`}
         >
           <MessageSquare className="w-4 h-4" />
           <span>Log Proses & Timeline</span>
           {logs.length > 0 && (
-            <span className="font-mono text-[10px] px-1.5 py-0.2 rounded-full bg-accent-brass/10 border border-accent-brass/30 text-accent-brass font-bold">
+            <span className="font-mono text-[10px] px-1.5 py-0.2 rounded-full bg-base border border-border text-ink-primary font-bold">
               {logs.length}
             </span>
           )}

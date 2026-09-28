@@ -76,7 +76,7 @@ export function Header() {
 
       <div className="flex items-center gap-4">
         <div className="flex items-center gap-1.5 px-2.5 py-1 rounded bg-base border border-border text-[11px] font-mono text-ink-muted">
-          <Database className="w-3.5 h-3.5 text-accent-brass" />
+          <Database className="w-3.5 h-3.5 text-ink-muted" />
           <span>schema: product_issue</span>
         </div>
 
@@ -86,7 +86,7 @@ export function Header() {
           className="p-1.5 rounded-md text-ink-muted hover:text-ink-primary hover:bg-surface-hover transition-colors border border-border"
         >
           {theme === 'dark' ? (
-            <Sun className="w-4 h-4 text-accent-brass" />
+            <Sun className="w-4 h-4 text-ink-muted" />
           ) : (
             <Moon className="w-4 h-4" />
           )}

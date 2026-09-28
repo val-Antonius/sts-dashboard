@@ -35,7 +35,7 @@ export function SolutionTimePerformanceTabs({
           onClick={() => setActiveTab('main_kpis')}
           className={`flex items-center gap-2 px-4 py-2.5 text-xs font-medium border-b-2 transition-colors -mb-px ${
             activeTab === 'main_kpis'
-              ? 'border-accent-brass text-accent-brass font-semibold'
+              ? 'border-ink-primary text-ink-primary font-semibold'
               : 'border-transparent text-ink-muted hover:text-ink-primary hover:border-border'
           }`}
         >
@@ -48,7 +48,7 @@ export function SolutionTimePerformanceTabs({
           onClick={() => setActiveTab('additional')}
           className={`flex items-center gap-2 px-4 py-2.5 text-xs font-medium border-b-2 transition-colors -mb-px ${
             activeTab === 'additional'
-              ? 'border-accent-brass text-accent-brass font-semibold'
+              ? 'border-ink-primary text-ink-primary font-semibold'
               : 'border-transparent text-ink-muted hover:text-ink-primary hover:border-border'
           }`}
         >

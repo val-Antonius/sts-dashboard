@@ -331,7 +331,7 @@ export function MasterDataTabs({ initialData }: MasterDataTabsProps) {
       header: 'Product Code',
       accessor: 'product_code',
       render: (r) => (
-        <span className="font-mono font-bold px-2 py-0.5 rounded bg-accent-brass/10 border border-accent-brass/30 text-accent-brass">
+        <span className="font-mono font-bold px-2 py-0.5 rounded bg-base border border-border text-ink-primary">
           {r.product_code}
         </span>
       ),
@@ -368,7 +368,7 @@ export function MasterDataTabs({ initialData }: MasterDataTabsProps) {
       render: (r) => (
         <span className={`px-2 py-0.5 rounded text-[10px] font-semibold ${
           r.key_account_type === 'KA NASIONAL'
-            ? 'bg-accent-brass/15 text-accent-brass border border-accent-brass/30'
+            ? 'bg-surface text-ink-primary border border-border font-bold'
             : 'bg-base text-ink-muted border border-border'
         }`}>
           {r.key_account_type || 'Standard / Non-KA'}
@@ -386,7 +386,7 @@ export function MasterDataTabs({ initialData }: MasterDataTabsProps) {
       render: (r) => (
         <span className={`px-2 py-0.5 rounded text-[10px] font-semibold ${
           r.golongan_customer === 'KA Nasional'
-            ? 'bg-[#B8863B]/15 text-[#B8863B] border border-[#B8863B]/30'
+            ? 'bg-status-warn/15 text-status-warn border border-status-warn/30'
             : 'bg-base text-ink-muted border border-border'
         }`}>
           {r.golongan_customer}
@@ -408,8 +408,8 @@ export function MasterDataTabs({ initialData }: MasterDataTabsProps) {
       render: (r) => (
         <span className={`px-2 py-0.5 rounded text-[10px] font-semibold ${
           r.is_warranty_scope
-            ? 'bg-[#3B7A57]/15 text-[#3B7A57] border border-[#3B7A57]/30'
-            : 'bg-[#A54B3F]/15 text-[#A54B3F] border border-[#A54B3F]/30'
+            ? 'bg-status-ok/15 text-status-ok border border-status-ok/30'
+            : 'bg-status-danger/15 text-status-danger border border-status-danger/30'
         }`}>
           {r.is_warranty_scope ? 'Warranty Scope' : 'Non-Warranty Scope'}
         </span>
@@ -425,7 +425,7 @@ export function MasterDataTabs({ initialData }: MasterDataTabsProps) {
     <div className="space-y-6">
       {/* Toast Notification */}
       {toastMsg && (
-        <div className="fixed bottom-5 right-5 z-50 flex items-center gap-2 px-4 py-2.5 rounded-lg bg-[#3B7A57] text-white text-xs font-semibold shadow-lg animate-in slide-in-from-bottom-2">
+        <div className="fixed bottom-5 right-5 z-50 flex items-center gap-2 px-4 py-2.5 rounded-lg bg-status-ok text-white text-xs font-semibold shadow-lg animate-in slide-in-from-bottom-2">
           <Check className="w-4 h-4" />
           <span>{toastMsg}</span>
         </div>
@@ -437,7 +437,7 @@ export function MasterDataTabs({ initialData }: MasterDataTabsProps) {
           onClick={() => setActiveTab('branch_pic')}
           className={`flex items-center gap-2 px-4 py-2.5 text-xs font-medium border-b-2 transition-colors -mb-px ${
             activeTab === 'branch_pic'
-              ? 'border-accent-brass text-accent-brass font-semibold'
+              ? 'border-ink-primary text-ink-primary font-semibold'
               : 'border-transparent text-ink-muted hover:text-ink-primary hover:border-border'
           }`}
         >
@@ -449,7 +449,7 @@ export function MasterDataTabs({ initialData }: MasterDataTabsProps) {
           onClick={() => setActiveTab('product')}
           className={`flex items-center gap-2 px-4 py-2.5 text-xs font-medium border-b-2 transition-colors -mb-px ${
             activeTab === 'product'
-              ? 'border-accent-brass text-accent-brass font-semibold'
+              ? 'border-ink-primary text-ink-primary font-semibold'
               : 'border-transparent text-ink-muted hover:text-ink-primary hover:border-border'
           }`}
         >
@@ -461,7 +461,7 @@ export function MasterDataTabs({ initialData }: MasterDataTabsProps) {
           onClick={() => setActiveTab('customer')}
           className={`flex items-center gap-2 px-4 py-2.5 text-xs font-medium border-b-2 transition-colors -mb-px ${
             activeTab === 'customer'
-              ? 'border-accent-brass text-accent-brass font-semibold'
+              ? 'border-ink-primary text-ink-primary font-semibold'
               : 'border-transparent text-ink-muted hover:text-ink-primary hover:border-border'
           }`}
         >
@@ -473,7 +473,7 @@ export function MasterDataTabs({ initialData }: MasterDataTabsProps) {
           onClick={() => setActiveTab('references')}
           className={`flex items-center gap-2 px-4 py-2.5 text-xs font-medium border-b-2 transition-colors -mb-px ${
             activeTab === 'references'
-              ? 'border-accent-brass text-accent-brass font-semibold'
+              ? 'border-ink-primary text-ink-primary font-semibold'
               : 'border-transparent text-ink-muted hover:text-ink-primary hover:border-border'
           }`}
         >
@@ -648,7 +648,7 @@ export function MasterDataTabs({ initialData }: MasterDataTabsProps) {
                       required
                       value={formData.branch_code || ''}
                       onChange={(e) => setFormData({ ...formData, branch_code: e.target.value })}
-                      className="w-full px-3 py-2 bg-surface border border-border rounded-md focus:border-accent-brass uppercase font-mono"
+                      className="w-full px-3 py-2 bg-surface border border-border rounded-md focus:border-ink-primary uppercase font-mono"
                     />
                   </div>
                   <div>
@@ -660,7 +660,7 @@ export function MasterDataTabs({ initialData }: MasterDataTabsProps) {
                       value={formData.branch_name || ''}
                       onChange={(e) => setFormData({ ...formData, branch_name: e.target.value })}
                       placeholder="e.g. Jakarta Head Office"
-                      className="w-full px-3 py-2 bg-surface border border-border rounded-md focus:border-accent-brass"
+                      className="w-full px-3 py-2 bg-surface border border-border rounded-md focus:border-ink-primary"
                     />
                   </div>
                   <div>
@@ -670,7 +670,7 @@ export function MasterDataTabs({ initialData }: MasterDataTabsProps) {
                     <select
                       value={formData.branch_location_id || ''}
                       onChange={(e) => setFormData({ ...formData, branch_location_id: e.target.value })}
-                      className="w-full px-3 py-2 bg-surface border border-border rounded-md focus:border-accent-brass"
+                      className="w-full px-3 py-2 bg-surface border border-border rounded-md focus:border-ink-primary"
                     >
                       <option value="">-- Select City --</option>
                       {locations.map((l) => (
@@ -695,7 +695,7 @@ export function MasterDataTabs({ initialData }: MasterDataTabsProps) {
                       required
                       value={formData.pic_name || ''}
                       onChange={(e) => setFormData({ ...formData, pic_name: e.target.value })}
-                      className="w-full px-3 py-2 bg-surface border border-border rounded-md focus:border-accent-brass"
+                      className="w-full px-3 py-2 bg-surface border border-border rounded-md focus:border-ink-primary"
                     />
                   </div>
                   <div>
@@ -706,7 +706,7 @@ export function MasterDataTabs({ initialData }: MasterDataTabsProps) {
                       type="text"
                       value={formData.pic_role_code || ''}
                       onChange={(e) => setFormData({ ...formData, pic_role_code: e.target.value })}
-                      className="w-full px-3 py-2 bg-surface border border-border rounded-md focus:border-accent-brass font-mono uppercase"
+                      className="w-full px-3 py-2 bg-surface border border-border rounded-md focus:border-ink-primary font-mono uppercase"
                     />
                   </div>
                 </>
@@ -724,7 +724,7 @@ export function MasterDataTabs({ initialData }: MasterDataTabsProps) {
                       required
                       value={formData.product_code || ''}
                       onChange={(e) => setFormData({ ...formData, product_code: e.target.value })}
-                      className="w-full px-3 py-2 bg-surface border border-border rounded-md focus:border-accent-brass uppercase font-mono"
+                      className="w-full px-3 py-2 bg-surface border border-border rounded-md focus:border-ink-primary uppercase font-mono"
                     />
                   </div>
                   <div>
@@ -736,7 +736,7 @@ export function MasterDataTabs({ initialData }: MasterDataTabsProps) {
                       value={formData.product_type_name || ''}
                       onChange={(e) => setFormData({ ...formData, product_type_name: e.target.value })}
                       placeholder="e.g. Perkins Engine Series"
-                      className="w-full px-3 py-2 bg-surface border border-border rounded-md focus:border-accent-brass"
+                      className="w-full px-3 py-2 bg-surface border border-border rounded-md focus:border-ink-primary"
                     />
                   </div>
                 </>
@@ -753,7 +753,7 @@ export function MasterDataTabs({ initialData }: MasterDataTabsProps) {
                       required
                       value={formData.product_model_id || ''}
                       onChange={(e) => setFormData({ ...formData, product_model_id: e.target.value })}
-                      className="w-full px-3 py-2 bg-surface border border-border rounded-md focus:border-accent-brass"
+                      className="w-full px-3 py-2 bg-surface border border-border rounded-md focus:border-ink-primary"
                     >
                       <option value="">-- Select Product Line --</option>
                       {models.map((m) => (
@@ -772,7 +772,7 @@ export function MasterDataTabs({ initialData }: MasterDataTabsProps) {
                       required
                       value={formData.unit_model_name || ''}
                       onChange={(e) => setFormData({ ...formData, unit_model_name: e.target.value })}
-                      className="w-full px-3 py-2 bg-surface border border-border rounded-md focus:border-accent-brass"
+                      className="w-full px-3 py-2 bg-surface border border-border rounded-md focus:border-ink-primary"
                     />
                   </div>
                   <div>
@@ -784,7 +784,7 @@ export function MasterDataTabs({ initialData }: MasterDataTabsProps) {
                       value={formData.serial_number || ''}
                       onChange={(e) => setFormData({ ...formData, serial_number: e.target.value })}
                       placeholder="e.g. TG40200IS11002"
-                      className="w-full px-3 py-2 bg-surface border border-border rounded-md focus:border-accent-brass font-mono"
+                      className="w-full px-3 py-2 bg-surface border border-border rounded-md focus:border-ink-primary font-mono"
                     />
                   </div>
                   <div>
@@ -795,7 +795,7 @@ export function MasterDataTabs({ initialData }: MasterDataTabsProps) {
                       type="date"
                       value={formData.delivery_date || ''}
                       onChange={(e) => setFormData({ ...formData, delivery_date: e.target.value })}
-                      className="w-full px-3 py-2 bg-surface border border-border rounded-md focus:border-accent-brass"
+                      className="w-full px-3 py-2 bg-surface border border-border rounded-md focus:border-ink-primary"
                     />
                   </div>
                 </>
@@ -813,7 +813,7 @@ export function MasterDataTabs({ initialData }: MasterDataTabsProps) {
                       required
                       value={formData.group_name || ''}
                       onChange={(e) => setFormData({ ...formData, group_name: e.target.value })}
-                      className="w-full px-3 py-2 bg-surface border border-border rounded-md focus:border-accent-brass"
+                      className="w-full px-3 py-2 bg-surface border border-border rounded-md focus:border-ink-primary"
                     />
                   </div>
                   <div>
@@ -823,7 +823,7 @@ export function MasterDataTabs({ initialData }: MasterDataTabsProps) {
                     <select
                       value={formData.key_account_type || ''}
                       onChange={(e) => setFormData({ ...formData, key_account_type: e.target.value || null })}
-                      className="w-full px-3 py-2 bg-surface border border-border rounded-md focus:border-accent-brass"
+                      className="w-full px-3 py-2 bg-surface border border-border rounded-md focus:border-ink-primary"
                     >
                       <option value="KA NASIONAL">KA NASIONAL (15 Days SLA)</option>
                       <option value="">Standard / Non-KA (20 Days SLA)</option>
@@ -844,7 +844,7 @@ export function MasterDataTabs({ initialData }: MasterDataTabsProps) {
                       required
                       value={formData.customer_name || ''}
                       onChange={(e) => setFormData({ ...formData, customer_name: e.target.value })}
-                      className="w-full px-3 py-2 bg-surface border border-border rounded-md focus:border-accent-brass"
+                      className="w-full px-3 py-2 bg-surface border border-border rounded-md focus:border-ink-primary"
                     />
                   </div>
                   <div>
@@ -854,7 +854,7 @@ export function MasterDataTabs({ initialData }: MasterDataTabsProps) {
                     <select
                       value={formData.customer_group_id || ''}
                       onChange={(e) => setFormData({ ...formData, customer_group_id: e.target.value || null })}
-                      className="w-full px-3 py-2 bg-surface border border-border rounded-md focus:border-accent-brass"
+                      className="w-full px-3 py-2 bg-surface border border-border rounded-md focus:border-ink-primary"
                     >
                       <option value="">-- No Group Assigned --</option>
                       {customerGroups.map((g) => (
@@ -878,7 +878,7 @@ export function MasterDataTabs({ initialData }: MasterDataTabsProps) {
                     required
                     value={formData.name || formData.root_cause_name || formData.bottleneck_name || ''}
                     onChange={(e) => setFormData({ ...formData, name: e.target.value })}
-                    className="w-full px-3 py-2 bg-surface border border-border rounded-md focus:border-accent-brass"
+                    className="w-full px-3 py-2 bg-surface border border-border rounded-md focus:border-ink-primary"
                   />
                 </div>
               )}
@@ -895,7 +895,7 @@ export function MasterDataTabs({ initialData }: MasterDataTabsProps) {
                       required
                       value={formData.name || formData.status_name || ''}
                       onChange={(e) => setFormData({ ...formData, name: e.target.value })}
-                      className="w-full px-3 py-2 bg-surface border border-border rounded-md focus:border-accent-brass"
+                      className="w-full px-3 py-2 bg-surface border border-border rounded-md focus:border-ink-primary"
                     />
                   </div>
                   <div className="flex items-center gap-2 pt-2">
@@ -904,7 +904,7 @@ export function MasterDataTabs({ initialData }: MasterDataTabsProps) {
                       id="warranty_scope_cb"
                       checked={Boolean(formData.is_warranty_scope)}
                       onChange={(e) => setFormData({ ...formData, is_warranty_scope: e.target.checked })}
-                      className="rounded border-border text-accent-brass focus:ring-accent-brass"
+                      className="rounded border-border text-ink-primary focus:ring-ink-primary"
                     />
                     <label htmlFor="warranty_scope_cb" className="text-xs text-ink-primary select-none cursor-pointer">
                       Warranty Scope (Covered under warranty rules)
@@ -925,7 +925,7 @@ export function MasterDataTabs({ initialData }: MasterDataTabsProps) {
                 <button
                   type="submit"
                   disabled={isSubmitting}
-                  className="flex items-center gap-1.5 px-4 py-1.5 rounded-md bg-accent-brass text-white font-semibold hover:bg-accent-brass/90 transition-colors disabled:opacity-50"
+                  className="flex items-center gap-1.5 px-4 py-1.5 rounded-md bg-surface-inverted text-ink-inverted font-semibold hover:opacity-90 transition-opacity disabled:opacity-50"
                 >
                   {isSubmitting && <Loader2 className="w-3.5 h-3.5 animate-spin" />}
                   <span>{editItem ? 'Save Changes' : 'Create Record'}</span>

@@ -28,6 +28,10 @@ import {
   FileSpreadsheet,
 } from 'lucide-react';
 
+import {
+  SLA_STATUS_COLORS,
+} from '@/lib/chartColors';
+
 interface SolutionTimeAnalyticsViewProps {
   initialData: SolutionTimeAnalyticsData;
 }
@@ -114,17 +118,17 @@ export function SolutionTimeAnalyticsView({ initialData }: SolutionTimeAnalytics
               <div className="text-xs font-semibold uppercase tracking-wider text-ink-muted mb-1">
                 SLA Achievement Rate
               </div>
-              <div className="text-3xl font-mono font-bold text-[#2E7D52] tabular-nums tracking-tight">
+              <div className="text-3xl font-mono font-bold text-ink-primary tabular-nums tracking-tight">
                 {summary.overall_achievement_pct}%
               </div>
             </div>
-            <div className="p-2 rounded-md bg-[#2E7D52]/10 text-[#2E7D52] border border-[#2E7D52]/20">
+            <div className="p-2 rounded-md bg-base text-ink-muted border border-border">
               <CheckCircle2 className="w-5 h-5" />
             </div>
           </div>
           <div className="text-[11px] text-ink-muted mt-2 flex items-center justify-between">
             <span>Target: 85.0%</span>
-            <span className={`font-mono font-semibold text-[10px] ${summary.overall_achievement_pct >= 85 ? 'text-[#2E7D52]' : 'text-accent-brass'}`}>
+            <span className={`font-mono font-semibold text-[10px] ${summary.overall_achievement_pct >= 85 ? 'text-ink-primary' : 'text-ink-muted'}`}>
               {summary.overall_achievement_pct >= 85 ? 'Memenuhi Standar' : 'Di Bawah Standar'}
             </span>
           </div>
@@ -164,7 +168,7 @@ export function SolutionTimeAnalyticsView({ initialData }: SolutionTimeAnalytics
                 {summary.total_cases_evaluated}
               </div>
             </div>
-            <div className="p-2 rounded-md bg-accent-brass/10 text-accent-brass border border-accent-brass/20">
+            <div className="p-2 rounded-md bg-base text-ink-muted border border-border">
               <Layers className="w-5 h-5" />
             </div>
           </div>
@@ -173,18 +177,23 @@ export function SolutionTimeAnalyticsView({ initialData }: SolutionTimeAnalytics
           </div>
         </div>
 
-        {/* Card 4: Overdue Cases */}
+        {/* Card 4: Overdue Cases with danger indicator dot */}
         <div className="p-4 bg-surface border border-border rounded-lg shadow-xs flex flex-col justify-between card-interactive">
           <div className="flex items-start justify-between">
             <div>
               <div className="text-xs font-semibold uppercase tracking-wider text-ink-muted mb-1">
                 Kasus Melewati SLA
               </div>
-              <div className="text-3xl font-mono font-bold text-[#A3462F] tabular-nums tracking-tight">
-                {summary.overdue_count}
+              <div className="flex items-center gap-2">
+                <span className="text-3xl font-mono font-bold text-ink-primary tabular-nums tracking-tight">
+                  {summary.overdue_count}
+                </span>
+                {summary.overdue_count > 0 && (
+                  <span className="w-2.5 h-2.5 rounded-full shrink-0" style={{ backgroundColor: 'var(--status-danger)' }} title="Kasus melewati SLA" />
+                )}
               </div>
             </div>
-            <div className="p-2 rounded-md bg-[#A3462F]/10 text-[#A3462F] border border-[#A3462F]/20">
+            <div className="p-2 rounded-md bg-base text-ink-muted border border-border">
               <AlertTriangle className="w-5 h-5" />
             </div>
           </div>
@@ -202,18 +211,18 @@ export function SolutionTimeAnalyticsView({ initialData }: SolutionTimeAnalytics
             <div className="flex items-center justify-between border-b border-border pb-3 mb-3">
               <div>
                 <h3 className="text-xs font-bold uppercase tracking-wider text-ink-primary flex items-center gap-2">
-                  <CheckCircle2 className="w-3.5 h-3.5 text-[#2E7D52]" />
+                  <CheckCircle2 className="w-3.5 h-3.5 text-ink-muted" />
                   <span>Peringkat Kepatuhan SLA per Cabang (%)</span>
                 </h3>
                 <p className="text-[11px] text-ink-muted mt-0.5">
-                  Cabang paling konsisten (hijau) vs cabang yang paling jauh dari target 85% (merah).
+                  Distribusi pencapaian kepatuhan SLA antar cabang operasional terhadap acuan 85%.
                 </p>
               </div>
             </div>
 
-            <div className="h-72 w-full">
+            <div className="h-80 w-full">
               {branchRanking.length === 0 ? (
-                <EmptyState className="h-72" />
+                <EmptyState className="h-80" />
               ) : (
                 <ResponsiveContainer width="100%" height="100%">
                   <BarChart
@@ -231,8 +240,9 @@ export function SolutionTimeAnalyticsView({ initialData }: SolutionTimeAnalytics
                     <YAxis
                       dataKey="branch_code"
                       type="category"
-                      tick={{ fontSize: 10, fill: 'var(--ink-muted)' }}
+                      tick={{ fontSize: 9, fill: 'var(--ink-muted)' }}
                       width={40}
+                      interval={0}
                     />
                     <Tooltip
                       contentStyle={customTooltipStyle}
@@ -241,26 +251,20 @@ export function SolutionTimeAnalyticsView({ initialData }: SolutionTimeAnalytics
                         'SLA Achievement %',
                       ]}
                     />
-                    <ReferenceLine x={85} stroke="#2E7D52" strokeDasharray="3 3" label={{ value: 'Target 85%', fill: '#2E7D52', fontSize: 9, position: 'insideTopRight' }} />
+                    <ReferenceLine x={85} stroke="var(--ink-muted)" strokeDasharray="3 3" label={{ value: 'Target 85%', fill: 'var(--ink-muted)', fontSize: 9, position: 'insideTopRight' }} />
                     <Bar
                       dataKey="achievement_pct"
                       name="Achievement %"
+                      fill="var(--chart-1)"
                       radius={[0, 4, 4, 0]}
-                    >
-                      {branchRanking.map((entry, index) => (
-                        <Cell
-                          key={`ach-${index}`}
-                          fill={entry.achievement_pct >= 85 ? '#2E7D52' : '#A3462F'}
-                        />
-                      ))}
-                    </Bar>
+                    />
                   </BarChart>
                 </ResponsiveContainer>
               )}
             </div>
           </div>
           <div className="pt-2 border-t border-border flex items-center justify-between text-[10px] font-mono text-ink-muted">
-            <span className="text-[#2E7D52]">Target Benchmark: 85.0%</span>
+            <span>Target Benchmark: 85.0%</span>
             <span>{branchRanking.length} Cabang Terdata</span>
           </div>
         </div>
@@ -271,7 +275,7 @@ export function SolutionTimeAnalyticsView({ initialData }: SolutionTimeAnalytics
             <div className="flex items-center justify-between border-b border-border pb-3 mb-3">
               <div>
                 <h3 className="text-xs font-bold uppercase tracking-wider text-ink-primary flex items-center gap-2">
-                  <Timer className="w-3.5 h-3.5 text-accent-brass" />
+                  <Timer className="w-3.5 h-3.5 text-ink-muted" />
                   <span>Analisis Bottleneck 8 Checkpoint Proses</span>
                 </h3>
                 <p className="text-[11px] text-ink-muted mt-0.5">
@@ -280,9 +284,9 @@ export function SolutionTimeAnalyticsView({ initialData }: SolutionTimeAnalytics
               </div>
             </div>
 
-            <div className="h-72 w-full">
+            <div className="h-80 w-full">
               {checkpointRanking.length === 0 ? (
-                <EmptyState className="h-72" />
+                <EmptyState className="h-80" />
               ) : (
                 <ResponsiveContainer width="100%" height="100%">
                   <BarChart
@@ -301,6 +305,7 @@ export function SolutionTimeAnalyticsView({ initialData }: SolutionTimeAnalytics
                       type="category"
                       tick={{ fontSize: 9, fill: 'var(--ink-muted)' }}
                       width={80}
+                      interval={0}
                     />
                     <Tooltip
                       contentStyle={customTooltipStyle}
@@ -312,23 +317,16 @@ export function SolutionTimeAnalyticsView({ initialData }: SolutionTimeAnalytics
                     <Bar
                       dataKey="avg_durasi"
                       name="Rata-rata Hari"
-                      fill="#A3462F"
+                      fill="var(--chart-1)"
                       radius={[0, 4, 4, 0]}
-                    >
-                      {checkpointRanking.map((entry, index) => (
-                        <Cell
-                          key={`cp-${index}`}
-                          fill={entry.avg_durasi >= 5 ? '#A3462F' : entry.avg_durasi >= 2 ? '#B87A28' : '#71717A'}
-                        />
-                      ))}
-                    </Bar>
+                    />
                   </BarChart>
                 </ResponsiveContainer>
               )}
             </div>
           </div>
           <div className="pt-2 border-t border-border flex items-center justify-between text-[10px] font-mono text-ink-muted">
-            <span className="text-[#A3462F] font-semibold">&ge;5 Hari = Bottleneck Utama</span>
+            <span className="text-ink-muted font-semibold">&ge;5 Hari = Bottleneck Utama</span>
             <span>{checkpointRanking.length} Checkpoint Teranalisis</span>
           </div>
         </div>
@@ -339,7 +337,7 @@ export function SolutionTimeAnalyticsView({ initialData }: SolutionTimeAnalytics
         <div className="flex items-center justify-between border-b border-border pb-3">
           <div>
             <h3 className="text-xs font-bold uppercase tracking-wider text-ink-primary flex items-center gap-2">
-              <Users className="w-3.5 h-3.5 text-accent-brass" />
+              <Users className="w-3.5 h-3.5 text-ink-muted" />
               <span>Perbandingan Kinerja SLA Antar Segmen Pelanggan</span>
             </h3>
             <p className="text-[11px] text-ink-muted mt-0.5">
@@ -375,8 +373,8 @@ export function SolutionTimeAnalyticsView({ initialData }: SolutionTimeAnalytics
                     <td className="py-2.5 px-3 text-center">
                       <span className={`px-2 py-0.5 rounded font-bold text-[10px] font-sans ${
                         seg.achievement === 'Achieved'
-                          ? 'bg-[#2E7D52]/10 text-[#2E7D52] border border-[#2E7D52]/20'
-                          : 'bg-[#A3462F]/10 text-[#A3462F] border border-[#A3462F]/20'
+                          ? 'bg-surface text-ink-primary border border-border'
+                          : 'bg-status-danger/10 text-status-danger border border-status-danger/20'
                       }`}>
                         {seg.achievement}
                       </span>
